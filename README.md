@@ -1,6 +1,6 @@
 # OpenDSU SDK as API spaces
 
-HTTP            :Http client APIs
+htt            :Http client APIs
 
 crypto          :Recommended Crypto APIs
 
@@ -8,7 +8,7 @@ anchoring       :Anchoring Services
 
 bricking        :Bricks Storages
 
-KeySSI          :KeySSI manipulation
+keyssi          :KeySSI manipulation
 
 resolver        :Obtain DSU Representations using a resolver
 
@@ -16,14 +16,14 @@ handlers        :DSU Handlers
 
 notifications   :Notifications based on KeySSIs
 
-MQ              :Working with Message Queues based on KeySSIs
+mq              :Working with Message Queues based on KeySSIs
 
-DC              :DSU  Channels and messaging  based on KeySSIs and DSUs
+dc              :DSU  Channels and messaging  based on KeySSIs and DSUs
 
-SC              :Security Context
+sc              :Security Context
 
-BDNS            :Handling Blockchain Domain Name Service
+bdns            :Handling Blockchain Domain Name Service
 
 choreographies  :OpenDSU APIs and choreographies
 
-DT              :Handling the creation/manipulation of DSU Types
+dt              :Handling the creation/manipulation of DSU Types
