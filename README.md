@@ -1,6 +1,4 @@
-# OpenDSU
-OpenDSU SDK: API spaces
-
+# OpenDSU SDK as API spaces
 
 HTTP            :Http client APIs
 
