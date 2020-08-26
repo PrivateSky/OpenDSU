@@ -64,9 +64,9 @@ const sign = (keySSI, hash, callback) => {
     callback(undefined, sign(hash, sign.sign(hash, keySSI.getEncryptionKey())));
 }
 
-const verifySignature = (keySSI, signature, callback) => {
+const verifySignature = (keySSI, hash, signature, callback) => {
     const verify = cryptoRegistry.getVerify(keySSI);
-    callback(undefined, verify.verify(keySSI.getEncryptionKey(), signature));
+    callback(undefined, verify.verify(hash, keySSI.getEncryptionKey(), signature));
 }
 
 module.exports = {
