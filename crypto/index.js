@@ -12,20 +12,23 @@ hash(KeySSI, JSONObject, callback)
 Return:  The callback is called with applying the hash function specified in the type of the KeySSI  to the JSONObject packed accordingly with OpenDSU RFC 041
 
 */
-const hash= (keySSI, JSONObject, callback) =>{
-    const hash = keySSI.cryptoRegistry.getHash(keySSI.getVn());
+
+const cryptoRegistry = require("key-ssi-resolver").CryptoAlgorithmsRegistry;
+
+const hash = (keySSI, JSONObject, callback) => {
+    const hash = cryptoRegistry.getHash(keySSI);
     callback(undefined, hash(JSON.stringify(JSONObject)));
 }
 
 
 const encrypt = (keySSI, buffer, callback) => {
-    const encrypt = keySSI.cryptoRegistry.getEncryption(keySSI.getVn());
+    const encrypt = cryptoRegistry.getEncryption(keySSI);
     callback(undefined, encrypt(buffer, keySSI.getEncryptionKey()));
 
 };
 
 const decrypt = (keySSI, encryptedBuffer, callback) => {
-    const decrypt = keySSI.cryptoRegistry.getDecryption(keySSI.getVn());
+    const decrypt = cryptoRegistry.getDecryption(keySSI);
     let decryptedBuffer;
     try {
         decryptedBuffer = decrypt(encryptedBuffer, keySSI.getEncryptionKey());
@@ -37,43 +40,33 @@ const decrypt = (keySSI, encryptedBuffer, callback) => {
 };
 
 const __getPemFormattedKeyPair = (keySSI, callback) => {
-    const keyGenerator = keySSI.cryptoRegistry.getKeyPairGenerator(keySSI.getVn());
+    const keyGenerator = cryptoRegistry.getKeyPairGenerator(keySSI);
     let rawPublicKey;
     const rawPrivateKey = keySSI.getEncryptionKey();
     try {
         rawPublicKey = keyGenerator.getPublicKey(rawPrivateKey);
-    }catch (e){
+    } catch (e) {
         return callback(e);
     }
 
     let pemConvertedKeys;
     try {
         pemConvertedKeys = keyGenerator.convertKeys(rawPrivateKey, rawPublicKey);
-    } catch (e){
+    } catch (e) {
         return callback(e);
     }
 
     callback(undefined, pemConvertedKeys);
 };
 
-const sign = (keySSI, hash, callback)=>{
-    __getPemFormattedKeyPair(keySSI, (err, pemConvertedKeys) => {
-        if (err) {
-            return callback(err);
-        }
-        const sign = keySSI.cryptoRegistry.getSign(keySSI.getVn());
-        callback(undefined, sign(hash, sign.sign(hash, pemConvertedKeys.privateKey)));
-    });
+const sign = (keySSI, hash, callback) => {
+    const sign = cryptoRegistry.getSign(keySSI);
+    callback(undefined, sign(hash, sign.sign(hash, pemConvertedKeys.privateKey)));
 }
 
 const verifySignature = (keySSI, signature, callback) => {
-    __getPemFormattedKeyPair(keySSI, (err, pemConvertedKeys) => {
-        if (err) {
-            return callback(err);
-        }
-        const verify = keySSI.cryptoRegistry.getVerify(keySSI.getVn());
-        callback(undefined, verify(hash, verify.sign(pemConvertedKeys.publicKey, signature)));
-    });
+    const verify = cryptoRegistry.getVerify(keySSI);
+    callback(undefined, verify.verify(hash, pemConvertedKeys.publicKey, signature));
 }
 
 module.exports = {
