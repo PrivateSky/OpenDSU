@@ -61,12 +61,12 @@ const __getPemFormattedKeyPair = (keySSI, callback) => {
 
 const sign = (keySSI, hash, callback) => {
     const sign = cryptoRegistry.getSign(keySSI);
-    callback(undefined, sign(hash, sign.sign(hash, pemConvertedKeys.privateKey)));
+    callback(undefined, sign(hash, sign.sign(hash, keySSI.getEncryptionKey())));
 }
 
 const verifySignature = (keySSI, signature, callback) => {
     const verify = cryptoRegistry.getVerify(keySSI);
-    callback(undefined, verify.verify(hash, pemConvertedKeys.publicKey, signature));
+    callback(undefined, verify.verify(keySSI.getEncryptionKey(), signature));
 }
 
 module.exports = {
