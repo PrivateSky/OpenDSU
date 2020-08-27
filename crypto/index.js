@@ -1,18 +1,18 @@
 const cryptoRegistry = require("key-ssi-resolver").CryptoAlgorithmsRegistry;
 
 const hash = (keySSI, JSONObject, callback) => {
-    const hash = cryptoRegistry.getHash(keySSI);
+    const hash = cryptoRegistry.getHashFunction(keySSI);
     callback(undefined, hash(JSON.stringify(JSONObject)));
 };
 
 const encrypt = (keySSI, buffer, callback) => {
-    const encrypt = cryptoRegistry.getEncryption(keySSI);
+    const encrypt = cryptoRegistry.getEncryptionFunction(keySSI);
     callback(undefined, encrypt(buffer, keySSI.getEncryptionKey()));
 
 };
 
 const decrypt = (keySSI, encryptedBuffer, callback) => {
-    const decrypt = cryptoRegistry.getDecryption(keySSI);
+    const decrypt = cryptoRegistry.getDecryptionFunction(keySSI);
     let decryptedBuffer;
     try {
         decryptedBuffer = decrypt(encryptedBuffer, keySSI.getEncryptionKey());
@@ -24,13 +24,13 @@ const decrypt = (keySSI, encryptedBuffer, callback) => {
 };
 
 const sign = (keySSI, hash, callback) => {
-    const sign = cryptoRegistry.getSign(keySSI);
-    callback(undefined, sign(hash, sign.sign(hash, keySSI.getEncryptionKey())));
+    const sign = cryptoRegistry.getSignFunction(keySSI);
+    callback(undefined, sign(hash, keySSI.getEncryptionKey()));
 };
 
 const verifySignature = (keySSI, hash, signature, callback) => {
-    const verify = cryptoRegistry.getVerify(keySSI);
-    callback(undefined, verify.verify(hash, keySSI.getEncryptionKey(), signature));
+    const verify = cryptoRegistry.getVerifyFunction(keySSI);
+    callback(undefined, verify(hash, keySSI.getEncryptionKey(), signature));
 };
 
 module.exports = {
