@@ -77,7 +77,7 @@ function fetch(url, options={}){
 	return promise;
 }
 
-function Response(xhrRequest, xhrResponse){
+function Response(httpRequest, httpResponse){
 	let handlers = {};
 
 	let readingInProgress = false;
@@ -90,7 +90,7 @@ function Response(xhrRequest, xhrResponse){
 
 		//data collecting
 		let rawData;
-		const contentType = xhrResponse.headers['content-type'];
+		const contentType = httpResponse.headers['content-type'];
 
 		if(contentType === "application/octet-stream"){
 			rawData = [];
@@ -98,7 +98,7 @@ function Response(xhrRequest, xhrResponse){
 			rawData = '';
 		}
 
-		xhrResponse.on('data', (chunk) => {
+		httpResponse.on('data', (chunk) => {
 			if(Array.isArray(rawData)){
 				rawData.push(...chunk);
 			}else{
@@ -106,7 +106,7 @@ function Response(xhrRequest, xhrResponse){
 			}
 		});
 
-		xhrResponse.on('end', () => {
+		httpResponse.on('end', () => {
 			try {
 				if(Array.isArray(rawData)){
 					rawData = Buffer.from(rawData);
@@ -116,10 +116,12 @@ function Response(xhrRequest, xhrResponse){
 				callback(err);
 			}finally {
 				//trying to prevent getting ECONNRESET error after getting our response
-				xhrRequest.abort();
+				httpRequest.abort();
 			}
 		});
 	}
+
+	this.ok = httpResponse.statusCode >=200 && httpResponse.statusCode<300 ? true : false;
 
 	this.arrayBuffer = function(){
 		let promise = new Promise((resolve, reject)=>{
