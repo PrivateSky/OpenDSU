@@ -4,26 +4,19 @@
 
 const or = require('overwrite-require');
 
-let fetch;
-switch($$.environmentType){
+switch ($$.environmentType) {
 	case or.constants.BROWSER_ENVIRONMENT_TYPE:
 	case or.constants.SERVICE_WORKER_ENVIRONMENT_TYPE:
-		fetch = require("./browser").fetch;
+		module.exports = require("./browser");
 		break;
 	default:
-		fetch = require("./node").fetch;
+		module.exports = require("./node");
 }
 
-module.exports = {
-	fetch: fetch,
-	poll: function(url, options, timeout){
+const PollRequestManager = require("./utils/PollRequestManager");
+const rm = new PollRequestManager(module.exports.fetch);
 
-		throw new Error("Not implemented yet!");
-
-		/*let RequestManager = require("./utils/RequestManager");
-		const rm = new RequestManager(timeout);
-		const request = rm.createRequest(url, options);
-
-		return request;*/
-	}
+module.exports.poll = function (url, options, delayStart) {
+	const request = rm.createRequest(url, options, delayStart);
+	return request;
 };
