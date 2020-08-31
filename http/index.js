@@ -14,16 +14,13 @@ switch($$.environmentType){
 		fetch = require("./node").fetch;
 }
 
+const PollRequestManager = require("./utils/PollRequestManager");
+const rm = new PollRequestManager(fetch);
+
 module.exports = {
 	fetch: fetch,
-	poll: function(url, options, timeout){
-
-		throw new Error("Not implemented yet!");
-
-		/*let RequestManager = require("./utils/RequestManager");
-		const rm = new RequestManager(timeout);
-		const request = rm.createRequest(url, options);
-
-		return request;*/
+	poll: function(url, options, delayStart){
+		const request = rm.createRequest(url, options, delayStart);
+		return request;
 	}
 };
