@@ -8,19 +8,31 @@ const parse = (ssiString) => {
 
 const buildSeedSSI = (domain, path, specificString, control, vn, hint) => {
     const seedSSI = keySSIFactory.create(SSITypes.SEED_SSI);
-    seedSSI.load(`${domain}/${path}`, specificString, control, vn, hint);
+    let dlDomain = domain;
+    if(typeof path !== "undefined" && path !== ''){
+        dlDomain = dlDomain + "/" + path;
+    }
+    seedSSI.load(SSITypes.SEED_SSI, dlDomain, specificString, control, vn, hint);
     return seedSSI;
 };
 
 const buildSReadSSI = (domain, path, specificString, control, vn, hint) => {
     const sReadSSI = keySSIFactory.create(SSITypes.SREAD_SSI);
-    sReadSSI.load(`${domain}/${path}`, specificString, control, vn, hint);
+    let dlDomain = domain;
+    if(typeof path !== "undefined" && path !== ''){
+        dlDomain = dlDomain + "/" + path;
+    }
+    sReadSSI.load(SSITypes.SREAD_SSI, dlDomain, specificString, control, vn, hint);
     return sReadSSI;
 };
 
 const buildSZeroAccessSSI = (domain, path, specificString, control, vn, hint) => {
     const sZaSSI = keySSIFactory.create(SSITypes.SZERO_ACCESS_SSI);
-    sZaSSI.load(`${domain}/${path}`, specificString, control, vn, hint);
+    let dlDomain = domain;
+    if(typeof path !== "undefined" && path !== ''){
+        dlDomain = dlDomain + "/" + path;
+    }
+    sZaSSI.load(SSITypes.SZERO_ACCESS_SSI, dlDomain, specificString, control, vn, hint);
     return sZaSSI;
 };
 
