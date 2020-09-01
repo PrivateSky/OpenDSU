@@ -1,32 +1,50 @@
-/*
-html API space
-*/
 
-const pskCrypto = require('pskcrypto');
-const edfsBrickStorage = require('edfs-brick-storage').createBrickStorageService();
 
+const bdns = require('./../index').loadApi('bdns');
+const { fetch } = require('../http');
+
+/**
+ * Get brick
+ * @param {hashLinkSSI} hashLinkSSI 
+ * @param {string} authToken 
+ * @param {function} callback 
+ */
 const getBrick = (hashLinkSSI, authToken, callback) => {
-    const hash = getHash(hashLinkSSI);
+    const brickStorageArray = bdns.getBrickStorages(hashLinkSSI);
+    const brickHash = hashLinkSSI.getHash();
 
+    if (!brickStorageArray.length) {
+        return callback('No storage provided');
+    }
 
-    edfsBrickStorage.getBrick(hash, (err, brick) => {
-        if (err) {
-            return callback(err);
-        }
+    const queries = brickStorageArray.map((storage) => fetch(`${brickStorageArray[0]}/get-brick/${brickHash}`, { method: 'GET' }));
 
-        return callback(null, pskCrypto.privateDencrypt(authToken, brick));
+    Promise.any(queries).then((response) => {
+        response.json().then((data) => callback(null, data))
+    }).catch((err) => callback(err));
+};
+
+/**
+ * Put brick
+ * @param {keySSI} keySSI 
+ * @param {ReadableStream} brick 
+ * @param {string} authToken 
+ * @param {function} callback 
+ */
+const putBrick = (keySSI, brick, authToken, callback) => {
+    const brickStorageArray = bdns.getBrickStorages(hashLinkSSI);
+
+    const options = {
+        method: 'PUT',
+        body: brick
+    };
+    const queries = brickStorageArray.map((storage) => fetch(`${brickStorageArray[0]}/put-brick/${brickHash}`, options));
+
+    Promise.allSettled(queries).then((rawResponses) => {
+        Promise.all(rawResponses.find((rawResponse) => rawResponse.status === 201).json()).then((response) => {
+            return callback(null, response)
+        });
     });
 };
-
-const putBrick = (brickStorageSSI, brick, authToken, callback) => {
-    const encryptedBrick = pskCrypto.privateEncrypt(authToken, brick);
-
-    return edfsBrickStorage.putBrick(brickStorageSSI, encryptedBrick, callback);
-};
-
-const getHash = (hashLinkSSI) => {
-    // TO BE implemented
-    return hashLinkSSI
-}
 
 module.exports = { getBrick, putBrick };
