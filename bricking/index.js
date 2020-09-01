@@ -1,7 +1,7 @@
 
 
 const bdns = require('./../index').loadApi('bdns');
-const { fetch } = require('../http');
+const { fetch, doPut } = require('../http');
 
 /**
  * Get brick
@@ -34,12 +34,17 @@ const getBrick = (hashLinkSSI, authToken, callback) => {
 const putBrick = (keySSI, brick, authToken, callback) => {
     const brickStorageArray = bdns.getBrickStorages(hashLinkSSI);
 
-    const options = {
-        method: 'PUT',
-        body: brick
-    };
-    const queries = brickStorageArray.map((storage) => fetch(`${brickStorageArray[0]}/put-brick/${brickHash}`, options));
+    // const options = {
+    //     method: 'PUT',
+    //     body: brick
+    // };
+    // const queries = brickStorageArray.map((storage) => fetch(`${brickStorageArray[0]}/put-brick/${brickHash}`, options));
 
+    const queries = brickStorageArray.map((storage) => {
+        return new Promise((resolve, reject) => {
+            doPut(`${brickStorageArray[0]}/put-brick/${brickHash}`, brick, resolve)
+        })
+    })
     Promise.allSettled(queries).then((rawResponses) => {
         Promise.all(rawResponses.find((rawResponse) => rawResponse.status === 201).json()).then((response) => {
             return callback(null, response)
