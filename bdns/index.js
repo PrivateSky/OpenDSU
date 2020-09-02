@@ -1,4 +1,4 @@
-const bdns = require("bdns");
+const bdns = require("bdns").createBDNS();
 
 const getRawInfo = (keySSI, callback) => {
     bdns.getRawInfo(keySSI, callback);
