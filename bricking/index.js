@@ -17,9 +17,38 @@ const getBrick = (hashLinkSSI, authToken, callback) => {
         return callback('No storage provided');
     }
 
-    const queries = brickStorageArray.map((storage) => fetch(`${brickStorageArray[0]}/get-brick/${brickHash}`, { method: 'GET' }));
+    const queries = brickStorageArray.map((storage) => fetch(`${storage}/get-brick/${brickHash}`));
 
     Promise.any(queries).then((response) => {
+        response.json().then((data) => callback(null, data))
+    }).catch((err) => callback(err));
+};
+
+/**
+ * Get multiple bricks
+ * @param {hashLinkSSIList} hashLinkSSIList 
+ * @param {string} authToken 
+ * @param {function} callback 
+ */
+const getMultipleBricks = (hashLinkSSIList, authToken, callback) => {
+    const brickStorageArray = bdns.getBrickStorages(hashLinkSSIList[0]);
+    const bricksHashes = hashLinkSSIList.map((hashLinkSSI) => hashLinkSSI.getHash());
+
+    if (!brickStorageArray.length) {
+        return callback('No storage provided');
+    }
+
+    let index = 0;
+    const size = 50;
+    const queries = [];
+
+    while (index < bricksHashes.length) {
+        const hashQuery = `"${bricksHashes.slice(index, size + index).join('&hashes=')}"`;
+        index += size;
+        queries.push(Promise.any(brickStorageArray.map((storage) => fetch(`${storage}/downloadMultipleBricks/?hashes=${hashQuery}`))));
+    }
+
+    Promise.all(queries).then((response) => {
         response.json().then((data) => callback(null, data))
     }).catch((err) => callback(err));
 };
@@ -52,4 +81,4 @@ const putBrick = (keySSI, brick, authToken, callback) => {
     });
 };
 
-module.exports = { getBrick, putBrick };
+module.exports = { getBrick, putBrick, getMultipleBricks };

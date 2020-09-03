@@ -5,34 +5,37 @@ const URL = require("url");
 function getProtocol(url, options) {
 	let protocol;
 
-	if(typeof options !== "undefined"){
-		if(options.protocol === 'http') {
+	// const urlObject = new URL(url).catch((err) => { throw new Error(err) });
+	// return urlObject.protocol === 'http:' ? http : https
+
+	if (typeof options !== "undefined") {
+		if (options.protocol === 'http') {
 			protocol = http;
-		} else if(options.protocol === 'https') {
+		} else if (options.protocol === 'https') {
 			protocol = https;
 		} else {
-			if(url.startsWith("https:")){
+			if (url.startsWith("https:")) {
 				protocol = https;
-			}else if(url.startsWith("http:")){
+			} else if (url.startsWith("http:")) {
 				protocol = http;
 			}
 		}
-	}else{
-		if(url.startsWith("https:")){
+	} else {
+		if (url.startsWith("https:")) {
 			protocol = https;
-		}else if(url.startsWith("http:")){
+		} else if (url.startsWith("http:")) {
 			protocol = http;
 		}
 	}
 
-	if(typeof protocol === "undefined"){
+	if (typeof protocol === "undefined") {
 		throw new Error(`Unable to determine the protocol`);
 	}
 
 	return protocol;
 }
 
-function decipherUrl(url, options){
+function decipherUrl(url, options) {
 	const innerUrl = URL.parse(url);
 
 	options.hostname = innerUrl.hostname;
@@ -40,30 +43,30 @@ function decipherUrl(url, options){
 	options.port = parseInt(innerUrl.port);
 }
 
-function getMethod(options){
+function getMethod(options) {
 	let method = 'get';
-	if(typeof options !== "undefined"){
+	if (typeof options !== "undefined") {
 		method = options.method;
 	}
 	return method;
 }
 
-function convertOptions(options = {}){
+function convertOptions(options = {}) {
 	//convert from fetch options into xhr options
 
-	if(typeof options.method === "undefined"){
+	if (typeof options.method === "undefined") {
 		options.method = 'GET';
 	}
 
 	return options;
 }
 
-function fetch(url, options={}){
+function fetch(url, options = {}) {
 	const protocol = getProtocol(url, options);
 
-	let promise = new Promise((resolve, reject)=>{
+	let promise = new Promise((resolve, reject) => {
 		decipherUrl(url, options);
-		let request = protocol.request(url, {}, (response)=>{
+		let request = protocol.request(url, {}, (response) => {
 			resolve(new Response(request, response));
 		});
 
@@ -77,12 +80,12 @@ function fetch(url, options={}){
 	return promise;
 }
 
-function Response(httpRequest, httpResponse){
+function Response(httpRequest, httpResponse) {
 	let handlers = {};
 
 	let readingInProgress = false;
-	function readResponse(callback){
-		if(readingInProgress){
+	function readResponse(callback) {
+		if (readingInProgress) {
 			throw new Error("Response reading in progress");
 		}
 
@@ -92,41 +95,41 @@ function Response(httpRequest, httpResponse){
 		let rawData;
 		const contentType = httpResponse.headers['content-type'];
 
-		if(contentType === "application/octet-stream"){
+		if (contentType === "application/octet-stream") {
 			rawData = [];
-		}else{
+		} else {
 			rawData = '';
 		}
 
 		httpResponse.on('data', (chunk) => {
-			if(Array.isArray(rawData)){
+			if (Array.isArray(rawData)) {
 				rawData.push(...chunk);
-			}else{
+			} else {
 				rawData += chunk;
 			}
 		});
 
 		httpResponse.on('end', () => {
 			try {
-				if(Array.isArray(rawData)){
+				if (Array.isArray(rawData)) {
 					rawData = Buffer.from(rawData);
 				}
 				callback(undefined, rawData);
 			} catch (err) {
 				callback(err);
-			}finally {
+			} finally {
 				//trying to prevent getting ECONNRESET error after getting our response
 				httpRequest.abort();
 			}
 		});
 	}
 
-	this.ok = httpResponse.statusCode >=200 && httpResponse.statusCode<300 ? true : false;
+	this.ok = httpResponse.statusCode >= 200 && httpResponse.statusCode < 300 ? true : false;
 
-	this.arrayBuffer = function(){
-		let promise = new Promise((resolve, reject)=>{
+	this.arrayBuffer = function () {
+		let promise = new Promise((resolve, reject) => {
 			readResponse((err, responseBody) => {
-				if(err){
+				if (err) {
 					return reject(err);
 				}
 				//endure responseBody has the wright type of ArrayBuffer
@@ -136,10 +139,10 @@ function Response(httpRequest, httpResponse){
 		return promise;
 	}
 
-	this.blob = function(){
-		let promise = new Promise((resolve, reject)=>{
+	this.blob = function () {
+		let promise = new Promise((resolve, reject) => {
 			readResponse((err, responseBody) => {
-				if(err){
+				if (err) {
 					return reject(err);
 				}
 				resolve(responseBody);
@@ -148,10 +151,10 @@ function Response(httpRequest, httpResponse){
 		return promise;
 	}
 
-	this.text = function(){
-		let promise = new Promise((resolve, reject)=>{
+	this.text = function () {
+		let promise = new Promise((resolve, reject) => {
 			readResponse((err, responseBody) => {
-				if(err){
+				if (err) {
 					return reject(err);
 				}
 				resolve(responseBody);
@@ -160,10 +163,10 @@ function Response(httpRequest, httpResponse){
 		return promise;
 	}
 
-	this.formData = function(){
-		let promise = new Promise((resolve, reject)=>{
+	this.formData = function () {
+		let promise = new Promise((resolve, reject) => {
 			readResponse((err, responseBody) => {
-				if(err){
+				if (err) {
 					return reject(err);
 				}
 				resolve(responseBody);
@@ -172,20 +175,20 @@ function Response(httpRequest, httpResponse){
 		return promise;
 	}
 
-	this.json = function(){
-		let promise = new Promise((resolve, reject)=>{
+	this.json = function () {
+		let promise = new Promise((resolve, reject) => {
 			readResponse((err, responseBody) => {
-				if(err){
+				if (err) {
 					return reject(err);
 				}
 				let jsonContent;
-				try{
+				try {
 					//do we really need this if ?!
-					if(Buffer.isBuffer(responseBody)){
+					if (Buffer.isBuffer(responseBody)) {
 						responseBody = responseBody.toString();
 					}
 					jsonContent = JSON.parse(responseBody);
-				}catch(err){
+				} catch (err) {
 					return reject(err);
 				}
 				resolve(jsonContent);

@@ -1,7 +1,6 @@
-/*
-	http API space
-*/
-
+/**
+ * http API space
+ */
 const or = require('overwrite-require');
 
 switch ($$.environmentType) {
