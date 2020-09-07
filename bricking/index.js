@@ -58,14 +58,16 @@ const getMultipleBricks = (hashLinkSSIList, authToken, callback) => {
         while (index < bricksHashes.length) {
             const hashQuery = `${bricksHashes.slice(index, size + index).join('&hashes=')}`;
             index += size;
-            queries.push(Promise.all(brickStorageArray.map((storage) => {
+            queries.push(Promise.allSettled(brickStorageArray.map((storage) => {
                 return fetch(`${storage}/bricks/downloadMultipleBricks/?hashes=${hashQuery}`)
             })));
         }
 
         Promise.all(queries).then((responses) => {
             Promise.all(responses.reduce((acc, response) => {
-                acc.push(response[0].arrayBuffer())
+                const batch = response.find((item) => item.status === 'fulfilled');
+
+                acc.push(batch.value.arrayBuffer());
                 return acc;
             }, [])).then((data) => callback(null, data));
         }).catch((err) => {
