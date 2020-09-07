@@ -1,8 +1,11 @@
 const cryptoRegistry = require("key-ssi-resolver").CryptoAlgorithmsRegistry;
 
-const hash = (keySSI, JSONObject, callback) => {
+const hash = (keySSI, data, callback) => {
+    if (typeof data === "object" && !Buffer.isBuffer(data)) {
+        data = JSON.stringify(data);
+    }
     const hash = cryptoRegistry.getHashFunction(keySSI);
-    callback(undefined, hash(JSON.stringify(JSONObject)));
+    callback(undefined, hash(data));
 };
 
 const encrypt = (keySSI, buffer, callback) => {
