@@ -1,11 +1,12 @@
 const bdns = require('./../index').loadApi('bdns');
-const {fetch, doPut} = require('../index').loadApi("http");
+const { fetch, doPut } = require('../index').loadApi("http");
 
 /**
  * Get brick
  * @param {hashLinkSSI} hashLinkSSI
  * @param {string} authToken
  * @param {function} callback
+ * @returns {any}
  */
 const getBrick = (hashLinkSSI, authToken, callback) => {
     if (typeof authToken === 'function') {
@@ -27,7 +28,7 @@ const getBrick = (hashLinkSSI, authToken, callback) => {
         const queries = brickStorageArray.map((storage) => fetch(`${storage}/bricks/get-brick/${brickHash}`));
 
         Promise.all(queries).then((responses) => {
-            responses[0].json().then((data) => callback(null, data));
+            responses[0].arrayBuffer().then((data) => callback(null, data));
         }).catch((err) => callback(err));
     });
 };
@@ -39,26 +40,52 @@ const getBrick = (hashLinkSSI, authToken, callback) => {
  * @param {function} callback
  */
 const getMultipleBricks = (hashLinkSSIList, authToken, callback) => {
-    const brickStorageArray = bdns.getBrickStorages(hashLinkSSIList[0]);
-    const bricksHashes = hashLinkSSIList.map((hashLinkSSI) => hashLinkSSI.getHash());
-
-    if (!brickStorageArray.length) {
-        return callback('No storage provided');
+    if (typeof authToken === 'function') {
+        callback = authToken;
+        authToken = undefined;
     }
 
-    let index = 0;
-    const size = 50;
-    const queries = [];
+    bdns.getBrickStorages(hashLinkSSIList[0], (err, brickStorageArray) => {
+        const bricksHashes = hashLinkSSIList.map((hashLinkSSI) => hashLinkSSI.getHash());
+        if (!brickStorageArray.length) {
+            return callback('No storage provided');
+        }
 
-    while (index < bricksHashes.length) {
-        const hashQuery = `"${bricksHashes.slice(index, size + index).join('&hashes=')}"`;
-        index += size;
-        queries.push(Promise.any(brickStorageArray.map((storage) => fetch(`${storage}/bricks/downloadMultipleBricks/?hashes=${hashQuery}`))));
-    }
+        let index = 0;
+        const size = 50;
+        const queries = [];
 
-    Promise.all(queries).then((responses) => {
-        callback(null, responses[0])
-    }).catch((err) => callback(err));
+        while (index < bricksHashes.length) {
+            const hashQuery = `${bricksHashes.slice(index, size + index).join('&hashes=')}`;
+            index += size;
+            queries.push(Promise.all(brickStorageArray.map((storage) => {
+                return fetch(`${storage}/bricks/downloadMultipleBricks/?hashes=${hashQuery}`)
+            })));
+        }
+
+        Promise.all(queries).then((responses) => {
+            Promise.all(responses.reduce((acc, response) => {
+                acc.push(response[0].arrayBuffer())
+                return acc;
+            }, [])).then((data) => callback(null, data));
+        }).catch((err) => {
+            callback(err)
+        });
+
+        // const BRICK_MAX_SIZE_IN_BYTES = 4;
+        // function parseResponse(response) {
+        //     if (response.length > 0) {
+        //         let brickSizeBuffer = response.slice(0, BRICK_MAX_SIZE_IN_BYTES);
+        //         let brickSize = brickSizeBuffer.readUInt32BE();
+        //         let brickData = response.slice(BRICK_MAX_SIZE_IN_BYTES, brickSize + BRICK_MAX_SIZE_IN_BYTES);
+        //         const brick = bar.createBrick();
+        //         brick.setTransformedData(brickData);
+        //         bricks.push(brick);
+        //         response = response.slice(brickSize + BRICK_MAX_SIZE_IN_BYTES);
+        //         return parseResponse(response);
+        //     }
+        // }
+    });
 };
 
 /**
@@ -67,6 +94,7 @@ const getMultipleBricks = (hashLinkSSIList, authToken, callback) => {
  * @param {ReadableStream} brick
  * @param {string} authToken
  * @param {function} callback
+ * @returns {string} brickhash
  */
 const putBrick = (keySSI, brick, authToken, callback) => {
     if (typeof authToken === 'function') {
@@ -97,9 +125,9 @@ const putBrick = (keySSI, brick, authToken, callback) => {
                 return callback({ message: 'Brick not created' });
             }
 
-            return callback(null, foundBrick.value)
+            return callback(null, JSON.parse(foundBrick.value).message)
         });
     });
 };
 
-module.exports = {getBrick, putBrick, getMultipleBricks};
+module.exports = { getBrick, putBrick, getMultipleBricks };
