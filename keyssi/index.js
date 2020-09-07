@@ -36,9 +36,20 @@ const buildSZeroAccessSSI = (domain, path, specificString, control, vn, hint) =>
     return sZaSSI;
 };
 
+const buildHashLinkSSI = (domain, path, specificString, control, vn, hint) => {
+    const hlSSI = keySSIFactory.create(SSITypes.HASH_LINK_SSI);
+    let dlDomain = domain;
+    if(typeof path !== "undefined" && path !== ''){
+        dlDomain = dlDomain + "/" + path;
+    }
+    hlSSI.load(SSITypes.HASH_LINK_SSI, dlDomain, specificString, control, vn, hint);
+    return hlSSI;
+};
+
 module.exports = {
     parse,
     buildSeedSSI,
     buildSReadSSI,
-    buildSZeroAccessSSI
+    buildSZeroAccessSSI,
+    buildHashLinkSSI
 };
