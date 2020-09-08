@@ -111,6 +111,7 @@ const putBrick = (keySSI, brick, authToken, callback) => {
         if (err) {
             return callback(err);
         }
+        
         const queries = brickStorageArray.map((storage) => {
             return new Promise((resolve, reject) => {
                 doPut(`${storage}/bricks/put-brick`, brick, (err, data) => {

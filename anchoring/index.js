@@ -1,42 +1,88 @@
 const bdns = require("../index").loadApi("bdns");
 const { fetch, doPut } = require('../http');
 
+/**
+ * Get versions
+ * @param {keySSI} keySSI 
+ * @param {string} authToken 
+ * @param {function} callback 
+ */
 const versions = (keySSI, authToken, callback) => {
-    const anchoringServicesArray = bdns.getAnchoringServices(keySSI);
-
-    if (!anchoringServicesArray.length) {
-        return callback('No anchoring service provided');
+    if (typeof authToken === 'function') {
+        callback = authToken;
+        authToken = undefined;
     }
 
-    const queries = anchoringServicesArray.map((service) => fetch(`${service}/anchor/versions/${keySSI.getAnchorAlias()}`));
+    bdns.getAnchoringServices(keySSI, (err, anchoringServicesArray) => {
+        if (err) {
+            return callback(err);
+        }
 
-    Promise.any(queries).then((response) => {
-        response.json().then((data) => callback(null, data))
-    }).catch((err) => callback(err));
-};
+        if (!anchoringServicesArray.length) {
+            return callback('No anchoring service provided');
+        }
+        console.log(keySSI.getAnchorAlias())
+        const queries = anchoringServicesArray.map((service) => fetch(`${service}/anchor/versions/${keySSI.getAnchorAlias()}`));
 
-const addAnchor = (keySSI, hashLinkSSI, authToken, callback) => {
-    const anchoringServicesArray = bdns.getAnchoringServices(keySSI);
+        Promise.allSettled(queries).then((responses) => {
+            const response = responses.find((response) => response.status === 'fulfilled');
 
-    // const options = {
-    //     method: 'PUT',
-    //     body: brick
-    // };
-    // const queries = brickStorageArray.map((storage) => fetch(`${brickStorageArray[0]}/put-brick/${brickHash}`, options));
-
-    const queries = anchoringServicesArray.map((service) => {
-        return new Promise((resolve, reject) => {
-            doPut(`${service}/anchor/${keySSI.getAnchorAlias()}`, hashLinkSSI.getHash(), resolve)
-        })
-    })
-    Promise.allSettled(queries).then((rawResponses) => {
-        Promise.all(rawResponses.find((rawResponse) => rawResponse.status === 201).json()).then((response) => {
-            return callback(null, response)
-        });
+            response.value.json().then((data) => callback(null, data))
+        }).catch((err) => callback(err));
     });
 };
 
+/**
+ * Add new version
+ * @param {keySSI} keySSI 
+ * @param {hashLinkSSI} hashLinkSSI 
+ * @param {string} authToken 
+ * @param {function} callback 
+ */
+const addVersion = (keySSI, hashLinkSSI, authToken, callback) => {
+    if (typeof authToken === 'function') {
+        callback = authToken;
+        authToken = undefined;
+    }
+
+    bdns.getAnchoringServices(keySSI, (err, anchoringServicesArray) => {
+        if (err) {
+            return callback(err);
+        }
+
+        if (!anchoringServicesArray.length) {
+            return callback('No anchoring service provided');
+        }
+
+        const queries = anchoringServicesArray.map((service) => {
+            return new Promise((resolve, reject) => {
+                doPut(`${service}/anchor/add/${keySSI.getAnchorAlias()}/${hashLinkSSI.getHash()}`, hashLinkSSI.getHash(), (err, data) => {
+                    if (err) {
+                        return reject(err);
+                    }
+
+                    return resolve(data);
+                });
+            })
+        });
+
+        Promise.allSettled(queries).then((responses) => {
+            const response = responses.find((response) => response.status === 'fulfilled');
+            if (!response) {
+                return callback('error')
+            }
+
+            callback(null, response.value);
+        });
+    });
+
+};
+
+const getObservable = (keySSI, fromVersion, authToken, timeout) => {
+    // TODO: to be implemented
+}
+
 module.exports = {
-    addAnchor,
+    addVersion,
     versions
 }
