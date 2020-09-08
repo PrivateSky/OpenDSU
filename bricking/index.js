@@ -69,24 +69,27 @@ const getMultipleBricks = (hashLinkSSIList, authToken, callback) => {
 
                 acc.push(batch.value.arrayBuffer());
                 return acc;
-            }, [])).then((data) => callback(null, data));
+            }, [])).then((data) => parseResponse(Buffer.concat(data), callback));
         }).catch((err) => {
-            callback(err)
+            callback(err);
         });
 
-        // const BRICK_MAX_SIZE_IN_BYTES = 4;
-        // function parseResponse(response) {
-        //     if (response.length > 0) {
-        //         let brickSizeBuffer = response.slice(0, BRICK_MAX_SIZE_IN_BYTES);
-        //         let brickSize = brickSizeBuffer.readUInt32BE();
-        //         let brickData = response.slice(BRICK_MAX_SIZE_IN_BYTES, brickSize + BRICK_MAX_SIZE_IN_BYTES);
-        //         const brick = bar.createBrick();
-        //         brick.setTransformedData(brickData);
-        //         bricks.push(brick);
-        //         response = response.slice(brickSize + BRICK_MAX_SIZE_IN_BYTES);
-        //         return parseResponse(response);
-        //     }
-        // }
+        function parseResponse(response, callback) {
+            const BRICK_MAX_SIZE_IN_BYTES = 4;
+
+            if (response.length > 0) {
+                const brickSizeBuffer = response.slice(0, BRICK_MAX_SIZE_IN_BYTES);
+
+                const brickSize = brickSizeBuffer.readUInt32BE();
+                const brickData = response.slice(BRICK_MAX_SIZE_IN_BYTES, brickSize + BRICK_MAX_SIZE_IN_BYTES);
+
+                callback(null, brickData);
+
+                response = response.slice(brickSize + BRICK_MAX_SIZE_IN_BYTES);
+
+                return parseResponse(response);
+            }
+        }
     });
 };
 
