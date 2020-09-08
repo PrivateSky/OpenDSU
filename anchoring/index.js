@@ -21,7 +21,7 @@ const versions = (keySSI, authToken, callback) => {
         if (!anchoringServicesArray.length) {
             return callback('No anchoring service provided');
         }
-        console.log(keySSI.getAnchorAlias())
+
         const queries = anchoringServicesArray.map((service) => fetch(`${service}/anchor/versions/${keySSI.getAnchorAlias()}`));
 
         Promise.allSettled(queries).then((responses) => {
