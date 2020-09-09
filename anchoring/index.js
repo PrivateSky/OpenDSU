@@ -39,12 +39,7 @@ const versions = (keySSI, authToken, callback) => {
  * @param {string} authToken 
  * @param {function} callback 
  */
-const addVersion = (keySSI, hashLinkSSI, authToken, callback) => {
-    if (typeof authToken === 'function') {
-        callback = authToken;
-        authToken = undefined;
-    }
-
+const addVersion = (keySSI, newHashLinkSSI, lastHashLinkSSI, zkpValue, digitalProof, callback) => {
     bdns.getAnchoringServices(keySSI, (err, anchoringServicesArray) => {
         if (err) {
             return callback(err);
@@ -54,11 +49,23 @@ const addVersion = (keySSI, hashLinkSSI, authToken, callback) => {
             return callback('No anchoring service provided');
         }
 
+        const body = {
+            hash: {
+                last: lastHashLinkSSI ? lastHashLinkSSI.getIdentifier() : null,
+                new: newHashLinkSSI.getIdentifier()
+            },
+            zkpValue,
+            digitalProof
+        };
+
         const queries = anchoringServicesArray.map((service) => {
             return new Promise((resolve, reject) => {
-                doPut(`${service}/anchor/add/${keySSI.getAnchorAlias()}/${hashLinkSSI.getHash()}`, hashLinkSSI.getHash(), (err, data) => {
+                doPut(`${service}/anchor/add/${keySSI.getAnchorAlias()}`, body, (err, data) => {
                     if (err) {
-                        return reject(err);
+                        return reject({
+                            statusCode: err.statusCode,
+                            message: err.statusCode === 428 ? 'Unable to add alias: versions out of sync' : err.message || 'Error'
+                        });
                     }
 
                     return resolve(data);
@@ -68,8 +75,10 @@ const addVersion = (keySSI, hashLinkSSI, authToken, callback) => {
 
         Promise.allSettled(queries).then((responses) => {
             const response = responses.find((response) => response.status === 'fulfilled');
+
             if (!response) {
-                return callback('error')
+                const rejected = responses.find((response) => response.status === 'rejected');
+                return callback(rejected.reason)
             }
 
             callback(null, response.value);
