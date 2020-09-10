@@ -16,9 +16,29 @@ const getReplicas = (keySSI, callback) => {
     bdns.getReplicas(keySSI, callback);
 };
 
+const addRawInfo = (keySSI, rawInfo) => {
+    bdns.addRawInfo(keySSI.getDLDomain(), rawInfo);
+};
+
+const addAnchoringServices = (keySSI, anchoringServices) => {
+    bdns.addAnchoringServices(keySSI.getDLDomain(), anchoringServices);
+};
+
+const addBrickStorages = (keySSI, brickStorages) => {
+    bdns.addBrickStorages(keySSI.getDLDomain(), brickStorages);
+};
+
+const addReplicas = (keySSI, replicas) => {
+    bdns.addReplicas(keySSI.getDLDomain(), replicas);
+};
+
 module.exports = {
     getRawInfo,
     getBrickStorages,
     getAnchoringServices,
-    getReplicas
+    getReplicas,
+    addRawInfo,
+    addAnchoringServices,
+    addBrickStorages,
+    addReplicas
 }
