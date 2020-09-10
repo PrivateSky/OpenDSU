@@ -7,43 +7,29 @@ const parse = (ssiString) => {
 };
 
 const buildSeedSSI = (domain, path, specificString, control, vn, hint) => {
-    const seedSSI = keySSIFactory.create(SSITypes.SEED_SSI);
-    let dlDomain = domain;
-    if(typeof path !== "undefined" && path !== ''){
-        dlDomain = dlDomain + "/" + path;
-    }
-    seedSSI.load(SSITypes.SEED_SSI, dlDomain, specificString, control, vn, hint);
-    return seedSSI;
+    return buildTemplateKeySSI(SSITypes.SEED_SSI, domain, path, specificString, control, vn, hint);
 };
 
 const buildSReadSSI = (domain, path, specificString, control, vn, hint) => {
-    const sReadSSI = keySSIFactory.create(SSITypes.SREAD_SSI);
-    let dlDomain = domain;
-    if(typeof path !== "undefined" && path !== ''){
-        dlDomain = dlDomain + "/" + path;
-    }
-    sReadSSI.load(SSITypes.SREAD_SSI, dlDomain, specificString, control, vn, hint);
-    return sReadSSI;
+    return buildTemplateKeySSI(SSITypes.SREAD_SSI, domain, path, specificString, control, vn, hint);
 };
 
 const buildSZeroAccessSSI = (domain, path, specificString, control, vn, hint) => {
-    const sZaSSI = keySSIFactory.create(SSITypes.SZERO_ACCESS_SSI);
-    let dlDomain = domain;
-    if(typeof path !== "undefined" && path !== ''){
-        dlDomain = dlDomain + "/" + path;
-    }
-    sZaSSI.load(SSITypes.SZERO_ACCESS_SSI, dlDomain, specificString, control, vn, hint);
-    return sZaSSI;
+    return buildTemplateKeySSI(SSITypes.SZERO_ACCESS_SSI, domain, path, specificString, control, vn, hint);
 };
 
 const buildHashLinkSSI = (domain, path, specificString, control, vn, hint) => {
-    const hlSSI = keySSIFactory.create(SSITypes.HASH_LINK_SSI);
+    return buildTemplateKeySSI(SSITypes.HASH_LINK_SSI, domain, path, specificString, control, vn, hint);
+};
+
+const buildTemplateKeySSI = (ssiType, domain, path, specificString, control, vn, hint) => {
+    const keySSI = keySSIFactory.create(ssiType);
     let dlDomain = domain;
     if(typeof path !== "undefined" && path !== ''){
         dlDomain = dlDomain + "/" + path;
     }
-    hlSSI.load(SSITypes.HASH_LINK_SSI, dlDomain, specificString, control, vn, hint);
-    return hlSSI;
+    keySSI.load(ssiType, dlDomain, specificString, control, vn, hint);
+    return keySSI;
 };
 
 module.exports = {
@@ -51,5 +37,6 @@ module.exports = {
     buildSeedSSI,
     buildSReadSSI,
     buildSZeroAccessSSI,
-    buildHashLinkSSI
+    buildHashLinkSSI,
+    buildTemplateKeySSI
 };
