@@ -19,3 +19,7 @@ module.exports.poll = function (url, options, delayStart) {
 	const request = rm.createRequest(url, options, delayStart);
 	return request;
 };
+
+module.exports.unpoll = function(request){
+	rm.cancelRequest(request);
+}
