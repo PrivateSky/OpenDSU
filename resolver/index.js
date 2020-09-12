@@ -3,6 +3,7 @@ const BootstrapingService = EDFS.BootstrapingService;
 const DSUFactory = EDFS.DSUFactory;
 const BrickMapStrategyFactory = require("bar").BrickMapStrategyFactory;
 const KeySSIResolver = require("key-ssi-resolver");
+const keyssi = require("../index").loadApi("keyssi");
 
 const initializeResolver = (options) => {
     options = options || {};
@@ -18,6 +19,9 @@ const initializeResolver = (options) => {
 }
 
 const createDSU = (keySSI, options, callback) => {
+    if (typeof keySSI === "string") {
+        keySSI = keyssi.parse(keySSI);
+    }
     if (typeof options === "function") {
         callback = options;
         options = undefined;
@@ -28,6 +32,10 @@ const createDSU = (keySSI, options, callback) => {
 };
 
 const loadDSU = (keySSI, options, callback) => {
+    if (typeof keySSI === "string") {
+        keySSI = keyssi.parse(keySSI);
+    }
+
     if (typeof options === "function") {
         callback = options;
         options = undefined;
