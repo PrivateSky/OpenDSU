@@ -14,7 +14,7 @@ const getBrick = (hashLinkSSI, authToken, callback) => {
         authToken = undefined;
     }
 
-    bdns.getBrickStorages(hashLinkSSI, (err, brickStorageArray) => {
+    bdns.getBrickStorages(hashLinkSSI.getDLDomain(), (err, brickStorageArray) => {
         if (err) {
             return callback(err);
         }
@@ -45,7 +45,7 @@ const getMultipleBricks = (hashLinkSSIList, authToken, callback) => {
         authToken = undefined;
     }
 
-    bdns.getBrickStorages(hashLinkSSIList[0], (err, brickStorageArray) => {
+    bdns.getBrickStorages(hashLinkSSIList[0].getDLDomain(), (err, brickStorageArray) => {
         const bricksHashes = hashLinkSSIList.map((hashLinkSSI) => hashLinkSSI.getHash());
         if (!brickStorageArray.length) {
             return callback('No storage provided');
@@ -107,11 +107,11 @@ const putBrick = (keySSI, brick, authToken, callback) => {
         authToken = undefined;
     }
 
-    bdns.getBrickStorages(keySSI, (err, brickStorageArray) => {
+    bdns.getBrickStorages(keySSI.getDLDomain(), (err, brickStorageArray) => {
         if (err) {
             return callback(err);
         }
-        
+
         const queries = brickStorageArray.map((storage) => {
             return new Promise((resolve, reject) => {
                 doPut(`${storage}/bricks/put-brick`, brick, (err, data) => {

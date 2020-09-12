@@ -36,10 +36,16 @@ const verifySignature = (keySSI, hash, signature, callback) => {
     callback(undefined, verify(hash, keySSI.getEncryptionKey(), signature));
 };
 
+const generateEncryptionKey = (keySSI, callback) => {
+    const generateEncryptionKey = cryptoRegistry.getEncryptionKeyGenerationFunction(keySSI);
+    callback(undefined, generateEncryptionKey());
+};
+
 module.exports = {
     hash,
     encrypt,
     decrypt,
     sign,
-    verifySignature
+    verifySignature,
+    generateEncryptionKey
 };

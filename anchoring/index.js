@@ -1,4 +1,5 @@
 const bdns = require("../index").loadApi("bdns");
+const keyssi = require("../index").loadApi("keyssi");
 const { fetch, doPut } = require('../http');
 
 /**
@@ -13,7 +14,7 @@ const versions = (keySSI, authToken, callback) => {
         authToken = undefined;
     }
 
-    bdns.getAnchoringServices(keySSI, (err, anchoringServicesArray) => {
+    bdns.getAnchoringServices(keySSI.getDLDomain(), (err, anchoringServicesArray) => {
         if (err) {
             return callback(err);
         }
@@ -22,12 +23,15 @@ const versions = (keySSI, authToken, callback) => {
             return callback('No anchoring service provided');
         }
 
-        const queries = anchoringServicesArray.map((service) => fetch(`${service}/anchor/versions/${keySSI.getAnchorAlias()}`));
+        const queries = anchoringServicesArray.map((service) => fetch(`${service}/anchor/versions/${keySSI.getAnchorId()}`));
 
         Promise.allSettled(queries).then((responses) => {
             const response = responses.find((response) => response.status === 'fulfilled');
 
-            response.value.json().then((data) => callback(null, data))
+            response.value.json().then((hlStrings) => {
+                const hashLinks = hlStrings.map(hlString => keyssi.parse(hlString));
+                return callback(null, hashLinks)
+            })
         }).catch((err) => callback(err));
     });
 };
@@ -42,7 +46,17 @@ const versions = (keySSI, authToken, callback) => {
  * @param {function} callback 
  */
 const addVersion = (keySSI, newHashLinkSSI, lastHashLinkSSI, zkpValue, digitalProof, callback) => {
-    bdns.getAnchoringServices(keySSI, (err, anchoringServicesArray) => {
+    if (typeof lastHashLinkSSI === "function") {
+        callback = lastHashLinkSSI;
+        lastHashLinkSSI = undefined;
+    }
+
+    if (typeof zkpValue === "function") {
+        callback = zkpValue;
+        zkpValue = undefined;
+    }
+
+    bdns.getAnchoringServices(keySSI.getDLDomain(), (err, anchoringServicesArray) => {
         if (err) {
             return callback(err);
         }
@@ -62,7 +76,7 @@ const addVersion = (keySSI, newHashLinkSSI, lastHashLinkSSI, zkpValue, digitalPr
 
         const queries = anchoringServicesArray.map((service) => {
             return new Promise((resolve, reject) => {
-                doPut(`${service}/anchor/add/${keySSI.getAnchorAlias()}`, body, (err, data) => {
+                doPut(`${service}/anchor/add/${keySSI.getAnchorId()}`, body, (err, data) => {
                     if (err) {
                         return reject({
                             statusCode: err.statusCode,

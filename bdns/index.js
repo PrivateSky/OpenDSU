@@ -1,35 +1,36 @@
-const bdns = require("bdns").createBDNS();
+require("bdns");
 
-const getRawInfo = (keySSI, callback) => {
-    bdns.getRawInfo(keySSI, callback);
+const bdns = $$.bdns;
+const getRawInfo = (dlDomain, callback) => {
+    bdns.getRawInfo(dlDomain, callback);
 };
 
-const getBrickStorages = (keySSI, callback) => {
-    bdns.getBrickStorages(keySSI, callback);
+const getBrickStorages = (dlDomain, callback) => {
+    bdns.getBrickStorages(dlDomain, callback);
 };
 
-const getAnchoringServices = (keySSI, callback) => {
-    bdns.getAnchoringServices(keySSI, callback);
+const getAnchoringServices = (dlDomain, callback) => {
+    bdns.getAnchoringServices(dlDomain, callback);
 };
 
-const getReplicas = (keySSI, callback) => {
-    bdns.getReplicas(keySSI, callback);
+const getReplicas = (dlDomain, callback) => {
+    bdns.getReplicas(dlDomain, callback);
 };
 
-const addRawInfo = (keySSI, rawInfo) => {
-    bdns.addRawInfo(keySSI.getDLDomain(), rawInfo);
+const addRawInfo = (dlDomain, rawInfo) => {
+    bdns.addRawInfo(dlDomain, rawInfo);
 };
 
-const addAnchoringServices = (keySSI, anchoringServices) => {
-    bdns.addAnchoringServices(keySSI.getDLDomain(), anchoringServices);
+const addAnchoringServices = (dlDomain, anchoringServices) => {
+    bdns.addAnchoringServices(dlDomain, anchoringServices);
 };
 
-const addBrickStorages = (keySSI, brickStorages) => {
-    bdns.addBrickStorages(keySSI.getDLDomain(), brickStorages);
+const addBrickStorages = (dlDomain, brickStorages) => {
+    bdns.addBrickStorages(dlDomain, brickStorages);
 };
 
-const addReplicas = (keySSI, replicas) => {
-    bdns.addReplicas(keySSI.getDLDomain(), replicas);
+const addReplicas = (dlDomain, replicas) => {
+    bdns.addReplicas(dlDomain, replicas);
 };
 
 module.exports = {
