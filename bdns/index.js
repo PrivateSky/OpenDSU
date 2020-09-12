@@ -1,6 +1,6 @@
-require("bdns");
-
-const bdns = $$.bdns;
+if (typeof bdns === "undefined") {
+    bdns = require("bdns").create();
+}
 const getRawInfo = (dlDomain, callback) => {
     bdns.getRawInfo(dlDomain, callback);
 };
