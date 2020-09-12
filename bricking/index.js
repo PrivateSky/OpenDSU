@@ -87,7 +87,7 @@ const getMultipleBricks = (hashLinkSSIList, authToken, callback) => {
 
                 response = response.slice(brickSize + BRICK_MAX_SIZE_IN_BYTES);
 
-                return parseResponse(response);
+                return parseResponse(response, callback);
             }
         }
     });
