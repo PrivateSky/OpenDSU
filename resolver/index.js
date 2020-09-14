@@ -3,7 +3,7 @@ const BootstrapingService = EDFS.BootstrapingService;
 const DSUFactory = EDFS.DSUFactory;
 const BrickMapStrategyFactory = require("bar").BrickMapStrategyFactory;
 const KeySSIResolver = require("key-ssi-resolver");
-const keyssi = require("../index").loadApi("keyssi");
+const keyssi = require("opendsu").loadApi("keyssi");
 
 const initializeResolver = (options) => {
     options = options || {};

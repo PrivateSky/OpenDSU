@@ -1,6 +1,7 @@
-const bdns = require("../index").loadApi("bdns");
-const keyssi = require("../index").loadApi("keyssi");
-const { fetch, doPut } = require('../http');
+const openDSU = require("opendsu");
+const bdns = openDSU.loadApi("bdns");
+const keyssi = openDSU.loadApi("keyssi");
+const {fetch, doPut} = openDSU.loadApi("http");
 
 /**
  * Get versions
@@ -76,7 +77,8 @@ const addVersion = (keySSI, newHashLinkSSI, lastHashLinkSSI, zkpValue, digitalPr
 
         const queries = anchoringServicesArray.map((service) => {
             return new Promise((resolve, reject) => {
-                doPut(`${service}/anchor/add/${keySSI.getAnchorId()}`, body, (err, data) => {
+                console.log("About to add version....", body);
+                doPut(`${service}/anchor/add/${keySSI.getAnchorId()}`, JSON.stringify(body), (err, data) => {
                     if (err) {
                         return reject({
                             statusCode: err.statusCode,
