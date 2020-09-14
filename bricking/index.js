@@ -1,6 +1,7 @@
-const bdns = require('./../index').loadApi('bdns');
-const { fetch, doPut } = require('../index').loadApi("http");
-
+const openDSU = require("opendsu");
+const bdns = openDSU.loadApi("bdns");
+const {fetch, doPut} = openDSU.loadApi("http");
+const or = require("overwrite-require");
 /**
  * Get brick
  * @param {hashLinkSSI} hashLinkSSI
@@ -69,7 +70,25 @@ const getMultipleBricks = (hashLinkSSIList, authToken, callback) => {
 
                 acc.push(batch.value.arrayBuffer());
                 return acc;
-            }, [])).then((data) => parseResponse(Buffer.concat(data), callback));
+            }, [])).
+            then(
+                (dataArray) => {
+                    if ($$.environmentType === or.constants.BROWSER_ENVIRONMENT_TYPE) {
+                        let len = 0;
+                        dataArray.forEach(arr => len += arr.byteLength);
+                        const newBuffer = new Buffer(len);
+                        let currentPos = 0;
+                        while (dataArray.length > 0) {
+                            const arrBuf = dataArray.shift();
+                            const partialDataView = new DataView(arrBuf);
+                            for (let i = 0; i < arrBuf.byteLength; i++) {
+                                newBuffer.writeUInt8(partialDataView.getUint8(i), currentPos);
+                                currentPos += 1;
+                            }
+                        }
+                        return parseResponse(newBuffer, callback);
+                    }
+                    return parseResponse(Buffer.concat(dataArray), callback)});
         }).catch((err) => {
             callback(err);
         });
@@ -128,7 +147,7 @@ const putBrick = (keySSI, brick, authToken, callback) => {
             const foundBrick = responses.find((response) => response.status === 'fulfilled');
 
             if (!foundBrick) {
-                return callback({ message: 'Brick not created' });
+                return callback({message: 'Brick not created'});
             }
 
             return callback(null, JSON.parse(foundBrick.value).message)
@@ -136,4 +155,4 @@ const putBrick = (keySSI, brick, authToken, callback) => {
     });
 };
 
-module.exports = { getBrick, putBrick, getMultipleBricks };
+module.exports = {getBrick, putBrick, getMultipleBricks};
