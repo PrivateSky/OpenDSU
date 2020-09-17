@@ -1,26 +1,14 @@
-const EDFS = require("edfs");
-const BootstrapingService = EDFS.BootstrapingService;
-const DSUFactory = EDFS.DSUFactory;
-const BrickMapStrategyFactory = require("bar").BrickMapStrategyFactory;
 const KeySSIResolver = require("key-ssi-resolver");
-const keyssi = require("opendsu").loadApi("keyssi");
+const keySSISpace = require("opendsu").loadApi("keyssi");
 
 const initializeResolver = (options) => {
     options = options || {};
-    options.bootstrapingService = options.bootstrapingService || new BootstrapingService(options);
-
-    options.dsuFactory =  new DSUFactory({
-        bootstrapingService: options.bootstrapingService,
-        brickMapStrategyFactory: new BrickMapStrategyFactory(),
-        keySSIFactory: KeySSIResolver.KeySSIFactory
-    })
-
     return KeySSIResolver.initialize(options);
 }
 
 const createDSU = (keySSI, options, callback) => {
     if (typeof keySSI === "string") {
-        keySSI = keyssi.parse(keySSI);
+        keySSI = keySSISpace.parse(keySSI);
     }
     if (typeof options === "function") {
         callback = options;
@@ -33,7 +21,7 @@ const createDSU = (keySSI, options, callback) => {
 
 const loadDSU = (keySSI, options, callback) => {
     if (typeof keySSI === "string") {
-        keySSI = keyssi.parse(keySSI);
+        keySSI = keySSISpace.parse(keySSI);
     }
 
     if (typeof options === "function") {
@@ -44,6 +32,23 @@ const loadDSU = (keySSI, options, callback) => {
     const keySSIResolver = initializeResolver(options);
     keySSIResolver.loadDSU(keySSI, options, callback);
 };
+
+const createWallet = (templateKeySSI, dsuTypeSSI, options, callback) => {
+    let keySSI = keySSISpace.parse(templateKeySSI);
+    if(typeof options === "function"){
+        callback = options;
+        options = {};
+    }
+
+    options.dsuTypeSSI = dsuTypeSSI;
+
+    const keySSIResolver = initializeResolver(options);
+    keySSIResolver.createDSU(keySSI, options, callback);
+}
+
+const loadWallet = (secret, options, callback) => {
+
+}
 
 const createCustomDSU = () => {
 
@@ -56,6 +61,8 @@ const getHandler = () => {
 module.exports = {
     createDSU,
     loadDSU,
+    createWallet,
+    loadWallet,
     createCustomDSU,
     getHandler
 }
