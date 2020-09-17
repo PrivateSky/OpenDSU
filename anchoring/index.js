@@ -24,7 +24,7 @@ const versions = (keySSI, authToken, callback) => {
             return callback('No anchoring service provided');
         }
        
-        const queries = anchoringServicesArray.map((service) => fetch(`${service}/anchor/versions/${keySSI.getAnchorIdBase58()}`));
+        const queries = anchoringServicesArray.map((service) => fetch(`${service}/anchor/versions/${keySSI.getAnchorId()}`));
 
         Promise.allSettled(queries).then((responses) => {
             const response = responses.find((response) => response.status === 'fulfilled');
@@ -78,7 +78,7 @@ const addVersion = (keySSI, newHashLinkSSI, lastHashLinkSSI, zkpValue, digitalPr
         const queries = anchoringServicesArray.map((service) => {
             return new Promise((resolve, reject) => {
                 console.log("About to add version....", body);
-                doPut(`${service}/anchor/add/${keySSI.getAnchorIdBase58()}`, JSON.stringify(body), (err, data) => {
+                doPut(`${service}/anchor/add/${keySSI.getAnchorId()}`, JSON.stringify(body), (err, data) => {
                     if (err) {
                         return reject({
                             statusCode: err.statusCode,
