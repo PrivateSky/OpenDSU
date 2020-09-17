@@ -19,3 +19,5 @@ module.exports.loadApi = function(apiSpaceName){
         default: throw new Error("Unknown API space " + apiSpaceName);
     }
 }
+
+module.exports.constants = require("./moduleConstants.js");

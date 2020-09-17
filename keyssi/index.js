@@ -27,7 +27,7 @@ const buildHashLinkSSI = (domain, specificString, control, vn, hint) => {
 };
 
 const buildTemplateKeySSI = (ssiType, domain, specificString, control, vn, hint) => {
-    const keySSI = keySSIFactory.create(ssiType);
+    const keySSI = keySSIFactory.createType(ssiType);
     keySSI.load(ssiType, domain, specificString, control, vn, hint);
     return keySSI;
 };
