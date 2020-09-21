@@ -30,8 +30,12 @@ const versions = (keySSI, authToken, callback) => {
             const response = responses.find((response) => response.status === 'fulfilled');
 
             response.value.json().then((hlStrings) => {
-                const hashLinks = hlStrings.map(hlString => keyssi.parse(hlString));
-                return callback(null, hashLinks)
+
+                // const hashLinks = hlStrings.map(hlString => {
+                //     console.log('Hash link', hlString);
+                //     return keyssi.parse(hlString)
+                // });
+                return callback(null, hlString)
             })
         }).catch((err) => callback(err));
     });
@@ -68,8 +72,8 @@ const addVersion = (keySSI, newHashLinkSSI, lastHashLinkSSI, zkpValue, digitalPr
 
         const body = {
             hash: {
-                last: lastHashLinkSSI ? lastHashLinkSSI.getHash() : null,
-                new: newHashLinkSSI.getHash()
+                last: lastHashLinkSSI ? lastHashLinkSSI.getIdentifier() : null,
+                new: newHashLinkSSI.getIdentifier()
             },
             zkpValue,
             digitalProof
