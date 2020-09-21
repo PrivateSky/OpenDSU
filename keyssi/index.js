@@ -2,8 +2,8 @@ const keySSIResolver = require("key-ssi-resolver");
 const keySSIFactory = keySSIResolver.KeySSIFactory;
 const SSITypes = keySSIResolver.SSITypes;
 
-const parse = (ssiString) => {
-    return keySSIFactory.create(ssiString);
+const parse = (ssiString, options) => {
+    return keySSIFactory.create(ssiString, options);
 };
 
 const buildSeedSSI = (domain, specificString, control, vn, hint) => {
