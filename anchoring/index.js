@@ -1,7 +1,7 @@
 const openDSU = require("opendsu");
 const bdns = openDSU.loadApi("bdns");
 const keyssi = openDSU.loadApi("keyssi");
-const {fetch, doPut} = openDSU.loadApi("http");
+const { fetch, doPut } = openDSU.loadApi("http");
 
 /**
  * Get versions
@@ -23,7 +23,7 @@ const versions = (keySSI, authToken, callback) => {
         if (!anchoringServicesArray.length) {
             return callback('No anchoring service provided');
         }
-       
+
         const queries = anchoringServicesArray.map((service) => fetch(`${service}/anchor/versions/${keySSI.getAnchorId()}`));
 
         Promise.allSettled(queries).then((responses) => {
@@ -31,11 +31,11 @@ const versions = (keySSI, authToken, callback) => {
 
             response.value.json().then((hlStrings) => {
 
-                // const hashLinks = hlStrings.map(hlString => {
-                //     console.log('Hash link', hlString);
-                //     return keyssi.parse(hlString)
-                // });
-                return callback(null, hlString)
+                const hashLinks = hlStrings.map(hlString => {
+                    return keyssi.parse(hlString)
+                });
+
+                return callback(null, hashLinks)
             })
         }).catch((err) => callback(err));
     });
