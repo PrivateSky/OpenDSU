@@ -73,7 +73,8 @@ const getMultipleBricks = (hashLinkSSIList, authToken, callback) => {
             }, [])).
             then(
                 (dataArray) => {
-                    if ($$.environmentType === or.constants.BROWSER_ENVIRONMENT_TYPE) {
+                    if ($$.environmentType === or.constants.BROWSER_ENVIRONMENT_TYPE ||
+                            $$.environmentType === or.constants.SERVICE_WORKER_ENVIRONMENT_TYPE) {
                         let len = 0;
                         dataArray.forEach(arr => len += arr.byteLength);
                         const newBuffer = new Buffer(len);
