@@ -81,7 +81,6 @@ const addVersion = (keySSI, newHashLinkSSI, lastHashLinkSSI, zkpValue, digitalPr
 
         const queries = anchoringServicesArray.map((service) => {
             return new Promise((resolve, reject) => {
-                console.log("About to add version....", body);
                 doPut(`${service}/anchor/add/${keySSI.getAnchorId()}`, JSON.stringify(body), (err, data) => {
                     if (err) {
                         return reject({
