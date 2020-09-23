@@ -47,7 +47,19 @@ const createWallet = (templateKeySSI, dsuTypeSSI, options, callback) => {
 }
 
 const loadWallet = (secret, options, callback) => {
+    let tmpKeySSI = keySSISpace.buildWalletSSI();
+    tmpKeySSI.getSeedSSI(secret, options, (err, seedSSI)=>{
+        if(err){
+            return callback(err);
+        }
 
+        loadDSU(seedSSI, (err, wallet) =>{
+            if(err){
+                return callback(err);
+            }
+            callback(undefined, wallet);
+        });
+    });
 }
 
 const createCustomDSU = () => {
