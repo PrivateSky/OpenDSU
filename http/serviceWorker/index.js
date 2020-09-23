@@ -23,7 +23,8 @@ function generateMethodForRequestWithData(httpMethod) {
 			}
 			return response.text().catch((err) => {
 				// This happens when the response is empty
-				return {};
+				let emptyResponse = {message: ""}
+				return JSON.stringify(emptyResponse);
 			});
 		}).then(function (data) {
 			callback(null, data)
