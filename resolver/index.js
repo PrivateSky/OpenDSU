@@ -48,6 +48,11 @@ const createWallet = (templateKeySSI, dsuTypeSSI, options, callback) => {
 
 const loadWallet = (secret, options, callback) => {
     let tmpKeySSI = keySSISpace.buildWalletSSI();
+    if(typeof options === "function"){
+        callback = options;
+        options = {};
+    }
+
     tmpKeySSI.getSeedSSI(secret, options, (err, seedSSI)=>{
         if(err){
             return callback(err);
