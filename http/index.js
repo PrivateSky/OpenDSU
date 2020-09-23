@@ -9,6 +9,7 @@ switch ($$.environmentType) {
 		break;
 	case or.constants.SERVICE_WORKER_ENVIRONMENT_TYPE:
 		module.exports = require("./serviceWorker");
+		break;
 	default:
 		module.exports = require("./node");
 }

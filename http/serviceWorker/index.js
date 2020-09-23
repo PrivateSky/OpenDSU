@@ -21,7 +21,7 @@ function generateMethodForRequestWithData(httpMethod) {
 			if (response.status >= 400) {
 				throw new Error(`An error occurred ${response.statusText}`);
 			}
-			return response.json().catch((err) => {
+			return response.text().catch((err) => {
 				// This happens when the response is empty
 				return {};
 			});
