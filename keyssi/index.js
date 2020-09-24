@@ -15,7 +15,7 @@ const buildWalletSSI = (domain, specificString, control, vn, hint) => {
 };
 
 const buildSReadSSI = (domain,  specificString, control, vn, hint) => {
-    return buildTemplateKeySSI(SSITypes.SREAD_SSI, domain, path, specificString, control, vn, hint);
+    return buildTemplateKeySSI(SSITypes.SREAD_SSI, domain, specificString, control, vn, hint);
 };
 
 const buildSZeroAccessSSI = (domain,  specificString, control, vn, hint) => {
@@ -32,6 +32,11 @@ const buildTemplateKeySSI = (ssiType, domain, specificString, control, vn, hint)
     return keySSI;
 };
 
+const buildArraySSI = (domain, arr, vn, hint) => {
+    const arraySSI = keySSIFactory.createType(SSITypes.ARRAY_SSI);
+    arraySSI.initialize(domain, arr, vn, hint);
+};
+
 module.exports = {
     parse,
     buildSeedSSI,
@@ -39,5 +44,6 @@ module.exports = {
     buildSReadSSI,
     buildSZeroAccessSSI,
     buildHashLinkSSI,
-    buildTemplateKeySSI
+    buildTemplateKeySSI,
+    buildArraySSI
 };

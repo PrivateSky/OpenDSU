@@ -6,6 +6,10 @@ const initializeResolver = (options) => {
     return KeySSIResolver.initialize(options);
 }
 
+const registerDSUFactory = (type, factory) => {
+    KeySSIResolver.DSUFactory.registerDSUType(type, factory);
+};
+
 const createDSU = (keySSI, options, callback) => {
     if (typeof keySSI === "string") {
         keySSI = keySSISpace.parse(keySSI);
@@ -81,5 +85,6 @@ module.exports = {
     createWallet,
     loadWallet,
     createCustomDSU,
-    getHandler
+    getHandler,
+    registerDSUFactory
 }
