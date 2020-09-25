@@ -7,7 +7,7 @@ const initializeResolver = (options) => {
 }
 
 const registerDSUFactory = (type, factory) => {
-    KeySSIResolver.DSUFactory.registerDSUType(type, factory);
+    KeySSIResolver.DSUFactory.prototype.registerDSUType(type, factory);
 };
 
 const createDSU = (keySSI, options, callback) => {
