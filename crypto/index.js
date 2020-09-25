@@ -41,11 +41,23 @@ const generateEncryptionKey = (keySSI, callback) => {
     callback(undefined, generateEncryptionKey());
 };
 
+const encode = (keySSI, data) => {
+    const encode = cryptoRegistry.getEncodingFunction(keySSI);
+    return encode(data);
+};
+
+const decode = (keySSI, data) => {
+    const decode = cryptoRegistry.getDecodingFunction(keySSI);
+    return decode(data);
+};
+
 module.exports = {
     hash,
     encrypt,
     decrypt,
     sign,
     verifySignature,
-    generateEncryptionKey
+    generateEncryptionKey,
+    encode,
+    decode
 };
