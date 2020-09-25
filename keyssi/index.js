@@ -35,6 +35,7 @@ const buildTemplateKeySSI = (ssiType, domain, specificString, control, vn, hint)
 const buildArraySSI = (domain, arr, vn, hint) => {
     const arraySSI = keySSIFactory.createType(SSITypes.ARRAY_SSI);
     arraySSI.initialize(domain, arr, vn, hint);
+    return arraySSI;
 };
 
 module.exports = {
