@@ -14,8 +14,8 @@ const getBrick = (hashLinkSSI, authToken, callback) => {
         callback = authToken;
         authToken = undefined;
     }
-
-    bdns.getBrickStorages(hashLinkSSI.getDLDomain(), (err, brickStorageArray) => {
+    const hashLinkDomain = hashLinkSSI.getDLDomain();
+    bdns.getBrickStorages(hashLinkDomain, (err, brickStorageArray) => {
         if (err) {
             return callback(err);
         }
@@ -26,7 +26,7 @@ const getBrick = (hashLinkSSI, authToken, callback) => {
             return callback('No storage provided');
         }
 
-        const queries = brickStorageArray.map((storage) => fetch(`${storage}/bricks/get-brick/${brickHash}`));
+        const queries = brickStorageArray.map((storage) => fetch(`${storage}/bricks/get-brick/${brickHash}/${hashLinkDomain}`));
 
         Promise.all(queries).then((responses) => {
             responses[0].arrayBuffer().then((data) => callback(null, data));
@@ -45,8 +45,8 @@ const getMultipleBricks = (hashLinkSSIList, authToken, callback) => {
         callback = authToken;
         authToken = undefined;
     }
-
-    bdns.getBrickStorages(hashLinkSSIList[0].getDLDomain(), (err, brickStorageArray) => {
+    const hashLinkDomain = hashLinkSSIList[0].getDLDomain();
+    bdns.getBrickStorages(hashLinkDomain, (err, brickStorageArray) => {
         const bricksHashes = hashLinkSSIList.map((hashLinkSSI) => hashLinkSSI.getHash());
         if (!brickStorageArray.length) {
             return callback('No storage provided');
@@ -60,7 +60,7 @@ const getMultipleBricks = (hashLinkSSIList, authToken, callback) => {
             const hashQuery = `${bricksHashes.slice(index, size + index).join('&hashes=')}`;
             index += size;
             queries.push(Promise.allSettled(brickStorageArray.map((storage) => {
-                return fetch(`${storage}/bricks/downloadMultipleBricks/?hashes=${hashQuery}`)
+                return fetch(`${storage}/bricks/downloadMultipleBricks/${hashLinkDomain}/?hashes=${hashQuery}`)
             })));
         }
 
@@ -126,15 +126,15 @@ const putBrick = (keySSI, brick, authToken, callback) => {
         callback = authToken;
         authToken = undefined;
     }
-
-    bdns.getBrickStorages(keySSI.getDLDomain(), (err, brickStorageArray) => {
+    const hashLinkDomain = keySSI.getDLDomain();
+    bdns.getBrickStorages(hashLinkDomain, (err, brickStorageArray) => {
         if (err) {
             return callback(err);
         }
 
         const queries = brickStorageArray.map((storage) => {
             return new Promise((resolve, reject) => {
-                doPut(`${storage}/bricks/put-brick`, brick, (err, data) => {
+                doPut(`${storage}/bricks/put-brick/${hashLinkDomain}`, brick, (err, data) => {
                     if (err) {
                         return reject(err);
                     }
