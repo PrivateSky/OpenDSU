@@ -2,6 +2,8 @@ const openDSU = require("opendsu");
 const bdns = openDSU.loadApi("bdns");
 const {fetch, doPut} = openDSU.loadApi("http");
 const or = require("overwrite-require");
+const config = openDSU.loadApi("config");
+const indexedDBbricking = require("./indexedDBbricking");
 /**
  * Get brick
  * @param {hashLinkSSI} hashLinkSSI
@@ -10,17 +12,22 @@ const or = require("overwrite-require");
  * @returns {any}
  */
 const getBrick = (hashLinkSSI, authToken, callback) => {
+    const dlDomain = hashLinkSSI.getDLDomain();
+    const brickHash = hashLinkSSI.getHash();
+
     if (typeof authToken === 'function') {
         callback = authToken;
         authToken = undefined;
     }
 
-    bdns.getBrickStorages(hashLinkSSI.getDLDomain(), (err, brickStorageArray) => {
+    if (dlDomain === "vault" && config.indexDbVaultIsEnabled()) {
+        return indexedDBbricking.getBrick(brickHash, callback);
+    }
+
+    bdns.getBrickStorages(dlDomain, (err, brickStorageArray) => {
         if (err) {
             return callback(err);
         }
-
-        const brickHash = hashLinkSSI.getHash();
 
         if (!brickStorageArray.length) {
             return callback('No storage provided');
@@ -45,9 +52,14 @@ const getMultipleBricks = (hashLinkSSIList, authToken, callback) => {
         callback = authToken;
         authToken = undefined;
     }
+    const dlDomain = hashLinkSSIList[0].getDLDomain();
+    const bricksHashes = hashLinkSSIList.map((hashLinkSSI) => hashLinkSSI.getHash());
 
-    bdns.getBrickStorages(hashLinkSSIList[0].getDLDomain(), (err, brickStorageArray) => {
-        const bricksHashes = hashLinkSSIList.map((hashLinkSSI) => hashLinkSSI.getHash());
+    if (dlDomain === "vault" && config.indexDbVaultIsEnabled()) {
+        return indexedDBbricking.getMultipleBricks(bricksHashes, callback);
+    }
+
+    bdns.getBrickStorages(dlDomain, (err, brickStorageArray) => {
         if (!brickStorageArray.length) {
             return callback('No storage provided');
         }
@@ -122,12 +134,17 @@ const getMultipleBricks = (hashLinkSSIList, authToken, callback) => {
  * @returns {string} brickhash
  */
 const putBrick = (keySSI, brick, authToken, callback) => {
+    let dlDomain = keySSI.getDLDomain();
     if (typeof authToken === 'function') {
         callback = authToken;
         authToken = undefined;
     }
 
-    bdns.getBrickStorages(keySSI.getDLDomain(), (err, brickStorageArray) => {
+    if (dlDomain === "vault" && config.indexDbVaultIsEnabled()) {
+        return indexedDBbricking.putBrick(brick, callback);
+    }
+
+    bdns.getBrickStorages(dlDomain, (err, brickStorageArray) => {
         if (err) {
             return callback(err);
         }
