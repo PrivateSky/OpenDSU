@@ -16,6 +16,7 @@ module.exports.loadApi = function(apiSpaceName){
         case "notifications":return require("./notifications"); break;
         case "resolver":return require("./resolver"); break;
         case "sc":return require("./sc"); break;
+        case "config":return require("./config"); break;
         default: throw new Error("Unknown API space " + apiSpaceName);
     }
 }
