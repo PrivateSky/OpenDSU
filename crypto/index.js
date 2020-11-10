@@ -1,5 +1,4 @@
 const cryptoRegistry = require("key-ssi-resolver").CryptoAlgorithmsRegistry;
-
 const hash = (keySSI, data, callback) => {
     if (typeof data === "object" && !Buffer.isBuffer(data)) {
         data = JSON.stringify(data);
@@ -51,6 +50,11 @@ const decode = (keySSI, data) => {
     return decode(data);
 };
 
+const sha256 = (dataObj) => {
+    const pskcrypto = require("pskcrypto");
+    return pskcrypto.objectHash("sha256", dataObj, "hex");
+};
+
 module.exports = {
     hash,
     encrypt,
@@ -59,5 +63,6 @@ module.exports = {
     verifySignature,
     generateEncryptionKey,
     encode,
-    decode
+    decode,
+    sha256
 };
