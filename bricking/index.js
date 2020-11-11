@@ -140,6 +140,7 @@ const putBrick = (keySSI, brick, authToken, callback) => {
         callback = authToken;
         authToken = undefined;
     }
+    const dlDomain = keySSI.getDLDomain();
 
     if (dlDomain === "vault" && config.indexDbVaultIsEnabled()) {
         return indexedDBbricking.putBrick(brick, callback);
