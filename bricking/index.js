@@ -30,7 +30,9 @@ const getBrick = (hashLinkSSI, authToken, callback) => {
 
         Promise.all(queries).then((responses) => {
             responses[0].arrayBuffer().then((data) => callback(null, data));
-        }).catch((err) => callback(err));
+        }).catch((err) => {
+            callback(err);
+        });
     });
 };
 
@@ -152,6 +154,8 @@ const putBrick = (keySSI, brick, authToken, callback) => {
             }
 
             return callback(null, JSON.parse(foundBrick.value).message)
+        }).catch(err => {
+            return callback(err);
         });
     });
 };
