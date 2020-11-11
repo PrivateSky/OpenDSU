@@ -27,12 +27,16 @@ const decrypt = (keySSI, encryptedBuffer, callback) => {
 
 const sign = (keySSI, hash, callback) => {
     const sign = cryptoRegistry.getSignFunction(keySSI);
-    callback(undefined, sign(hash, keySSI.getEncryptionKey()));
+    callback(undefined, sign(hash, keySSI.getPrivateKey()));
 };
 
-const verifySignature = (keySSI, hash, signature, callback) => {
+const verifySignature = (keySSI, hash, signature, publicKey, callback) => {
+    if (typeof publicKey === "function") {
+        callback = publicKey;
+        publicKey = keySSI.getPublicKey();
+    }
     const verify = cryptoRegistry.getVerifyFunction(keySSI);
-    callback(undefined, verify(hash, keySSI.getEncryptionKey(), signature));
+    callback(undefined, verify(hash, publicKey, signature));
 };
 
 const generateEncryptionKey = (keySSI, callback) => {
@@ -52,7 +56,8 @@ const decode = (keySSI, data) => {
 
 const sha256 = (dataObj) => {
     const pskcrypto = require("pskcrypto");
-    return pskcrypto.objectHash("sha256", dataObj, "hex");
+    const hashBuffer = pskcrypto.objectHash("sha256", dataObj);
+    return pskcrypto.pskBase58Encode(hashBuffer);
 };
 
 module.exports = {

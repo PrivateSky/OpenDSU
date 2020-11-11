@@ -23,6 +23,13 @@ const buildSZeroAccessSSI = (domain,  specificString, control, vn, hint) => {
 };
 
 const buildHashLinkSSI = (domain, specificString, control, vn, hint) => {
+    try{
+    if (typeof specificString !== "string") {
+        throw Error("Specific string is not string");
+    }
+    }catch (e) {
+        console.log("Failed to build hashlink", e);
+    }
     return buildTemplateKeySSI(SSITypes.HASH_LINK_SSI, domain,  specificString, control, vn, hint);
 };
 
@@ -38,6 +45,10 @@ const buildArraySSI = (domain, arr, vn, hint) => {
     return arraySSI;
 };
 
+const buildSymmetricalEncryptionSSI = (domain, encryptionKey, control, vn, hint) => {
+    return buildTemplateKeySSI(SSITypes.SYMMETRICAL_ENCRYPTION_SSI, domain, encryptionKey, control, vn, hint);
+};
+
 module.exports = {
     parse,
     buildSeedSSI,
@@ -46,5 +57,6 @@ module.exports = {
     buildSZeroAccessSSI,
     buildHashLinkSSI,
     buildTemplateKeySSI,
-    buildArraySSI
+    buildArraySSI,
+    buildSymmetricalEncryptionSSI
 };
