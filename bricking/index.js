@@ -2,6 +2,8 @@ const openDSU = require("opendsu");
 const bdns = openDSU.loadApi("bdns");
 const {fetch, doPut} = openDSU.loadApi("http");
 const or = require("overwrite-require");
+const config = openDSU.loadApi("config");
+const indexedDBbricking = require("./indexedDBbricking");
 /**
  * Get brick
  * @param {hashLinkSSI} hashLinkSSI
@@ -10,23 +12,28 @@ const or = require("overwrite-require");
  * @returns {any}
  */
 const getBrick = (hashLinkSSI, authToken, callback) => {
+    const dlDomain = hashLinkSSI.getDLDomain();
+    const brickHash = hashLinkSSI.getHash();
+
     if (typeof authToken === 'function') {
         callback = authToken;
         authToken = undefined;
     }
-    const hashLinkDomain = hashLinkSSI.getDLDomain();
-    bdns.getBrickStorages(hashLinkDomain, (err, brickStorageArray) => {
+
+    if (dlDomain === "vault" && config.indexDbVaultIsEnabled()) {
+        return indexedDBbricking.getBrick(brickHash, callback);
+    }
+
+    bdns.getBrickStorages(dlDomain, (err, brickStorageArray) => {
         if (err) {
             return callback(err);
         }
-
-        const brickHash = hashLinkSSI.getHash();
 
         if (!brickStorageArray.length) {
             return callback('No storage provided');
         }
 
-        const queries = brickStorageArray.map((storage) => fetch(`${storage}/bricks/get-brick/${brickHash}/${hashLinkDomain}`));
+        const queries = brickStorageArray.map((storage) => fetch(`${storage}/bricks/get-brick/${brickHash}/${dlDomain}`));
 
         Promise.all(queries).then((responses) => {
             responses[0].arrayBuffer().then((data) => callback(null, data));
@@ -47,9 +54,14 @@ const getMultipleBricks = (hashLinkSSIList, authToken, callback) => {
         callback = authToken;
         authToken = undefined;
     }
-    const hashLinkDomain = hashLinkSSIList[0].getDLDomain();
-    bdns.getBrickStorages(hashLinkDomain, (err, brickStorageArray) => {
-        const bricksHashes = hashLinkSSIList.map((hashLinkSSI) => hashLinkSSI.getHash());
+    const dlDomain = hashLinkSSIList[0].getDLDomain();
+    const bricksHashes = hashLinkSSIList.map((hashLinkSSI) => hashLinkSSI.getHash());
+
+    if (dlDomain === "vault" && config.indexDbVaultIsEnabled()) {
+        return indexedDBbricking.getMultipleBricks(bricksHashes, callback);
+    }
+
+    bdns.getBrickStorages(dlDomain, (err, brickStorageArray) => {
         if (!brickStorageArray.length) {
             return callback('No storage provided');
         }
@@ -62,7 +74,7 @@ const getMultipleBricks = (hashLinkSSIList, authToken, callback) => {
             const hashQuery = `${bricksHashes.slice(index, size + index).join('&hashes=')}`;
             index += size;
             queries.push(Promise.allSettled(brickStorageArray.map((storage) => {
-                return fetch(`${storage}/bricks/downloadMultipleBricks/${hashLinkDomain}/?hashes=${hashQuery}`)
+                return fetch(`${storage}/bricks/downloadMultipleBricks/${dlDomain}/?hashes=${hashQuery}`)
             })));
         }
 
@@ -128,15 +140,19 @@ const putBrick = (keySSI, brick, authToken, callback) => {
         callback = authToken;
         authToken = undefined;
     }
-    const hashLinkDomain = keySSI.getDLDomain();
-    bdns.getBrickStorages(hashLinkDomain, (err, brickStorageArray) => {
+
+    if (dlDomain === "vault" && config.indexDbVaultIsEnabled()) {
+        return indexedDBbricking.putBrick(brick, callback);
+    }
+
+    bdns.getBrickStorages(dlDomain, (err, brickStorageArray) => {
         if (err) {
             return callback(err);
         }
 
         const queries = brickStorageArray.map((storage) => {
             return new Promise((resolve, reject) => {
-                doPut(`${storage}/bricks/put-brick/${hashLinkDomain}`, brick, (err, data) => {
+                doPut(`${storage}/bricks/put-brick/${dlDomain}`, brick, (err, data) => {
                     if (err) {
                         return reject(err);
                     }

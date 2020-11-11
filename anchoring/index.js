@@ -2,6 +2,8 @@ const openDSU = require("opendsu");
 const bdns = openDSU.loadApi("bdns");
 const keyssi = openDSU.loadApi("keyssi");
 const { fetch, doPut } = openDSU.loadApi("http");
+const config = openDSU.loadApi("config");
+const indexedDBAnchoring = require("./indexedDBAnchoring");
 
 /**
  * Get versions
@@ -13,6 +15,12 @@ const versions = (keySSI, authToken, callback) => {
     if (typeof authToken === 'function') {
         callback = authToken;
         authToken = undefined;
+    }
+
+    const dlDomain = keySSI.getDLDomain();
+    const anchorId = keySSI.getAnchorId();
+    if (dlDomain === "vault" && config.indexDbVaultIsEnabled()) {
+        return indexedDBAnchoring.versions(anchorId, callback);
     }
 
     bdns.getAnchoringServices(keySSI.getDLDomain(), (err, anchoringServicesArray) => {
@@ -61,7 +69,12 @@ const addVersion = (keySSI, newHashLinkSSI, lastHashLinkSSI, zkpValue, digitalPr
         zkpValue = undefined;
     }
 
-    bdns.getAnchoringServices(keySSI.getDLDomain(), (err, anchoringServicesArray) => {
+    const dlDomain = keySSI.getDLDomain();
+    const anchorId = keySSI.getAnchorId();
+    if (dlDomain === "vault" && config.indexDbVaultIsEnabled()) {
+        return indexedDBAnchoring.addVersion(anchorId, newHashLinkSSI.getIdentifier(), callback);
+    }
+    bdns.getAnchoringServices(dlDomain, (err, anchoringServicesArray) => {
         if (err) {
             return callback(err);
         }
@@ -81,7 +94,7 @@ const addVersion = (keySSI, newHashLinkSSI, lastHashLinkSSI, zkpValue, digitalPr
 
         const queries = anchoringServicesArray.map((service) => {
             return new Promise((resolve, reject) => {
-                doPut(`${service}/anchor/add/${keySSI.getAnchorId()}`, JSON.stringify(body), (err, data) => {
+                doPut(`${service}/anchor/add/${anchorId}`, JSON.stringify(body), (err, data) => {
                     if (err) {
                         return reject({
                             statusCode: err.statusCode,
