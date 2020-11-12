@@ -1,4 +1,4 @@
-let indexDbVaultEnabled = false;
+let indexDbVaultEnabled = true;
 
 function enableIndexDbVault() {
     indexDbVaultEnabled = true;
