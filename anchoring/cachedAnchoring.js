@@ -1,11 +1,11 @@
 const openDSU = require("opendsu");
 const keySSISpace = openDSU.loadApi("keyssi");
-const cachedIndexDBStores = require("../utils/cachedIndexedDBStores");
+const cachedStores = require("../cache/cachedStores");
 const storeName = "anchors";
 
 function addVersion(anchorId, newHashLinkId, callback) {
-    const dbHandler = cachedIndexDBStores.getDBHandler(storeName);
-    dbHandler.get(anchorId, (err, hashLinkIds) => {
+    const cache = cachedStores.getCache(storeName);
+    cache.get(anchorId, (err, hashLinkIds) => {
         if (err) {
             return callback(err);
         }
@@ -15,13 +15,13 @@ function addVersion(anchorId, newHashLinkId, callback) {
         }
 
         hashLinkIds.push(newHashLinkId);
-        dbHandler.put(anchorId, hashLinkIds, callback);
+        cache.put(anchorId, hashLinkIds, callback);
     });
 }
 
 function versions(anchorId, callback) {
-    const dbHandler = cachedIndexDBStores.getDBHandler(storeName);
-    dbHandler.get(anchorId, (err, hashLinkIds) => {
+    const cache = cachedStores.getCache(storeName);
+    cache.get(anchorId, (err, hashLinkIds) => {
         if (err) {
             return callback(err);
         }

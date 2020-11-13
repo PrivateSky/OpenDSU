@@ -3,7 +3,8 @@ const bdns = openDSU.loadApi("bdns");
 const {fetch, doPut} = openDSU.loadApi("http");
 const or = require("overwrite-require");
 const config = openDSU.loadApi("config");
-const indexedDBbricking = require("./indexedDBbricking");
+const cachedBricking = require("./cachedBricking");
+const constants = require("../moduleConstants");
 /**
  * Get brick
  * @param {hashLinkSSI} hashLinkSSI
@@ -20,8 +21,8 @@ const getBrick = (hashLinkSSI, authToken, callback) => {
         authToken = undefined;
     }
 
-    if (dlDomain === "vault" && config.indexDbVaultIsEnabled()) {
-        return indexedDBbricking.getBrick(brickHash, callback);
+    if (dlDomain === constants.DOMAINS.VAULT && typeof config.get(constants.CACHE.VAULT_TYPE) !== "undefined") {
+        return cachedBricking.getBrick(brickHash, callback);
     }
 
     bdns.getBrickStorages(dlDomain, (err, brickStorageArray) => {
@@ -57,8 +58,8 @@ const getMultipleBricks = (hashLinkSSIList, authToken, callback) => {
     const dlDomain = hashLinkSSIList[0].getDLDomain();
     const bricksHashes = hashLinkSSIList.map((hashLinkSSI) => hashLinkSSI.getHash());
 
-    if (dlDomain === "vault" && config.indexDbVaultIsEnabled()) {
-        return indexedDBbricking.getMultipleBricks(bricksHashes, callback);
+    if (dlDomain === constants.DOMAINS.VAULT && typeof config.get(constants.CACHE.VAULT_TYPE) !== "undefined") {
+        return cachedBricking.getMultipleBricks(bricksHashes, callback);
     }
 
     bdns.getBrickStorages(dlDomain, (err, brickStorageArray) => {
@@ -142,8 +143,8 @@ const putBrick = (keySSI, brick, authToken, callback) => {
     }
     const dlDomain = keySSI.getDLDomain();
 
-    if (dlDomain === "vault" && config.indexDbVaultIsEnabled()) {
-        return indexedDBbricking.putBrick(brick, callback);
+    if (dlDomain === constants.DOMAINS.VAULT && typeof config.get(constants.CACHE.VAULT_TYPE) !== "undefined") {
+        return cachedBricking.putBrick(brick, callback);
     }
 
     bdns.getBrickStorages(dlDomain, (err, brickStorageArray) => {

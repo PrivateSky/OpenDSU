@@ -3,7 +3,8 @@ const bdns = openDSU.loadApi("bdns");
 const keyssi = openDSU.loadApi("keyssi");
 const { fetch, doPut } = openDSU.loadApi("http");
 const config = openDSU.loadApi("config");
-const indexedDBAnchoring = require("./indexedDBAnchoring");
+const cachedAnchoring = require("./cachedAnchoring");
+const constants = require("../moduleConstants");
 
 /**
  * Get versions
@@ -19,8 +20,8 @@ const versions = (keySSI, authToken, callback) => {
 
     const dlDomain = keySSI.getDLDomain();
     const anchorId = keySSI.getAnchorId();
-    if (dlDomain === "vault" && config.indexDbVaultIsEnabled()) {
-        return indexedDBAnchoring.versions(anchorId, callback);
+    if (dlDomain === constants.DOMAINS.VAULT && typeof config.get(constants.CACHE.VAULT_TYPE) !== "undefined") {
+        return cachedAnchoring.versions(anchorId, callback);
     }
 
     bdns.getAnchoringServices(keySSI.getDLDomain(), (err, anchoringServicesArray) => {
@@ -71,8 +72,8 @@ const addVersion = (keySSI, newHashLinkSSI, lastHashLinkSSI, zkpValue, digitalPr
 
     const dlDomain = keySSI.getDLDomain();
     const anchorId = keySSI.getAnchorId();
-    if (dlDomain === "vault" && config.indexDbVaultIsEnabled()) {
-        return indexedDBAnchoring.addVersion(anchorId, newHashLinkSSI.getIdentifier(), callback);
+    if (dlDomain === constants.DOMAINS.VAULT && typeof config.get(constants.CACHE.VAULT_TYPE) !== "undefined") {
+        return cachedAnchoring.addVersion(anchorId, newHashLinkSSI.getIdentifier(), callback);
     }
     bdns.getAnchoringServices(dlDomain, (err, anchoringServicesArray) => {
         if (err) {

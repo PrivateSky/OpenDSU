@@ -1,17 +1,17 @@
 const openDSU = require("opendsu");
 const crypto = openDSU.loadApi("crypto");
 const keySSISpace = openDSU.loadApi("keyssi");
-const cachedIndexDBStores = require("../utils/cachedIndexedDBStores");
+const cachedStores = require("../cache/cachedStores");
 const storeName = "bricks";
 
 function putBrick(brick, callback) {
-    const dbHandler = cachedIndexDBStores.getDBHandler(storeName);
+    const cache = cachedStores.getCache(storeName);
     crypto.hash(keySSISpace.buildSeedSSI("vault"), brick, (err, brickHash) => {
         if (err) {
             return callback(err);
         }
 
-        dbHandler.put(brickHash, brick, (err, hash) => {
+        cache.put(brickHash, brick, (err, hash) => {
             if (err) {
                 return callback(err);
             }
@@ -22,8 +22,8 @@ function putBrick(brick, callback) {
 }
 
 function getBrick(brickHash, callback) {
-    const dbHandler = cachedIndexDBStores.getDBHandler(storeName);
-    dbHandler.get(brickHash, (err, brickData) => {
+    const cache = cachedStores.getCache(storeName);
+    cache.get(brickHash, (err, brickData) => {
         if (err) {
             return callback(err);
         }
