@@ -1,16 +1,17 @@
 const openDSU = require("opendsu");
 const bdns = openDSU.loadApi("bdns");
 const keyssi = openDSU.loadApi("keyssi");
-const { fetch, doPut } = openDSU.loadApi("http");
+const {fetch, doPut} = openDSU.loadApi("http");
 const config = openDSU.loadApi("config");
 const cachedAnchoring = require("./cachedAnchoring");
 const constants = require("../moduleConstants");
+const cache = require("../cache/cachedStores").getCache(constants.CACHE.GENERAL_CACHE);
 
 /**
  * Get versions
- * @param {keySSI} keySSI 
- * @param {string} authToken 
- * @param {function} callback 
+ * @param {keySSI} keySSI
+ * @param {string} authToken
+ * @param {function} callback
  */
 const versions = (keySSI, authToken, callback) => {
     if (typeof authToken === 'function') {
@@ -24,40 +25,53 @@ const versions = (keySSI, authToken, callback) => {
         return cachedAnchoring.versions(anchorId, callback);
     }
 
-    bdns.getAnchoringServices(keySSI.getDLDomain(), (err, anchoringServicesArray) => {
-        if (err) {
-            return callback(err);
-        }
+    cache.get(anchorId, (err, versions) => {
+        if (err || typeof versions === "undefined") {
+            bdns.getAnchoringServices(dlDomain, (err, anchoringServicesArray) => {
+                if (err) {
+                    return callback(err);
+                }
 
-        if (!anchoringServicesArray.length) {
-            return callback('No anchoring service provided');
-        }
+                if (!anchoringServicesArray.length) {
+                    return callback('No anchoring service provided');
+                }
 
-        const queries = anchoringServicesArray.map((service) => fetch(`${service}/anchor/versions/${keySSI.getAnchorId()}`));
-        //TODO: security issue (which response we trust)
-        Promise.allSettled(queries).then((responses) => {
-            const response = responses.find((response) => response.status === 'fulfilled');
+                const queries = anchoringServicesArray.map((service) => fetch(`${service}/anchor/versions/${keySSI.getAnchorId()}`));
+                //TODO: security issue (which response we trust)
+                Promise.allSettled(queries).then((responses) => {
+                    const response = responses.find((response) => response.status === 'fulfilled');
 
-            response.value.json().then((hlStrings) => {
+                    response.value.json().then((hlStrings) => {
 
-                const hashLinks = hlStrings.map(hlString => {
+                        const hashLinks = hlStrings.map(hlString => {
+                            return keyssi.parse(hlString)
+                        });
+
+                        return callback(null, hashLinks)
+                    })
+                }).catch((err) => callback(err));
+            });
+        } else {
+            try {
+                const hashLinks = versions.map(hlString => {
                     return keyssi.parse(hlString)
                 });
-
                 return callback(null, hashLinks)
-            })
-        }).catch((err) => callback(err));
+            } catch (e) {
+                callback(e);
+            }
+        }
     });
 };
 
 /**
  * Add new version
- * @param {keySSI} keySSI 
- * @param {hashLinkSSI} newHashLinkSSI 
- * @param {hashLinkSSI} lastHashLinkSSI 
- * @param {string} zkpValue 
- * @param {string} digitalProof 
- * @param {function} callback 
+ * @param {keySSI} keySSI
+ * @param {hashLinkSSI} newHashLinkSSI
+ * @param {hashLinkSSI} lastHashLinkSSI
+ * @param {string} zkpValue
+ * @param {string} digitalProof
+ * @param {function} callback
  */
 const addVersion = (keySSI, newHashLinkSSI, lastHashLinkSSI, zkpValue, digitalProof, callback) => {
     if (typeof lastHashLinkSSI === "function") {
@@ -116,7 +130,13 @@ const addVersion = (keySSI, newHashLinkSSI, lastHashLinkSSI, zkpValue, digitalPr
                 return callback(rejected.reason)
             }
 
-            callback(null, response.value);
+            cache.get(anchorId, (err, versions) => {
+                if (err || typeof versions === "undefined") {
+                    versions = [];
+                }
+                versions.push(newHashLinkSSI.getIdentifier());
+                cache.put(anchorId, versions, err => callback(undefined, response.value));
+            });
         });
     });
 

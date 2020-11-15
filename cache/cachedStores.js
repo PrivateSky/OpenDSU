@@ -45,7 +45,7 @@ function IndexedDBCache(storeName) {
             let req = store.put(value, key);
             req.onsuccess = function () {
                 callback(undefined, key);
-            }
+            };
         }
     };
 }
@@ -81,16 +81,25 @@ function FSCache(folderName) {
                     return callback(err);
                 }
 
-                callback(undefined, data.toString());
+                let content = data;
+                try {
+                    content = JSON.parse(content.toString())
+                } catch (e) {
+                    return callback(data);
+                }
+                callback(undefined, content);
             });
         }
     };
 
     self.put = function (key, value, callback) {
+        if (Array.isArray(value)) {
+            value = JSON.stringify(value);
+        }
         if (!storageFolderIsCreated) {
             self.addPendingCall(() => {
                 self.put(key, value, callback);
-            })
+            });
         } else {
             fs.writeFile(path.join(folderPath, key), value, callback);
         }

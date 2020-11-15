@@ -16,7 +16,8 @@ module.exports = {
 		INDEXED_DB: "indexedDB",
 		VAULT_TYPE: "vaultType",
 		BASE_FOLDER: "internal-volume/cache",
-		BASE_FOLDER_CONFIG_PROPERTY: "fsCache.baseFolder"
+		BASE_FOLDER_CONFIG_PROPERTY: "fsCache.baseFolder",
+		GENERAL_CACHE: "cache"
 	},
 	DOMAINS: {
 		VAULT: "vault"
