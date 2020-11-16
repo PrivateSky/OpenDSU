@@ -17,6 +17,7 @@ module.exports.loadApi = function(apiSpaceName){
         case "resolver":return require("./resolver"); break;
         case "sc":return require("./sc"); break;
         case "config":return require("./config"); break;
+        case "cache":return require("./cache/cachedStores"); break;
         default: throw new Error("Unknown API space " + apiSpaceName);
     }
 }
