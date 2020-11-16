@@ -1,6 +1,6 @@
 const KeySSIResolver = require("key-ssi-resolver");
 const keySSISpace = require("opendsu").loadApi("keyssi");
-
+const dsuInstances = {};
 const initializeResolver = (options) => {
     options = options || {};
     return KeySSIResolver.initialize(options);
@@ -33,8 +33,22 @@ const loadDSU = (keySSI, options, callback) => {
         options = undefined;
     }
 
+    const ssiId = keySSI.getIdentifier();
+    if(dsuInstances[ssiId]){
+        return callback(undefined, dsuInstances[ssiId]);
+    }
     const keySSIResolver = initializeResolver(options);
-    keySSIResolver.loadDSU(keySSI, options, callback);
+    keySSIResolver.loadDSU(keySSI, options, (err, newDSU) => {
+        if (err) {
+            return callback(err);
+        }
+
+        if (typeof dsuInstances[ssiId] === "undefined") {
+            dsuInstances[ssiId] = newDSU;
+        }
+
+        callback(undefined, newDSU);
+    });
 };
 
 const createWallet = (templateKeySSI, dsuTypeSSI, options, callback) => {
