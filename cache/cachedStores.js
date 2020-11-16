@@ -43,9 +43,12 @@ function IndexedDBCache(storeName) {
             let transaction = db.transaction(storeName, "readwrite");
             const store = transaction.objectStore(storeName);
             let req = store.put(value, key);
-            req.onsuccess = function () {
-                callback(undefined, key);
-            };
+            if (callback) {
+                req.onsuccess = function () {
+                    callback(undefined, key)
+
+                };
+            }
         }
     };
 }
@@ -101,6 +104,10 @@ function FSCache(folderName) {
                 self.put(key, value, callback);
             });
         } else {
+            if(!callback){
+                callback = () => {
+                };
+            }
             fs.writeFile(path.join(folderPath, key), value, callback);
         }
     }
