@@ -17,7 +17,8 @@ module.exports = {
 		VAULT_TYPE: "vaultType",
 		BASE_FOLDER: "internal-volume/cache",
 		BASE_FOLDER_CONFIG_PROPERTY: "fsCache.baseFolder",
-		GENERAL_CACHE: "cache"
+		ENCRYPTED_BRICKS_CACHE: "encrypted-bricks-cache",
+		ANCHORING_CACHE: "anchoring-cache"
 	},
 	DOMAINS: {
 		VAULT: "vault"
