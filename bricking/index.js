@@ -4,7 +4,7 @@ const {fetch, doPut} = openDSU.loadApi("http");
 const config = openDSU.loadApi("config");
 const cachedBricking = require("./cachedBricking");
 const constants = require("../moduleConstants");
-const cache = require("../cache/cachedStores").getCache(constants.CACHE.GENERAL_CACHE);
+const cache = require("../cache/cachedStores").getCache(constants.CACHE.ENCRYPTED_BRICKS_CACHE);
 /**
  * Get brick
  * @param {hashLinkSSI} hashLinkSSI
@@ -39,7 +39,10 @@ const getBrick = (hashLinkSSI, authToken, callback) => {
                 const queries = brickStorageArray.map((storage) => fetch(`${storage}/bricks/get-brick/${brickHash}/${dlDomain}`));
 
                 Promise.all(queries).then((responses) => {
-                    responses[0].arrayBuffer().then((data) => callback(null, data));
+                    responses[0].arrayBuffer().then((data) => {
+                        cache.put(brickHash, data);
+                        callback(null, data)
+                    });
                 }).catch((err) => {
                     callback(err);
                 });
