@@ -1,6 +1,17 @@
 function generateMethodForRequestWithData(httpMethod) {
-	return function (url, data, callback) {
+	return function (url, data, options, callback) {
+		if(typeof options === "function"){
+			callback = options;
+			options = {};
+		}
+
 		const xhr = new XMLHttpRequest();
+
+		if(typeof options.headers !== "undefined"){
+			for(let name in options.headers){
+				xhr.setRequestHeader(name, options.headers[name]);
+			}
+		}
 
 		xhr.onload = function () {
 			if (xhr.readyState === 4 && (xhr.status >= 200 && xhr.status < 300)) {

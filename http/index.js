@@ -14,6 +14,9 @@ switch ($$.environmentType) {
 		module.exports = require("./node");
 }
 
+//enable support for http interceptors.
+require("./utils/interceptors").enable(module.exports);
+
 const PollRequestManager = require("./utils/PollRequestManager");
 const rm = new PollRequestManager(module.exports.fetch);
 

@@ -17,7 +17,11 @@ function getNetworkForOptions(options) {
 }
 
 function generateMethodForRequestWithData(httpMethod) {
-	return function (url, data, callback) {
+	return function (url, data, reqOptions, callback) {
+		if(typeof reqOptions === "function"){
+			callback = reqOptions;
+			reqOptions = {};
+		}
 		const innerUrl = URL.parse(url);
 
 		const options = {
@@ -30,6 +34,10 @@ function generateMethodForRequestWithData(httpMethod) {
 			},
 			method: httpMethod
 		};
+
+		for(let name in reqOptions.headers){
+			options.headers[name] = reqOptions.headers[name];
+		}
 
 		const network = getNetworkForOptions(innerUrl);
 
