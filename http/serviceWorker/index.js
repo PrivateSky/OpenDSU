@@ -1,6 +1,10 @@
 function generateMethodForRequestWithData(httpMethod) {
-	return function (url, data, callback) {
-		const headers = {}
+	return function (url, data, options, callback) {
+		if(typeof options === "function"){
+			callback = options;
+			options = {};
+		}
+		const headers = options.headers || {};
 		if(ArrayBuffer.isView(data) || data instanceof ArrayBuffer) {
 			headers['Content-Type'] = 'application/octet-stream';
 
