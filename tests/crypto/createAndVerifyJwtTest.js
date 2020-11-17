@@ -10,7 +10,7 @@ const seedSSI2 = keyssispace.buildSeedSSI("default");
 const { JWT_ERRORS } = crypto;
 
 const credentials = [];
-const options = { sub: "johnDoe" };
+const options = { subject: "JOHN_DOE" };
 
 assert.callback("Create and verify valid JWT test", (callback) => {
     seedSSI.initialize("default", undefined, undefined, undefined, "hint", (err) => {
@@ -38,7 +38,7 @@ assert.callback("Create and verify valid JWT and rootOfTrustVerificationStrategy
             crypto.verifyJWT(
                 jwt,
                 (jwtContent, callback) => {
-                    if (jwtContent.body.sub !== options.sub) {
+                    if (jwtContent.body.sub !== options.subject) {
                         return callback("invalid");
                     }
                     return callback(null, true);
@@ -63,7 +63,7 @@ assert.callback("Create and verify valid JWT and rootOfTrustVerificationStrategy
             crypto.verifyJWT(
                 jwt,
                 (jwtContent, callback) => {
-                    if (jwtContent.body.sub === options.sub) {
+                    if (jwtContent.body.sub === options.subject) {
                         return callback("invalid");
                     }
                     return callback(null, true);
@@ -116,6 +116,129 @@ assert.callback("Create and verify invalid JWT (someone modifies the payload) te
                     crypto.verifyJWT(invalidJwt, null, (verifyError, verifyResult) => {
                         assert.notNull(verifyError);
                         callback();
+                    });
+                });
+            });
+        });
+    });
+});
+
+assert.callback("createCredential test", (callback) => {
+    seedSSI.initialize("default", undefined, undefined, undefined, "hint", (err) => {
+        if (err) throw err;
+
+        crypto.createCredential(seedSSI, "JOHN_DOE", (error, jwt) => {
+            if (error) throw error;
+
+            crypto.verifyJWT(
+                jwt,
+                (jwtContent, callback) => {
+                    if (jwtContent.body.sub !== "JOHN_DOE") {
+                        return callback("invalid");
+                    }
+                    return callback(null, true);
+                },
+                (verifyError, verifyResult) => {
+                    if (verifyError) throw verifyError;
+                    assert.true(verifyResult);
+                    callback();
+                }
+            );
+        });
+    });
+});
+
+assert.callback("full manual verifyAuthToken test", (callback) => {
+    seedSSI.initialize("default", undefined, undefined, undefined, "hint", (err) => {
+        if (err) throw err;
+
+        seedSSI2.initialize("default", undefined, undefined, undefined, "hint", (err) => {
+            if (err) throw err;
+
+            const userSReadSSI = seedSSI2.derive().getIdentifier();
+
+            crypto.createCredential(seedSSI, userSReadSSI, (error, credentialJwt) => {
+                if (error) throw error;
+
+                crypto.createAuthToken(seedSSI2, "scope1", credentialJwt, (error, authToken) => {
+                    if (error) throw error;
+
+                    crypto.verifyJWT(
+                        authToken,
+                        (jwtContent, callback) => {
+                            crypto.verifyJWT(
+                                jwtContent.body.credentials[0],
+                                (jwtContent, callback) => {
+                                    if (userSReadSSI === jwtContent.body.sub) {
+                                        return callback(null, true);
+                                    }
+
+                                    return callback(null, false);
+                                },
+                                (verifyError, verifyResult) => {
+                                    if (verifyError) throw verifyError;
+                                    assert.true(verifyResult);
+                                    return callback(null, true);
+                                }
+                            );
+                        },
+                        (verifyError, verifyResult) => {
+                            if (verifyError) throw verifyError;
+                            assert.true(verifyResult);
+                            callback();
+                        }
+                    );
+                });
+            });
+        });
+    });
+});
+
+assert.callback("verifyAuthToken test", (callback) => {
+    seedSSI.initialize("default", undefined, undefined, undefined, "hint", (err) => {
+        if (err) throw err;
+
+        seedSSI2.initialize("default", undefined, undefined, undefined, "hint", (err) => {
+            if (err) throw err;
+
+            const organizationSReadSSI = seedSSI.derive().getIdentifier();
+            const userSReadSSI = seedSSI2.derive().getIdentifier();
+
+            crypto.createCredential(seedSSI, userSReadSSI, (error, credentialJwt) => {
+                if (error) throw error;
+
+                crypto.createAuthToken(seedSSI2, "scope1", credentialJwt, (error, authToken) => {
+                    if (error) throw error;
+
+                    crypto.verifyAuthToken(authToken, [organizationSReadSSI], (verifyError, verifyResult) => {
+                        if (verifyError) throw verifyError;
+                        assert.true(verifyResult);
+                        return callback();
+                    });
+                });
+            });
+        });
+    });
+});
+
+assert.callback("verifyAuthToken with invalid issuer test", (callback) => {
+    seedSSI.initialize("default", undefined, undefined, undefined, "hint", (err) => {
+        if (err) throw err;
+
+        seedSSI2.initialize("default", undefined, undefined, undefined, "hint", (err) => {
+            if (err) throw err;
+
+            const userSReadSSI = seedSSI2.derive().getIdentifier();
+
+            crypto.createCredential(seedSSI, userSReadSSI, (error, credentialJwt) => {
+                if (error) throw error;
+
+                crypto.createAuthToken(seedSSI2, "scope1", credentialJwt, (error, authToken) => {
+                    if (error) throw error;
+
+                    crypto.verifyAuthToken(authToken, ["INEXISTING_VERIFIER"], (verifyError, verifyResult) => {
+                        assert.notNull(verifyError);
+                        return callback();
                     });
                 });
             });

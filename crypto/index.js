@@ -7,6 +7,8 @@ const jwtUtils = require("./jwt");
 const templateSeedSSI = keySSIFactory.createType(SSITypes.SEED_SSI);
 templateSeedSSI.load(SSITypes.SEED_SSI, "default");
 
+const { JWT_ERRORS } = jwtUtils;
+
 const hash = (keySSI, data, callback) => {
     if (typeof data === "object" && !Buffer.isBuffer(data)) {
         data = JSON.stringify(data);
@@ -73,11 +75,11 @@ const decodeBase58 = (data) => {
     return decode(templateSeedSSI, data);
 };
 
-const createJWT = (seedSSI, audience, credentials, options, callback) => {
+const createJWT = (seedSSI, scope, credentials, options, callback) => {
     jwtUtils.createJWT(
         {
             seedSSI,
-            audience,
+            scope,
             credentials,
             options,
             hash,
@@ -101,6 +103,61 @@ const verifyJWT = (jwt, rootOfTrustVerificationStrategy, callback) => {
     );
 };
 
+const createCredential = (issuer, credentialSubject, callback) => {
+    createJWT(issuer, "", null, { subject: credentialSubject }, callback);
+};
+
+const createAuthToken = (seedSSI, scope, credential, callback) => {
+    createJWT(seedSSI, scope, credential, null, callback);
+};
+
+const verifyAuthToken = (jwt, listOfIssuers, callback) => {
+    if (!listOfIssuers || !listOfIssuers.length) return callback(JWT_ERRORS.EMPTY_LIST_OF_ISSUERS_PROVIDED);
+
+    // checks every credentials from the JWT's body to see if it has at least one JWT issues by one of listOfIssuers for the current subject
+    const rootOfTrustVerificationStrategy = ({ body }, verificationCallback) => {
+        const { sub: subject, credentials } = body;
+        // the JWT doesn't have credentials specified so we cannot check for valid authorizarion
+        if (!credentials) return verificationCallback(null, false);
+
+        const credentialVerifiers = credentials.map((credential) => {
+            return new Promise((resolve) => {
+                verifyJWT(
+                    credential,
+                    ({ body }, credentialVerificationCallback) => {
+                        // check if credential was issued for the JWT that we are verifying the authorization for
+                        const isCredentialIssuedForSubject = body.sub === subject;
+                        if (!isCredentialIssuedForSubject) return credentialVerificationCallback(null, false);
+
+                        const isValidIssuer = listOfIssuers.some((issuer) => issuer === body.iss);
+                        credentialVerificationCallback(null, isValidIssuer);
+                    },
+                    (credentialVerifyError, isCredentialValid) => {
+                        if (credentialVerifyError) return resolve(false);
+                        resolve(isCredentialValid);
+                    }
+                );
+            }).catch(() => {
+                // is something went wrong, we deny the JWT
+                return false;
+            });
+        });
+
+        Promise.all(credentialVerifiers)
+            .then((credentialVerifierResults) => {
+                const hasAtLeastOneValidIssuer = credentialVerifierResults.some((result) => result);
+                if (!hasAtLeastOneValidIssuer) return verificationCallback(null, false);
+                verificationCallback(null, true);
+            })
+            .catch(() => {
+                // is something went wrong, we deny the JWT
+                verificationCallback(null, false);
+            });
+    };
+
+    verifyJWT(jwt, rootOfTrustVerificationStrategy, callback);
+};
+
 module.exports = {
     hash,
     encrypt,
@@ -113,5 +170,8 @@ module.exports = {
     sha256,
     createJWT,
     verifyJWT,
-    JWT_ERRORS: jwtUtils.JWT_ERRORS,
+    createCredential,
+    createAuthToken,
+    verifyAuthToken,
+    JWT_ERRORS,
 };

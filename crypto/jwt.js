@@ -12,21 +12,27 @@ const JWT_ERRORS = {
     INVALID_JWT_BODY: "INVALID_JWT_BODY",
     INVALID_JWT_HEADER_TYPE: "INVALID_JWT_HEADER_TYPE",
     INVALID_JWT_ISSUER: "INVALID_JWT_ISSUER",
+    INVALID_CREDENTIALS_FORMAT: "INVALID_CREDENTIALS_FORMAT",
     JWT_TOKEN_EXPIRED: "JWT_TOKEN_EXPIRED",
     JWT_TOKEN_NOT_ACTIVE: "JWT_TOKEN_NOT_ACTIVE",
     INVALID_JWT_SIGNATURE: "INVALID_JWT_SIGNATURE",
     ROOT_OF_TRUST_VERIFICATION_FAILED: "ROOT_OF_TRUST_VERIFICATION_FAILED",
+    EMPTY_LIST_OF_ISSUERS_PROVIDED: "EMPTY_LIST_OF_ISSUERS_PROVIDED",
 };
 
 function nowEpochSeconds() {
     return Math.floor(new Date().getTime() / 1000);
 }
 
-function createJWT({ seedSSI, audience, credentials, options, hash, encode, sign }, callback) {
+function createJWT({ seedSSI, scope, credentials, options, hash, encode, sign }, callback) {
     const sReadSSI = seedSSI.derive();
 
-    let { sub, valability, ...optionsRest } = options || {};
+    let { subject, valability, ...optionsRest } = options || {};
     valability = valability || JWT_VALABILITY_SECONDS;
+
+    if (credentials) {
+        credentials = Array.isArray(credentials) ? credentials : [credentials];
+    }
 
     const header = {
         typ: HEADER_TYPE,
@@ -34,8 +40,9 @@ function createJWT({ seedSSI, audience, credentials, options, hash, encode, sign
 
     const now = nowEpochSeconds();
     const body = {
-        sub,
-        aud: encode(audience),
+        sub: subject || sReadSSI.getIdentifier(),
+        // aud: encode(scope),
+        scope,
         iss: sReadSSI.getIdentifier(),
         publicKey: seedSSI.getPublicKey(),
         iat: now,
@@ -109,6 +116,8 @@ function verifyJWTContent(jwtContent, callback) {
     if (!body.iss) return callback(JWT_ERRORS.INVALID_JWT_ISSUER);
     if (isJwtExpired(body)) return callback(JWT_ERRORS.JWT_TOKEN_EXPIRED);
     if (isJwtNotActive(body)) return callback(JWT_ERRORS.JWT_TOKEN_NOT_ACTIVE);
+
+    if (body.credentials && !Array.isArray(body.credentials)) return callback(JWT_ERRORS.INVALID_CREDENTIALS_FORMAT);
 
     callback(null);
 }
