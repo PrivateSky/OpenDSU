@@ -14,22 +14,11 @@ function unregisterInterceptor(interceptor){
     }
 }
 
-function callInterceptors(target, callback){
-    function call(index, data){
-        if(interceptors.length === index){
-            return callback(undefined, data);
-        }
-        let interceptor = interceptors[index];
-        interceptor(data, (err, result)=>{
-           if(err){
-               return callback(err);
-           }
-           index +=1;
-           call(index, result);
-        });
-    }
-
-    call(0, target);
+function callInterceptors(target){
+    interceptors.forEach(function(interceptor){
+        target = interceptor(target);
+    });
+    return target;
 }
 
 function setupInterceptors(handler){
@@ -46,14 +35,13 @@ function setupInterceptors(handler){
             }
 
             let data = {url: args[0], headers};
-            callInterceptors(data, function(err, result){
-                if(optionsAvailable){
-                    args[target.position]["headers"] = result.headers;
-                }else{
-                    args.splice(target.position, 0, {headers: result.headers});
-                }
-                return method(...args);
-            });
+            let result = callInterceptors(data);
+            if(optionsAvailable){
+                args[target.position]["headers"] = result.headers;
+            }else{
+                args.splice(target.position, 0, {headers: result.headers});
+            }
+            return method(...args);
         }
     });
 }
