@@ -25,7 +25,6 @@ function setupInterceptors(handler){
     const interceptMethods = [{name: "doPost", position: 2}, {name:"doPut", position: 2}, {name: "fetch", position: 1}];
     interceptMethods.forEach(function(target){
         let method = handler[target.name];
-        debugger;
         handler[target.name] = function(...args){
             let headers = {};
             let optionsAvailable = false;
