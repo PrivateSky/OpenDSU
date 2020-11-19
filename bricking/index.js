@@ -48,7 +48,6 @@ const getBrick = (hashLinkSSI, authToken, callback) => {
                 });
             });
         } else {
-            console.log("Getting brick from cache", brickHash);
             callback(undefined, brick);
         }
     });
