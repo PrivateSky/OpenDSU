@@ -3,12 +3,13 @@ const config = require("opendsu").loadApi("config");
 const CacheMixin = require("./CacheMixin");
 const constants = require("../moduleConstants");
 
-function IndexedDBCache(storeName) {
+function IndexedDBCache(storeName, lifetime) {
     const self = this;
     CacheMixin(self);
 
     let db;
     let openRequest = indexedDB.open(storeName);
+    let versionChangeTransaction;
     openRequest.onsuccess = () => {
         db = openRequest.result;
         self.executePendingCalls();
@@ -25,11 +26,24 @@ function IndexedDBCache(storeName) {
                 self.get(key, callback);
             });
         } else {
-            let transaction = db.transaction(storeName, "readwrite");
+            let transaction = db.transaction(storeName, "readonly");
             const store = transaction.objectStore(storeName);
             let req = store.get(key);
-            req.onsuccess = function () {
-                callback(undefined, req.result);
+            transaction.oncomplete = () => {
+                if (typeof lifetime !== "undefined") {
+                    const currentTime = Date.now();
+                    const timestampedData = req.result;
+                    if (typeof timestampedData === "undefined") {
+                        return callback();
+                    }
+                    if (currentTime - timestampedData.timestamp > lifetime) {
+                        self.delete(key);
+                        return callback();
+                    }
+                    callback(undefined, timestampedData.value)
+                } else {
+                    callback(undefined, req.result);
+                }
             }
         }
     };
@@ -40,17 +54,56 @@ function IndexedDBCache(storeName) {
                 self.put(key, value, callback);
             });
         } else {
-            let transaction = db.transaction(storeName, "readwrite");
-            const store = transaction.objectStore(storeName);
-            let req = store.put(value, key);
-            if (callback) {
-                req.onsuccess = function () {
-                    callback(undefined, key)
-
-                };
+            if (typeof versionChangeTransaction === "undefined") {
+                versionChangeTransaction = db.transaction(storeName, "readwrite");
+                const store = versionChangeTransaction.objectStore(storeName);
+                let data;
+                if (typeof lifetime !== "undefined") {
+                    data = {
+                        value: value,
+                        timestamp: Date.now()
+                    }
+                } else {
+                    data = value;
+                }
+                let req = store.put(data, key);
+                versionChangeTransaction.oncomplete = () => {
+                    versionChangeTransaction = undefined;
+                    if (typeof callback === "function") {
+                        callback(undefined, key);
+                    }
+                }
+            } else {
+                self.addPendingCall(() => {
+                    self.put(key, value, callback);
+                });
             }
         }
     };
+
+    self.delete = (key, callback) => {
+        if (typeof db === "undefined") {
+            self.addPendingCall(() => {
+                self.delete(key, callback);
+            });
+        } else {
+            if (typeof versionChangeTransaction === "undefined") {
+                versionChangeTransaction = db.transaction(storeName, "readwrite");
+                const store = versionChangeTransaction.objectStore(storeName);
+                let req = store.delete(key);
+                versionChangeTransaction.oncomplete = () => {
+                    versionChangeTransaction = undefined;
+                    if (typeof callback === "function") {
+                        callback(undefined, key);
+                    }
+                }
+            } else {
+                self.addPendingCall(() => {
+                    self.delete(key, callback);
+                });
+            }
+        }
+    }
 }
 
 function FSCache(folderName) {
@@ -104,7 +157,7 @@ function FSCache(folderName) {
                 self.put(key, value, callback);
             });
         } else {
-            if(!callback){
+            if (!callback) {
                 callback = () => {
                 };
             }
@@ -113,11 +166,11 @@ function FSCache(folderName) {
     }
 }
 
-function getCache(storeName) {
+function getCache(storeName, lifetime) {
     if (typeof stores[storeName] === "undefined") {
         switch (config.get(constants.CACHE.VAULT_TYPE)) {
             case constants.CACHE.INDEXED_DB:
-                stores[storeName] = new IndexedDBCache(storeName);
+                stores[storeName] = new IndexedDBCache(storeName, lifetime);
                 break;
             case constants.CACHE.FS:
                 stores[storeName] = new FSCache(storeName);
