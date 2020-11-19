@@ -25,32 +25,43 @@ const getBrick = (hashLinkSSI, authToken, callback) => {
         return cachedBricking.getBrick(brickHash, callback);
     }
 
-    cache.get(brickHash, (err, brick) => {
-        if (err || typeof brick === "undefined") {
-            bdns.getBrickStorages(dlDomain, (err, brickStorageArray) => {
-                if (err) {
-                    return callback(err);
-                }
+    if (typeof cache === "undefined") {
+        __getBrickFromEndpoint();
+    } else {
+        cache.get(brickHash, (err, brick) => {
+            if (err || typeof brick === "undefined") {
+                __getBrickFromEndpoint();
+            } else {
+                callback(undefined, brick);
+            }
+        });
+    }
 
-                if (!brickStorageArray.length) {
-                    return callback('No storage provided');
-                }
+    function __getBrickFromEndpoint() {
+        bdns.getBrickStorages(dlDomain, (err, brickStorageArray) => {
+            if (err) {
+                return callback(err);
+            }
 
-                const queries = brickStorageArray.map((storage) => fetch(`${storage}/bricks/get-brick/${brickHash}/${dlDomain}`));
+            if (!brickStorageArray.length) {
+                return callback('No storage provided');
+            }
 
-                Promise.all(queries).then((responses) => {
-                    responses[0].arrayBuffer().then((data) => {
+            const queries = brickStorageArray.map((storage) => fetch(`${storage}/bricks/get-brick/${brickHash}/${dlDomain}`));
+
+            Promise.all(queries).then((responses) => {
+                responses[0].arrayBuffer().then((data) => {
+                    if (typeof cache !== "undefined") {
                         cache.put(brickHash, data);
-                        callback(null, data)
-                    });
-                }).catch((err) => {
-                    callback(err);
+                    }
+                    callback(null, data)
                 });
+            }).catch((err) => {
+                callback(err);
             });
-        } else {
-            callback(undefined, brick);
-        }
-    });
+        });
+    }
+
 };
 
 /**
@@ -227,6 +238,9 @@ const putBrick = (keySSI, brick, authToken, callback) => {
             }
 
             const brickHash = JSON.parse(foundBrick.value).message;
+            if (typeof cache === "undefined") {
+                return callback(undefined, brickHash)
+            }
             return cache.put(brickHash, brick, err => {
                 if (err) {
                     return callback(err);

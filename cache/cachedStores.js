@@ -175,6 +175,8 @@ function getCache(storeName, lifetime) {
             case constants.CACHE.FS:
                 stores[storeName] = new FSCache(storeName);
                 break;
+            case constants.CACHE.NO_CACHE:
+                break;
             default:
                 throw Error("Invalid cache type");
         }

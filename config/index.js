@@ -15,8 +15,9 @@ switch ($$.environmentType){
         set(constants.CACHE.VAULT_TYPE, constants.CACHE.INDEXED_DB);
         break;
     case constants.ENVIRONMENT.NODEJS_ENVIRONMENT_TYPE:
-        set(constants.CACHE.VAULT_TYPE, constants.CACHE.FS);
+        set(constants.CACHE.VAULT_TYPE, constants.CACHE.NO_CACHE);
         break;
+
     default:
 }
 
