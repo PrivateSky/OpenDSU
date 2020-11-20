@@ -220,7 +220,7 @@ const putBrick = (keySSI, brick, authToken, callback) => {
             })
         };
 
-        promiseRunner.runAll(brickStorageArray, setBrick, (err, results) => {
+        promiseRunner.runAll(brickStorageArray, setBrick, null, (err, results) => {
             if (err || !results.length) {
                 return callback({ message: 'Brick not created' });
             }

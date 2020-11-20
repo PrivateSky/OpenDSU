@@ -3,7 +3,7 @@ const assert = require("double-check").assert;
 
 const promiseRunner = require("../../utils/promise-runner");
 
-assert.callback("T1 promiseRunner runOne success", (callback) => {
+assert.callback("T1 promiseRunner runOneSuccessful success", (callback) => {
   const entries = [1, 2, 3, 4, 5];
   const execute = (entry) => {
     return new Promise((resolve) => {
@@ -12,14 +12,14 @@ assert.callback("T1 promiseRunner runOne success", (callback) => {
     });
   };
 
-  promiseRunner.runOne(entries, execute, (err, result) => {
+  promiseRunner.runOneSuccessful(entries, execute, (err, result) => {
     if (err) throw err;
     assert.notNull(result);
     callback();
   });
 });
 
-assert.callback("T2 promiseRunner runOne success with first fail", (callback) => {
+assert.callback("T2 promiseRunner runOneSuccessful success with first fail", (callback) => {
   const entries = [1, 2, 3, 4, 5];
   let hasFailed = false;
 
@@ -35,7 +35,7 @@ assert.callback("T2 promiseRunner runOne success with first fail", (callback) =>
     });
   };
 
-  promiseRunner.runOne(entries, execute, (err, result) => {
+  promiseRunner.runOneSuccessful(entries, execute, (err, result) => {
     if (err) throw err;
     assert.notNull(result);
     callback();
@@ -51,7 +51,7 @@ assert.callback("T3 promiseRunner runAll with all success", (callback) => {
     });
   };
 
-  promiseRunner.runAll(entries, execute, (err, result) => {
+  promiseRunner.runAll(entries, execute, null, (err, result) => {
     if (err) throw err;
     assert.notNull(result);
     callback();
@@ -72,7 +72,7 @@ assert.callback("T4 promiseRunner runAll with over half success", (callback) => 
     });
   };
 
-  promiseRunner.runAll(entries, execute, (err, results) => {
+  promiseRunner.runAll(entries, execute, null, (err, results) => {
     if (err) throw err;
     assert.notNull(results);
 
@@ -95,8 +95,97 @@ assert.callback("T5 promiseRunner runAll with under half success", (callback) =>
     });
   };
 
-  promiseRunner.runAll(entries, execute, (err) => {
+  promiseRunner.runAll(entries, execute, null, (err) => {
     assert.notNull(err);
+    callback();
+  });
+});
+
+assert.callback("T6 promiseRunner runEnoughForMajority with all success and default configs", (callback) => {
+  const entries = [1, 2, 3, 4, 5];
+  const execute = (entry) => {
+    return new Promise((resolve) => {
+      console.log(`T6 Running entry ${entry}`);
+      resolve(entry);
+    });
+  };
+
+  promiseRunner.runEnoughForMajority(entries, execute, null, null, (err, result) => {
+    if (err) throw err;
+    assert.notNull(result);
+    callback();
+  });
+});
+
+assert.callback("T7 promiseRunner runEnoughForMajority with first fail and default configs", (callback) => {
+  const entries = [1, 2, 3, 4, 5];
+  const execute = (entry) => {
+    return new Promise((resolve, reject) => {
+      console.log(`T7 Running entry ${entry}`);
+      setTimeout(() => {
+        if (entry === 1) return reject();
+        resolve(entry);
+      }, 100);
+    });
+  };
+
+  promiseRunner.runEnoughForMajority(entries, execute, null, null, (err, result) => {
+    if (err) throw err;
+    assert.notNull(result);
+    callback();
+  });
+});
+
+assert.callback("T8 promiseRunner runEnoughForMajority with fails and custom validateResults", (callback) => {
+  const entries = [1, 2, 3, 4, 5];
+  const execute = (entry) => {
+    return new Promise((resolve, reject) => {
+      console.log(`T8 Running entry ${entry}`);
+      setTimeout(() => {
+        if (entry === 1) return reject();
+        resolve(entry);
+      }, 100);
+    });
+  };
+
+  const validateResults = (successResults, errorResults, totalCount) => {
+    // force to run all the executions
+    return successResults.length + errorResults.length === totalCount;
+  };
+
+  promiseRunner.runEnoughForMajority(entries, execute, null, validateResults, (err, result) => {
+    if (err) {
+      console.log("T8", err);
+      throw err;
+    }
+    assert.notNull(result);
+    callback();
+  });
+});
+
+assert.callback("T9 promiseRunner runEnoughForMajority with fails and custom validateResults starting with 1 in parallel", (callback) => {
+  const entries = [1, 2, 3, 4, 5];
+  const execute = (entry) => {
+    return new Promise((resolve, reject) => {
+      console.log(`T9 Running entry ${entry}`);
+      setTimeout(() => {
+        if (entry === 1) return reject();
+        resolve(entry);
+      }, 50);
+    });
+  };
+
+  const validateResults = (successResults, errorResults, totalCount) => {
+    // force to run all the executions
+    return successResults.length + errorResults.length === totalCount;
+  };
+
+  promiseRunner.runEnoughForMajority(entries, execute, 1, validateResults, (err, result) => {
+    if (err) {
+      console.log("T9", err);
+      throw err;
+    }
+    assert.notNull(result);
     callback();
   });
 });

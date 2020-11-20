@@ -50,7 +50,7 @@ const versions = (keySSI, authToken, callback) => {
                 });
         };
 
-        promiseRunner.runOne(anchoringServicesArray, fetchAnchor, callback);
+        promiseRunner.runOneSuccessful(anchoringServicesArray, fetchAnchor, callback);
     });
 };
 
@@ -112,7 +112,7 @@ const addVersion = (keySSI, newHashLinkSSI, lastHashLinkSSI, zkpValue, digitalPr
             })
         };
 
-        promiseRunner.runOne(anchoringServicesArray, addAnchor, callback);
+        promiseRunner.runOneSuccessful(anchoringServicesArray, addAnchor, callback);
     });
 
 };
