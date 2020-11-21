@@ -6,6 +6,7 @@ const config = openDSU.loadApi("config");
 const cachedAnchoring = require("./cachedAnchoring");
 const constants = require("../moduleConstants");
 const cache = require("../cache/cachedStores").getCache(constants.CACHE.ANCHORING_CACHE);
+const promiseRunner = require("../utils/promise-runner");
 
 /**
  * Get versions
@@ -34,21 +35,22 @@ const versions = (keySSI, authToken, callback) => {
             return callback('No anchoring service provided');
         }
 
-        const queries = anchoringServicesArray.map((service) => fetch(`${service}/anchor/versions/${keySSI.getAnchorId()}`));
         //TODO: security issue (which response we trust)
-        Promise.allSettled(queries).then((responses) => {
-            const response = responses.find((response) => response.status === 'fulfilled');
+        const fetchAnchor = (service) => {
+            return fetch(`${service}/anchor/versions/${keySSI.getAnchorId()}`)
+                .then((response) => {
+                    return response.json().then((hlStrings) => {
+                        const hashLinks = hlStrings.map((hlString) => {
+                            return keyssi.parse(hlString);
+                        });
 
-            response.value.json().then((hlStrings) => {
-
-                const hashLinks = hlStrings.map(hlString => {
-                    return keyssi.parse(hlString)
+                        // cache.put(anchorId, hlStrings);
+                        return hashLinks;
+                    });
                 });
+        };
 
-                // cache.put(anchorId, hlStrings);
-                return callback(null, hashLinks)
-            })
-        }).catch((err) => callback(err));
+        promiseRunner.runOneSuccessful(anchoringServicesArray, fetchAnchor, callback);
     });
 };
 
@@ -95,7 +97,7 @@ const addVersion = (keySSI, newHashLinkSSI, lastHashLinkSSI, zkpValue, digitalPr
             digitalProof
         };
 
-        const queries = anchoringServicesArray.map((service) => {
+        const addAnchor = (service) => {
             return new Promise((resolve, reject) => {
                 doPut(`${service}/anchor/add/${anchorId}`, JSON.stringify(body), (err, data) => {
                     if (err) {
@@ -108,18 +110,9 @@ const addVersion = (keySSI, newHashLinkSSI, lastHashLinkSSI, zkpValue, digitalPr
                     return resolve(data);
                 });
             })
-        });
+        };
 
-        Promise.allSettled(queries).then((responses) => {
-            const response = responses.find((response) => response.status === 'fulfilled');
-
-            if (!response) {
-                const rejected = responses.find((response) => response.status === 'rejected');
-                return callback(rejected.reason)
-            }
-
-            callback(undefined, response.value);
-        });
+        promiseRunner.runOneSuccessful(anchoringServicesArray, addAnchor, callback);
     });
 
 };

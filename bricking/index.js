@@ -218,7 +218,7 @@ const putBrick = (keySSI, brick, authToken, callback) => {
             return callback(err);
         }
 
-        const queries = brickStorageArray.map((storage) => {
+        const setBrick = (storage) => {
             return new Promise((resolve, reject) => {
                 doPut(`${storage}/bricks/put-brick/${dlDomain}`, brick, (err, data) => {
                     if (err) {
@@ -228,15 +228,14 @@ const putBrick = (keySSI, brick, authToken, callback) => {
                     return resolve(data);
                 });
             })
-        });
+        };
 
-        Promise.allSettled(queries).then((responses) => {
-            const foundBrick = responses.find((response) => response.status === 'fulfilled');
-
-            if (!foundBrick) {
-                return callback({message: 'Brick not created'});
+        promiseRunner.runAll(brickStorageArray, setBrick, null, (err, results) => {
+            if (err || !results.length) {
+                return callback({ message: 'Brick not created' });
             }
 
+            const foundBrick = results[0];
             const brickHash = JSON.parse(foundBrick.value).message;
             if (typeof cache === "undefined") {
                 return callback(undefined, brickHash)
@@ -247,8 +246,6 @@ const putBrick = (keySSI, brick, authToken, callback) => {
                 }
                 callback(err, brickHash);
             });
-        }).catch(err => {
-            return callback(err);
         });
     });
 };
