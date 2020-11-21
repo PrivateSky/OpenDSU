@@ -5,6 +5,8 @@ const config = openDSU.loadApi("config");
 const cachedBricking = require("./cachedBricking");
 const constants = require("../moduleConstants");
 const cache = require("../cache/cachedStores").getCache(constants.CACHE.ENCRYPTED_BRICKS_CACHE);
+const promiseRunner = require("../utils/promise-runner");
+
 /**
  * Get brick
  * @param {hashLinkSSI} hashLinkSSI
