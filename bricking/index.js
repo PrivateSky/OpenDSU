@@ -222,13 +222,16 @@ const putBrick = (keySSI, brick, authToken, callback) => {
 
         const setBrick = (storage) => {
             return new Promise((resolve, reject) => {
-                doPut(`${storage}/bricks/put-brick/${dlDomain}`, brick, (err, data) => {
+                const putResult = doPut(`${storage}/bricks/put-brick/${dlDomain}`, brick, (err, data) => {
                     if (err) {
                         return reject(err);
                     }
 
                     return resolve(data);
                 });
+                if(putResult) {
+                    putResult.then(resolve).catch(reject);
+                }
             })
         };
 
@@ -238,16 +241,21 @@ const putBrick = (keySSI, brick, authToken, callback) => {
             }
 
             const foundBrick = results[0];
-            const brickHash = JSON.parse(foundBrick.value).message;
+            const brickHash = JSON.parse(foundBrick).message;
             if (typeof cache === "undefined") {
                 return callback(undefined, brickHash)
             }
-            return cache.put(brickHash, brick, err => {
-                if (err) {
-                    return callback(err);
-                }
-                callback(err, brickHash);
-            });
+
+            cache
+                .put(brickHash, brick, (err) => {
+                    if (err) {
+                        return callback(err);
+                    }
+                    callback(err, brickHash);
+                })
+                .catch((err) => {
+                    callback(err);
+                });
         });
     });
 };

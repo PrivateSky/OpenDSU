@@ -99,7 +99,7 @@ const addVersion = (keySSI, newHashLinkSSI, lastHashLinkSSI, zkpValue, digitalPr
 
         const addAnchor = (service) => {
             return new Promise((resolve, reject) => {
-                doPut(`${service}/anchor/add/${anchorId}`, JSON.stringify(body), (err, data) => {
+                const putResult = doPut(`${service}/anchor/add/${anchorId}`, JSON.stringify(body), (err, data) => {
                     if (err) {
                         return reject({
                             statusCode: err.statusCode,
@@ -109,6 +109,9 @@ const addVersion = (keySSI, newHashLinkSSI, lastHashLinkSSI, zkpValue, digitalPr
 
                     return resolve(data);
                 });
+                if(putResult) {
+                    putResult.then(resolve).catch(reject);
+                }
             })
         };
 
