@@ -125,7 +125,7 @@ assert.callback("T7 promiseRunner runEnoughForMajority with first fail and defau
       setTimeout(() => {
         if (entry === 1) return reject();
         resolve(entry);
-      }, 100);
+      }, 500);
     });
   };
 
@@ -134,7 +134,7 @@ assert.callback("T7 promiseRunner runEnoughForMajority with first fail and defau
     assert.notNull(result);
     callback();
   });
-});
+}, 10000);
 
 assert.callback("T8 promiseRunner runEnoughForMajority with fails and custom validateResults", (callback) => {
   const entries = [1, 2, 3, 4, 5];
@@ -144,7 +144,7 @@ assert.callback("T8 promiseRunner runEnoughForMajority with fails and custom val
       setTimeout(() => {
         if (entry === 1) return reject();
         resolve(entry);
-      }, 100);
+      }, 500);
     });
   };
 
@@ -161,7 +161,7 @@ assert.callback("T8 promiseRunner runEnoughForMajority with fails and custom val
     assert.notNull(result);
     callback();
   });
-});
+}, 10000);
 
 assert.callback("T9 promiseRunner runEnoughForMajority with fails and custom validateResults starting with 1 in parallel", (callback) => {
   const entries = [1, 2, 3, 4, 5];
@@ -171,7 +171,7 @@ assert.callback("T9 promiseRunner runEnoughForMajority with fails and custom val
       setTimeout(() => {
         if (entry === 1) return reject();
         resolve(entry);
-      }, 50);
+      }, 300);
     });
   };
 
@@ -188,4 +188,4 @@ assert.callback("T9 promiseRunner runEnoughForMajority with fails and custom val
     assert.notNull(result);
     callback();
   });
-});
+}, 10000);
