@@ -1,6 +1,6 @@
-const ENVIRONMENT = require("../overwrite-require/moduleConstants");
+const ENVIRONMENT_TYPES = require("../overwrite-require/moduleConstants");
 module.exports = {
-	ENVIRONMENT,
+	ENVIRONMENT_TYPES,
 	CODE_FOLDER: "/code",
 	CONSTITUTION_FOLDER: '/code/constitution',
 	BLOCKCHAIN_FOLDER: '/blockchain',
@@ -11,6 +11,7 @@ module.exports = {
 	APPS_FOLDER: "/apps",
 	DATA_FOLDER: "/data",
 	MANIFEST_FILE: "/manifest",
+	BDNS_ROOT_HOSTS: "BDNS_ROOT_HOSTS",
 	CACHE: {
 		FS: "fs",
 		INDEXED_DB: "indexedDB",

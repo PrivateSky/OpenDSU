@@ -16,10 +16,12 @@ module.exports.loadApi = function(apiSpaceName){
         case "notifications":return require("./notifications"); break;
         case "resolver":return require("./resolver"); break;
         case "sc":return require("./sc"); break;
-        case "config":return require("./config"); break;
         case "cache":return require("./cache/cachedStores"); break;
+        case "config":return require("./config"); break;
+        case "system":return require("./system"); break;
         default: throw new Error("Unknown API space " + apiSpaceName);
     }
 }
 
 module.exports.constants = require("./moduleConstants.js");
+require("./config/autoConfig");
