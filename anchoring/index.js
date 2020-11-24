@@ -8,6 +8,10 @@ const constants = require("../moduleConstants");
 const cache = require("../cache/cachedStores").getCache(constants.CACHE.ANCHORING_CACHE);
 const promiseRunner = require("../utils/promise-runner");
 
+const isValidVaultCache = () => {
+  return typeof config.get(constants.CACHE.VAULT_TYPE) !== "undefined" && config.get(constants.CACHE.VAULT_TYPE) !== constants.CACHE.NO_CACHE;
+}
+
 /**
  * Get versions
  * @param {keySSI} keySSI
@@ -22,7 +26,7 @@ const versions = (keySSI, authToken, callback) => {
 
     const dlDomain = keySSI.getDLDomain();
     const anchorId = keySSI.getAnchorId();
-    if (dlDomain === constants.DOMAINS.VAULT && typeof config.get(constants.CACHE.VAULT_TYPE) !== "undefined") {
+    if (dlDomain === constants.DOMAINS.VAULT && isValidVaultCache()) {
         return cachedAnchoring.versions(anchorId, callback);
     }
 
@@ -76,7 +80,7 @@ const addVersion = (keySSI, newHashLinkSSI, lastHashLinkSSI, zkpValue, digitalPr
 
     const dlDomain = keySSI.getDLDomain();
     const anchorId = keySSI.getAnchorId();
-    if (dlDomain === constants.DOMAINS.VAULT && typeof config.get(constants.CACHE.VAULT_TYPE) !== "undefined") {
+    if (dlDomain === constants.DOMAINS.VAULT && isValidVaultCache()) {
         return cachedAnchoring.addVersion(anchorId, newHashLinkSSI.getIdentifier(), callback);
     }
     bdns.getAnchoringServices(dlDomain, (err, anchoringServicesArray) => {

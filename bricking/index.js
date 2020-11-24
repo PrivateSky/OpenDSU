@@ -7,6 +7,10 @@ const constants = require("../moduleConstants");
 const cache = require("../cache/cachedStores").getCache(constants.CACHE.ENCRYPTED_BRICKS_CACHE);
 const promiseRunner = require("../utils/promise-runner");
 
+const isValidVaultCache = () => {
+  return typeof config.get(constants.CACHE.VAULT_TYPE) !== "undefined" && config.get(constants.CACHE.VAULT_TYPE) !== constants.CACHE.NO_CACHE;
+}
+
 /**
  * Get brick
  * @param {hashLinkSSI} hashLinkSSI
@@ -23,7 +27,7 @@ const getBrick = (hashLinkSSI, authToken, callback) => {
         authToken = undefined;
     }
 
-    if (dlDomain === constants.DOMAINS.VAULT && typeof config.get(constants.CACHE.VAULT_TYPE) !== "undefined") {
+    if (dlDomain === constants.DOMAINS.VAULT && isValidVaultCache()) {
         return cachedBricking.getBrick(brickHash, callback);
     }
 
@@ -82,7 +86,7 @@ const getMultipleBricks = (hashLinkSSIList, authToken, callback) => {
     const dlDomain = hashLinkSSIList[0].getDLDomain();
     const bricksHashes = hashLinkSSIList.map((hashLinkSSI) => hashLinkSSI.getHash());
 
-    if (dlDomain === constants.DOMAINS.VAULT && typeof config.get(constants.CACHE.VAULT_TYPE) !== "undefined") {
+    if (dlDomain === constants.DOMAINS.VAULT && isValidVaultCache()) {
         return cachedBricking.getMultipleBricks(bricksHashes, callback);
     }
     hashLinkSSIList.forEach(hashLinkSSI => getBrick(hashLinkSSI, authToken, callback));
@@ -211,7 +215,7 @@ const putBrick = (keySSI, brick, authToken, callback) => {
     }
     const dlDomain = keySSI.getDLDomain();
 
-    if (dlDomain === constants.DOMAINS.VAULT && typeof config.get(constants.CACHE.VAULT_TYPE) !== "undefined") {
+    if (dlDomain === constants.DOMAINS.VAULT && isValidVaultCache()) {
         return cachedBricking.putBrick(brick, callback);
     }
 
