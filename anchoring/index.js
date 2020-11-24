@@ -107,6 +107,7 @@ const addVersion = (keySSI, newHashLinkSSI, lastHashLinkSSI, zkpValue, digitalPr
                         });
                     }
 
+                    require("opendsu").loadApi("resolver").invalidateDSUCache(keySSI);
                     return resolve(data);
                 });
                 if(putResult) {

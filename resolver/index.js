@@ -34,7 +34,7 @@ const loadDSU = (keySSI, options, callback) => {
     }
 
     const ssiId = keySSI.getIdentifier();
-    if(dsuInstances[ssiId]){
+    if (dsuInstances[ssiId]) {
         return callback(undefined, dsuInstances[ssiId]);
     }
     const keySSIResolver = initializeResolver(options);
@@ -53,7 +53,7 @@ const loadDSU = (keySSI, options, callback) => {
 
 const createWallet = (templateKeySSI, dsuTypeSSI, options, callback) => {
     let keySSI = keySSISpace.parse(templateKeySSI);
-    if(typeof options === "function"){
+    if (typeof options === "function") {
         callback = options;
         options = {};
     }
@@ -65,7 +65,7 @@ const createWallet = (templateKeySSI, dsuTypeSSI, options, callback) => {
 }
 
 const loadWallet = (secret, options, callback) => {
-    if(typeof options === "function"){
+    if (typeof options === "function") {
         callback = options;
         options = {
             domain: "default"
@@ -74,13 +74,13 @@ const loadWallet = (secret, options, callback) => {
 
     let tmpKeySSI = keySSISpace.buildWalletSSI(options.domain);
 
-    tmpKeySSI.getSeedSSI(secret, (err, seedSSI)=>{
-        if(err){
+    tmpKeySSI.getSeedSSI(secret, (err, seedSSI) => {
+        if (err) {
             return callback(err);
         }
 
-        loadDSU(seedSSI, (err, wallet) =>{
-            if(err){
+        loadDSU(seedSSI, (err, wallet) => {
+            if (err) {
                 return callback(err);
             }
             callback(undefined, wallet);
@@ -96,6 +96,12 @@ const getHandler = () => {
 
 };
 
+function invalidateDSUCache(dsuKeySSI) {
+    // console.log("Invalidating cache ...................");
+    // const ssiId = dsuKeySSI.getIdentifier();
+    // delete dsuInstances[ssiId]
+}
+
 module.exports = {
     createDSU,
     loadDSU,
@@ -103,5 +109,6 @@ module.exports = {
     loadWallet,
     createCustomDSU,
     getHandler,
-    registerDSUFactory
+    registerDSUFactory,
+    invalidateDSUCache
 }

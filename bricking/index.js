@@ -98,8 +98,8 @@ const getMultipleBricks = (hashLinkSSIList, authToken, callback) => {
 //     if (dlDomain === constants.DOMAINS.VAULT && typeof config.get(constants.CACHE.VAULT_TYPE) !== "undefined") {
 //         return cachedBricking.getMultipleBricks(bricksHashes, callback);
 //     }
-//     if($$.environmentType === constants.ENVIRONMENT.BROWSER_ENVIRONMENT_TYPE ||
-//     $$.environmentType === constants.ENVIRONMENT.SERVICE_WORKER_ENVIRONMENT_TYPE){
+//     if($$.environmentType === constants.ENVIRONMENT_TYPES.BROWSER_ENVIRONMENT_TYPE ||
+//     $$.environmentType === constants.ENVIRONMENT_TYPES.SERVICE_WORKER_ENVIRONMENT_TYPE){
 //         cache.get(stringOfHashes, (err, bricks) => {
 //             if (err || typeof bricks === "undefined") {
 //                 console.log("Error /////////////////", err);
@@ -142,8 +142,8 @@ const getMultipleBricks = (hashLinkSSIList, authToken, callback) => {
 //                     return acc;
 //                 }, [])).then(
 //                     (dataArray) => {
-//                         if ($$.environmentType === constants.ENVIRONMENT.BROWSER_ENVIRONMENT_TYPE ||
-//                             $$.environmentType === constants.ENVIRONMENT.SERVICE_WORKER_ENVIRONMENT_TYPE) {
+//                         if ($$.environmentType === constants.ENVIRONMENT_TYPES.BROWSER_ENVIRONMENT_TYPE ||
+//                             $$.environmentType === constants.ENVIRONMENT_TYPES.SERVICE_WORKER_ENVIRONMENT_TYPE) {
 //                             let len = 0;
 //                             dataArray.forEach(arr => len += arr.byteLength);
 //                             const newBuffer = new Buffer(len);
