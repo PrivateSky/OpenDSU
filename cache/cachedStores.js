@@ -1,6 +1,6 @@
 let stores = {};
 const config = require("opendsu").loadApi("config");
-const CacheMixin = require("./CacheMixin");
+const CacheMixin = require("../utils/PendingCallMixin");
 const constants = require("../moduleConstants");
 
 function IndexedDBCache(storeName, lifetime) {
@@ -9,10 +9,10 @@ function IndexedDBCache(storeName, lifetime) {
 
     let db;
     let openRequest = indexedDB.open(storeName);
-    let versionChangeTransaction;
     openRequest.onsuccess = () => {
         db = openRequest.result;
         self.executePendingCalls();
+        self.executeSerialPendingCalls();
     };
 
     openRequest.onupgradeneeded = () => {
@@ -49,60 +49,67 @@ function IndexedDBCache(storeName, lifetime) {
     };
 
     self.put = (key, value, callback) => {
-        if (typeof db === "undefined") {
-            self.addPendingCall(() => {
-                self.put(key, value, callback);
-            });
-        } else {
-            if (typeof versionChangeTransaction === "undefined") {
-                versionChangeTransaction = db.transaction(storeName, "readwrite");
-                const store = versionChangeTransaction.objectStore(storeName);
-                let data;
-                if (typeof lifetime !== "undefined") {
-                    data = {
-                        value: value,
-                        timestamp: Date.now()
-                    }
-                } else {
-                    data = value;
-                }
-                let req = store.put(data, key);
-                versionChangeTransaction.oncomplete = () => {
-                    versionChangeTransaction = undefined;
-                    if (typeof callback === "function") {
-                        callback(undefined, key);
-                    }
+        self.addSerialPendingCall((next) => {
+            let transaction;
+            let store
+            try {
+                transaction = db.transaction(storeName, "readwrite");
+                store = transaction.objectStore(storeName);
+            }catch (e) {
+                callback(e);
+                return next();
+            }
+            let data;
+            if (typeof lifetime !== "undefined") {
+                data = {
+                    value: value,
+                    timestamp: Date.now()
                 }
             } else {
-                self.addPendingCall(() => {
-                    self.put(key, value, callback);
-                });
+                data = value;
             }
-        }
+            let req = store.put(data, key);
+            transaction.oncomplete = () => {
+                if (typeof callback === "function") {
+                    callback(undefined, key);
+                }
+                next();
+            }
+            transaction.onabort = function() {
+                console.log("Error", transaction.error);
+            };
+            req.onerror = function (event){
+                next();
+            }
+        });
     };
 
     self.delete = (key, callback) => {
-        if (typeof db === "undefined") {
-            self.addPendingCall(() => {
-                self.delete(key, callback);
-            });
-        } else {
-            if (typeof versionChangeTransaction === "undefined") {
-                versionChangeTransaction = db.transaction(storeName, "readwrite");
-                const store = versionChangeTransaction.objectStore(storeName);
+            self.addSerialPendingCall((next) => {
+                let transaction;
+                let store
+                try {
+                    transaction = db.transaction(storeName, "readwrite");
+                    store = transaction.objectStore(storeName);
+                }catch (e) {
+                    callback(e);
+                    next();
+                    return;
+                }
                 let req = store.delete(key);
-                versionChangeTransaction.oncomplete = () => {
-                    versionChangeTransaction = undefined;
+                transaction.oncomplete = () => {
                     if (typeof callback === "function") {
                         callback(undefined, key);
                     }
+                    next();
                 }
-            } else {
-                self.addPendingCall(() => {
-                    self.delete(key, callback);
-                });
-            }
-        }
+                transaction.onabort = function() {
+                    console.log("Error", transaction.error);
+                };
+                req.onerror = function (event){
+                    next();
+                }
+            });
     }
 }
 
