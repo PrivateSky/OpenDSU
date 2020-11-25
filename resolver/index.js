@@ -1,6 +1,6 @@
 const KeySSIResolver = require("key-ssi-resolver");
 const keySSISpace = require("opendsu").loadApi("keyssi");
-//const dsuInstances = {};
+const dsuInstances = {};
 const initializeResolver = (options) => {
     options = options || {};
     return KeySSIResolver.initialize(options);
@@ -34,18 +34,18 @@ const loadDSU = (keySSI, options, callback) => {
     }
 
     const ssiId = keySSI.getIdentifier();
-    //if (dsuInstances[ssiId]) {
-        //return callback(undefined, dsuInstances[ssiId]);
-    //}
+    if (dsuInstances[ssiId]) {
+        return callback(undefined, dsuInstances[ssiId]);
+    }
     const keySSIResolver = initializeResolver(options);
     keySSIResolver.loadDSU(keySSI, options, (err, newDSU) => {
         if (err) {
             return callback(err);
         }
 
-        //if (typeof dsuInstances[ssiId] === "undefined") {
-            //dsuInstances[ssiId] = newDSU;
-        //}
+        if (typeof dsuInstances[ssiId] === "undefined") {
+            dsuInstances[ssiId] = newDSU;
+        }
 
         callback(undefined, newDSU);
     });
@@ -98,8 +98,8 @@ const getHandler = () => {
 
 function invalidateDSUCache(dsuKeySSI) {
     // console.log("Invalidating cache ...................");
-    // const ssiId = dsuKeySSI.getIdentifier();
-    // delete dsuInstances[ssiId]
+    const ssiId = dsuKeySSI.getIdentifier();
+    delete dsuInstances[ssiId]
 }
 
 module.exports = {
