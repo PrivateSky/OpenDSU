@@ -68,6 +68,12 @@ const sha256 = (dataObj) => {
     return pskcrypto.pskBase58Encode(hashBuffer);
 };
 
+const generateRandom = (length) => {
+    const pskcrypto = require("pskcrypto");
+    const randomBuffer = pskcrypto.randomBytes(length);
+    return pskcrypto.pskBase58Encode(randomBuffer);
+}
+
 const encodeBase58 = (data) => {
     return encode(templateSeedSSI, data);
 };
@@ -108,6 +114,10 @@ const createCredential = (issuer, credentialSubject, callback) => {
 };
 
 const createAuthToken = (seedSSI, scope, credential, callback) => {
+    createJWT(seedSSI, scope, credential, null, callback);
+};
+
+const createPresentationToken = (seedSSI, scope, credential, callback) => {
     createJWT(seedSSI, scope, credential, null, callback);
 };
 
@@ -160,6 +170,7 @@ const verifyAuthToken = (jwt, listOfIssuers, callback) => {
 
 module.exports = {
     hash,
+    generateRandom,
     encrypt,
     decrypt,
     sign,
@@ -173,5 +184,6 @@ module.exports = {
     createCredential,
     createAuthToken,
     verifyAuthToken,
+    createPresentationToken,
     JWT_ERRORS,
 };
