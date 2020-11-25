@@ -12,7 +12,11 @@ function BDNS() {
             .then((response) => {
                 return response.json()
             }).then((bdnsHosts) => {
-            bdnsCache = bdnsHosts;
+            bdnsHosts = JSON.stringify(bdnsHosts);
+            let baseURL =  require("../utils/getBaseURL")
+
+            bdnsHosts = bdnsHosts.replace(/\$ORIGIN/g, baseURL);
+            bdnsCache = JSON.parse(bdnsHosts);
             isInitialized = true;
             this.executePendingCalls();
         }).catch((err) => console.log(err, "Failed to retrieve bdns hosts"));
