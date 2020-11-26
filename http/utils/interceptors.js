@@ -14,15 +14,26 @@ function unregisterInterceptor(interceptor){
     }
 }
 
-function callInterceptors(target){
-    interceptors.forEach(function(interceptor){
-        target = interceptor(target);
-    });
-    return target;
+function callInterceptors(target, callback){
+    let index = -1;
+    function executeInterceptor(result){
+        index++;
+        if(index >= interceptors.length){
+            return callback(undefined, result);
+        }
+        let interceptor = interceptors[index];
+        interceptor(target, (err, result)=>{
+            if(err){
+                return callback(err);
+            }
+            return executeInterceptor(result);
+        });
+    }
+    executeInterceptor(target);
 }
 
 function setupInterceptors(handler){
-    const interceptMethods = [{name: "doPost", position: 2}, {name:"doPut", position: 2}, {name: "fetch", position: 1}];
+    const interceptMethods = [{name: "doPost", position: 2}, {name:"doPut", position: 2}];
     interceptMethods.forEach(function(target){
         let method = handler[target.name];
         handler[target.name] = function(...args){
@@ -34,14 +45,48 @@ function setupInterceptors(handler){
             }
 
             let data = {url: args[0], headers};
-            let result = callInterceptors(data);
-            if(optionsAvailable){
-                args[target.position]["headers"] = result.headers;
-            }else{
-                args.splice(target.position, 0, {headers: result.headers});
-            }
-            return method(...args);
+            callInterceptors(data, function(err, result){
+                if(optionsAvailable){
+                    args[target.position]["headers"] = result.headers;
+                }else{
+                    args.splice(target.position, 0, {headers: result.headers});
+                }
+
+                return method(...args);
+            });
         }
+    });
+
+    const promisedBasedInterceptors = [{name: "fetch", position: 1}];
+    promisedBasedInterceptors.forEach(function(target){
+        let method = handler[target.name];
+        handler[target.name] = function(...args){
+            return new Promise((resolve, reject) => {
+                let headers = {};
+                let optionsAvailable = false;
+                if(args.length > target.position+1 && ["function", "undefined"].indexOf(typeof args[target.position]) === -1){
+                    headers = args[target.position]["headers"];
+                    optionsAvailable = true;
+                }
+
+                let data = {url: args[0], headers};
+                callInterceptors(data, function(err, result) {
+                    if (optionsAvailable) {
+                        args[target.position]["headers"] = result.headers;
+                    } else {
+                        args.splice(target.position, 0, {headers: result.headers});
+                    }
+
+                    method(...args)
+                        .then((...args) => {
+                            resolve(...args);
+                        })
+                        .catch((...args) => {
+                            reject(...args);
+                        });
+                });
+            });
+        };
     });
 }
 
