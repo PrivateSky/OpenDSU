@@ -41,7 +41,7 @@ const versions = (keySSI, authToken, callback) => {
 
         //TODO: security issue (which response we trust)
         const fetchAnchor = (service) => {
-            return fetch(`${service}/anchor/versions/${keySSI.getAnchorId()}`)
+            return fetch(`${service}/anchor/${dlDomain}/versions/${keySSI.getAnchorId()}`)
                 .then((response) => {
                     return response.json().then((hlStrings) => {
                         const hashLinks = hlStrings.map((hlString) => {
@@ -103,7 +103,7 @@ const addVersion = (keySSI, newHashLinkSSI, lastHashLinkSSI, zkpValue, digitalPr
 
         const addAnchor = (service) => {
             return new Promise((resolve, reject) => {
-                const putResult = doPut(`${service}/anchor/add/${anchorId}`, JSON.stringify(body), (err, data) => {
+                const putResult = doPut(`${service}/anchor/${dlDomain}/add/${anchorId}`, JSON.stringify(body), (err, data) => {
                     if (err) {
                         return reject({
                             statusCode: err.statusCode,

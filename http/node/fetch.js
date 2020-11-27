@@ -188,8 +188,8 @@ function Response(httpRequest, httpResponse) {
 						responseBody = responseBody.toString();
 					}
 					jsonContent = JSON.parse(responseBody);
-				} catch (err) {
-					return reject(err);
+				} catch (e) {
+					return reject(e);
 				}
 				resolve(jsonContent);
 			});
