@@ -37,6 +37,15 @@ const decrypt = (keySSI, encryptedBuffer, callback) => {
     callback(undefined, decryptedBuffer);
 };
 
+const convertDerSignatureToASN1 = (derSignature) => {
+    return require('pskcrypto').decodeDerToASN1ETH(derSignature);
+
+};
+
+const convertASN1SignatureToDer = (ans1Signature) => {
+
+};
+
 const sign = (keySSI, data, callback) => {
     const sign = cryptoRegistry.getSignFunction(keySSI);
     callback(undefined, sign(data, keySSI.getPrivateKey()));
@@ -179,6 +188,7 @@ module.exports = {
     encrypt,
     decrypt,
     sign,
+    convertDerSignatureToASN1,
     verifySignature,
     generateEncryptionKey,
     encode,
