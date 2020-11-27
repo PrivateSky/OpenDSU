@@ -99,7 +99,6 @@ const addVersion = (powerfulKeySSI, newHashLinkSSI, lastHashLinkSSI, zkpValue, c
             if (err) {
                 return callback(err);
             }
-            console.log(digitalProof);
             const body = {
                 hash,
                 digitalProof,
