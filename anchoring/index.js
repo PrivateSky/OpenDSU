@@ -8,7 +8,7 @@ const constants = require("../moduleConstants");
 const promiseRunner = require("../utils/promise-runner");
 
 const isValidVaultCache = () => {
-  return typeof config.get(constants.CACHE.VAULT_TYPE) !== "undefined" && config.get(constants.CACHE.VAULT_TYPE) !== constants.CACHE.NO_CACHE;
+    return typeof config.get(constants.CACHE.VAULT_TYPE) !== "undefined" && config.get(constants.CACHE.VAULT_TYPE) !== constants.CACHE.NO_CACHE;
 }
 
 /**
@@ -40,7 +40,7 @@ const versions = (powerfulKeySSI, authToken, callback) => {
 
         //TODO: security issue (which response we trust)
         const fetchAnchor = (service) => {
-            return fetch(`${service}/anchor/versions/${powerfulKeySSI.getAnchorId()}`)
+            return fetch(`${service}/anchor/${dlDomain}/versions/${powerfulKeySSI.getAnchorId()}`)
                 .then((response) => {
                     return response.json().then((hlStrings) => {
                         const hashLinks = hlStrings.map((hlString) => {
@@ -66,10 +66,15 @@ const versions = (powerfulKeySSI, authToken, callback) => {
  * @param {string} digitalProof
  * @param {function} callback
  */
-const addVersion = (powerfulKeySSI, newHashLinkSSI, lastHashLinkSSI, callback) => {
+const addVersion = (powerfulKeySSI, newHashLinkSSI, lastHashLinkSSI, zkpValue, callback) => {
     if (typeof lastHashLinkSSI === "function") {
         callback = lastHashLinkSSI;
         lastHashLinkSSI = undefined;
+    }
+
+    if (typeof zkpValue === "function") {
+        callback = zkpValue;
+        zkpValue = '';
     }
 
     const dlDomain = powerfulKeySSI.getDLDomain();
@@ -90,21 +95,19 @@ const addVersion = (powerfulKeySSI, newHashLinkSSI, lastHashLinkSSI, callback) =
             last: lastHashLinkSSI ? lastHashLinkSSI.getIdentifier() : null,
             new: newHashLinkSSI.getIdentifier()
         };
-
-        crypto.sign(powerfulKeySSI, hash.new, (err, signature) => {
-            const digitalProof = {
-                signature: crypto.encodeBase58(signature),
-                publicKey: crypto.encodeBase58(powerfulKeySSI.getPublicKey("raw"))
+        createDigitalProof(powerfulKeySSI, hash.new, hash.last, zkpValue, (err, digitalProof) => {
+            if (err) {
+                return callback(err);
             }
-
             const body = {
                 hash,
-                digitalProof
+                digitalProof,
+                zkp: zkpValue
             };
 
             const addAnchor = (service) => {
                 return new Promise((resolve, reject) => {
-                    const putResult = doPut(`${service}/anchor/add/${anchorId}`, JSON.stringify(body), (err, data) => {
+                    const putResult = doPut(`${service}/anchor/${dlDomain}/add/${anchorId}`, JSON.stringify(body), (err, data) => {
                         if (err) {
                             return reject({
                                 statusCode: err.statusCode,
@@ -115,7 +118,7 @@ const addVersion = (powerfulKeySSI, newHashLinkSSI, lastHashLinkSSI, callback) =
                         require("opendsu").loadApi("resolver").invalidateDSUCache(powerfulKeySSI);
                         return resolve(data);
                     });
-                    if(putResult) {
+                    if (putResult) {
                         putResult.then(resolve).catch(reject);
                     }
                 })
@@ -123,8 +126,28 @@ const addVersion = (powerfulKeySSI, newHashLinkSSI, lastHashLinkSSI, callback) =
 
             promiseRunner.runOneSuccessful(anchoringServicesArray, addAnchor, callback);
         });
-        });
+    });
 };
+
+function createDigitalProof(powerfulKeySSI, newHashLinkIdentifier, lastHashLinkIdentifier, zkp, callback) {
+    let anchorId = powerfulKeySSI.getIdentifier();
+    let dataToSign = anchorId + newHashLinkIdentifier + zkp;
+    if (!lastHashLinkIdentifier) {
+        dataToSign += lastHashLinkIdentifier;
+    }
+
+    crypto.sign(powerfulKeySSI, dataToSign, (err, signature) => {
+        if (err) {
+            return callback(err);
+        }
+        const digitalProof = {
+            signature: crypto.encodeBase58(signature),
+            publicKey: crypto.encodeBase58(powerfulKeySSI.getPublicKey("raw"))
+        };
+
+        return callback(undefined, digitalProof);
+    });
+}
 
 const getObservable = (keySSI, fromVersion, authToken, timeout) => {
     // TODO: to be implemented

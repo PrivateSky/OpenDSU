@@ -19,7 +19,7 @@ function BDNS() {
             bdnsCache = JSON.parse(bdnsHosts);
             isInitialized = true;
             this.executePendingCalls();
-        }).catch((err) => console.log(err, "Failed to retrieve bdns hosts"));
+        }).catch((err) => console.log("Failed to retrieve BDNS hosts", err));
     };
 
     retrieveHosts();
