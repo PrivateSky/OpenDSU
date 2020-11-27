@@ -6,40 +6,60 @@ const parse = (ssiString, options) => {
     return keySSIFactory.create(ssiString, options);
 };
 
-const buildSeedSSI = (domain, specificString, control, vn, hint) => {
-    return buildTemplateKeySSI(SSITypes.SEED_SSI, domain, specificString, control, vn, hint);
+const buildSeedSSI = (domain, specificString, control, vn, hint, callback) => {
+    return buildTemplateKeySSI(SSITypes.SEED_SSI, domain, specificString, control, vn, hint, callback);
 };
 
-const buildWalletSSI = (domain, specificString, control, vn, hint) => {
-    return buildTemplateKeySSI(SSITypes.WALLET_SSI, domain, specificString, control, vn, hint);
+const buildWalletSSI = (domain, specificString, control, vn, hint, callback) => {
+    return buildTemplateKeySSI(SSITypes.WALLET_SSI, domain, specificString, control, vn, hint, callback);
 };
 
-const buildSReadSSI = (domain,  specificString, control, vn, hint) => {
-    return buildTemplateKeySSI(SSITypes.SREAD_SSI, domain, specificString, control, vn, hint);
+const buildSReadSSI = (domain,  specificString, control, vn, hint, callback) => {
+    return buildTemplateKeySSI(SSITypes.SREAD_SSI, domain, specificString, control, vn, hint, callback);
 };
 
-const buildSZeroAccessSSI = (domain,  specificString, control, vn, hint) => {
-    return buildTemplateKeySSI(SSITypes.SZERO_ACCESS_SSI, domain, specificString, control, vn, hint);
+const buildSZeroAccessSSI = (domain,  specificString, control, vn, hint, callback) => {
+    return buildTemplateKeySSI(SSITypes.SZERO_ACCESS_SSI, domain, specificString, control, vn, hint, callback);
 };
 
-const buildHashLinkSSI = (domain, specificString, control, vn, hint) => {
-    return buildTemplateKeySSI(SSITypes.HASH_LINK_SSI, domain,  specificString, control, vn, hint);
+const buildHashLinkSSI = (domain, specificString, control, vn, hint, callback) => {
+    return buildTemplateKeySSI(SSITypes.HASH_LINK_SSI, domain,  specificString, control, vn, hint, callback);
 };
 
-const buildTemplateKeySSI = (ssiType, domain, specificString, control, vn, hint) => {
+const buildTemplateKeySSI = (ssiType, domain, specificString, control, vn, hint, callback) => {
+    //only ssiType and domain are mandatory arguments
+    if (typeof specificString === "function") {
+        callback = specificString;
+        specificString = undefined;
+    }
+    if (typeof control === "function") {
+        callback = control;
+        control = undefined;
+    }
+    if (typeof vn === "function") {
+        callback = vn;
+        specificString = undefined;
+    }
+    if (typeof hint === "function") {
+        callback = hint;
+        hint = undefined;
+    }
     const keySSI = keySSIFactory.createType(ssiType);
     keySSI.load(ssiType, domain, specificString, control, vn, hint);
+    if (typeof callback === "function") {
+        callback(undefined, keySSI);
+    }
     return keySSI;
 };
 
-const buildArraySSI = (domain, arr, vn, hint) => {
+const buildArraySSI = (domain, arr, vn, hint, callback) => {
     const arraySSI = keySSIFactory.createType(SSITypes.ARRAY_SSI);
     arraySSI.initialize(domain, arr, vn, hint);
     return arraySSI;
 };
 
-const buildSymmetricalEncryptionSSI = (domain, encryptionKey, control, vn, hint) => {
-    return buildTemplateKeySSI(SSITypes.SYMMETRICAL_ENCRYPTION_SSI, domain, encryptionKey, control, vn, hint);
+const buildSymmetricalEncryptionSSI = (domain, encryptionKey, control, vn, hint, callback) => {
+    return buildTemplateKeySSI(SSITypes.SYMMETRICAL_ENCRYPTION_SSI, domain, encryptionKey, control, vn, hint, callback);
 };
 
 module.exports = {
