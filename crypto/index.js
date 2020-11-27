@@ -10,12 +10,16 @@ templateSeedSSI.load(SSITypes.SEED_SSI, "default");
 const { JWT_ERRORS } = jwtUtils;
 
 const hash = (keySSI, data, callback) => {
+    callback(undefined, hashSync(keySSI, data));
+};
+
+const hashSync = (keySSI, data)=>{
     if (typeof data === "object" && !Buffer.isBuffer(data)) {
         data = JSON.stringify(data);
     }
     const hash = cryptoRegistry.getHashFunction(keySSI);
-    callback(undefined, hash(data));
-};
+    return hash(data);
+}
 
 const encrypt = (keySSI, buffer, callback) => {
     const encrypt = cryptoRegistry.getEncryptionFunction(keySSI);
@@ -33,18 +37,18 @@ const decrypt = (keySSI, encryptedBuffer, callback) => {
     callback(undefined, decryptedBuffer);
 };
 
-const sign = (keySSI, hash, callback) => {
+const sign = (keySSI, data, callback) => {
     const sign = cryptoRegistry.getSignFunction(keySSI);
-    callback(undefined, sign(hash, keySSI.getPrivateKey()));
+    callback(undefined, sign(data, keySSI.getPrivateKey()));
 };
 
-const verifySignature = (keySSI, hash, signature, publicKey, callback) => {
+const verifySignature = (keySSI, data, signature, publicKey, callback) => {
     if (typeof publicKey === "function") {
         callback = publicKey;
         publicKey = keySSI.getPublicKey();
     }
     const verify = cryptoRegistry.getVerifyFunction(keySSI);
-    callback(undefined, verify(hash, publicKey, signature));
+    callback(undefined, verify(data, publicKey, signature));
 };
 
 const generateEncryptionKey = (keySSI, callback) => {
@@ -109,16 +113,16 @@ const verifyJWT = (jwt, rootOfTrustVerificationStrategy, callback) => {
     );
 };
 
-const createCredential = (issuer, credentialSubject, callback) => {
-    createJWT(issuer, "", null, { subject: credentialSubject }, callback);
+const createCredential = (issuerSeedSSI, credentialSubjectSReadSSI, callback) => {
+    createJWT(issuerSeedSSI, "", null, { subject: credentialSubjectSReadSSI }, callback);
 };
 
-const createAuthToken = (seedSSI, scope, credential, callback) => {
+const createAuthToken = (holderSeedSSI, scope, credential, callback) => {
     createJWT(seedSSI, scope, credential, null, callback);
 };
 
-const createPresentationToken = (seedSSI, scope, credential, callback) => {
-    createJWT(seedSSI, scope, credential, null, callback);
+const createPresentationToken = (holderSeedSSI, scope, credential, callback) => {
+    createJWT(holderSeedSSI, scope, credential, null, callback);
 };
 
 const verifyAuthToken = (jwt, listOfIssuers, callback) => {
@@ -170,6 +174,7 @@ const verifyAuthToken = (jwt, listOfIssuers, callback) => {
 
 module.exports = {
     hash,
+    hashSync,
     generateRandom,
     encrypt,
     decrypt,
@@ -178,6 +183,8 @@ module.exports = {
     generateEncryptionKey,
     encode,
     decode,
+    encodeBase58,
+    decodeBase58,
     sha256,
     createJWT,
     verifyJWT,
