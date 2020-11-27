@@ -40,7 +40,7 @@ const versions = (powerfulKeySSI, authToken, callback) => {
 
         //TODO: security issue (which response we trust)
         const fetchAnchor = (service) => {
-            return fetch(`${service}/anchor/versions/${powerfulKeySSI.getAnchorId()}`)
+            return fetch(`${service}/anchor/${dlDomain}/versions/${powerfulKeySSI.getAnchorId()}`)
                 .then((response) => {
                     return response.json().then((hlStrings) => {
                         const hashLinks = hlStrings.map((hlString) => {
