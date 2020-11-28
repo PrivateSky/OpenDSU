@@ -25,6 +25,14 @@ function nowEpochSeconds() {
 }
 
 function createJWT({ seedSSI, scope, credentials, options, hash, encode, sign }, callback) {
+    if(typeof seedSSI === "string"){
+        const keyssiSpace = require('opendsu').loadApi("keyssi");
+        try{
+            seedSSI = keyssiSpace.parse(seedSSI);
+        }catch(e){
+            return callback(e);
+        }
+    }
     const sReadSSI = seedSSI.derive();
 
     let { subject, valability, ...optionsRest } = options || {};
