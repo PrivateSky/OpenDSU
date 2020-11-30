@@ -62,20 +62,20 @@ function setupInterceptors(handler){
         let method = handler[target.name];
         handler[target.name] = function(...args){
             return new Promise((resolve, reject) => {
-                let headers = {};
-                let optionsAvailable = false;
-                if(args.length > target.position+1 && ["function", "undefined"].indexOf(typeof args[target.position]) === -1){
-                    headers = args[target.position]["headers"];
-                    optionsAvailable = true;
+                if (args.length === 1) {
+                    args.push({headers: {}});
                 }
+
+                if(typeof args[1].headers === "undefined"){
+                    args[1].headers = {};
+                }
+                let headers = args[1].headers;
 
                 let data = {url: args[0], headers};
                 callInterceptors(data, function(err, result) {
-                    if (optionsAvailable) {
-                        args[target.position]["headers"] = result.headers;
-                    } else {
-                        args.splice(target.position, 0, {headers: result.headers});
-                    }
+
+                    let options = args[target.position];
+                    options.headers = result.headers;
 
                     method(...args)
                         .then((...args) => {
