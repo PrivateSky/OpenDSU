@@ -6,8 +6,11 @@ function set(key, value) {
 function get(key) {
     return config[key];
 }
+
+const autoconfigFromEnvironment = require("./autoConfigFromEnvironment");
 module.exports = {
     set,
-    get
+    get,
+    autoconfigFromEnvironment
 };
 
