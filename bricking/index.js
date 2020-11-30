@@ -53,7 +53,7 @@ const getBrick = (hashLinkSSI, authToken, callback) => {
                 return callback('No storage provided');
             }
 
-            const queries = brickStorageArray.map((storage) => fetch(`${storage}/bricks/${dlDomain}/get-brick/${brickHash}/${dlDomain}`));
+            const queries = brickStorageArray.map((storage) => fetch(`${storage}/bricking/${dlDomain}/get-brick/${brickHash}/${dlDomain}`));
 
             Promise.all(queries).then((responses) => {
                 responses[0].arrayBuffer().then((data) => {
@@ -226,7 +226,7 @@ const putBrick = (keySSI, brick, authToken, callback) => {
 
         const setBrick = (storage) => {
             return new Promise((resolve, reject) => {
-                const putResult = doPut(`${storage}/bricks/${dlDomain}/put-brick/${dlDomain}`, brick, (err, data) => {
+                const putResult = doPut(`${storage}/bricking/${dlDomain}/put-brick/${dlDomain}`, brick, (err, data) => {
                     if (err) {
                         return reject(err);
                     }
