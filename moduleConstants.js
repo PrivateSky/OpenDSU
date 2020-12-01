@@ -28,5 +28,12 @@ module.exports = {
 	VAULT:{
 		BRICKS_STORE: "bricks",
 		ANCHORS_STORE: "anchors"
+	},
+	LOADER_ENVIRONMENT_JSON:{
+		AGENT: "agent",
+		SERVER: "server",
+		VAULT: "vault",
+		MOBILE: "mobile",
 	}
+
 }
