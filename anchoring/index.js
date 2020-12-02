@@ -130,7 +130,7 @@ const addVersion = (powerfulKeySSI, newHashLinkSSI, lastHashLinkSSI, zkpValue, c
 };
 
 function createDigitalProof(powerfulKeySSI, newHashLinkIdentifier, lastHashLinkIdentifier, zkp, callback) {
-    let anchorId = powerfulKeySSI.getIdentifier();
+    let anchorId = powerfulKeySSI.getAnchorId();
     let dataToSign = anchorId + newHashLinkIdentifier + zkp;
     if (!lastHashLinkIdentifier) {
         dataToSign += lastHashLinkIdentifier;
