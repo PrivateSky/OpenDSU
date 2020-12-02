@@ -136,19 +136,30 @@ function createDigitalProof(powerfulKeySSI, newHashLinkIdentifier, lastHashLinkI
         dataToSign += lastHashLinkIdentifier;
     }
 
-    // return callback(undefined, "somesignature");
+    let ssiType = powerfulKeySSI.getTypeName();
+    switch(ssiType){
+        case constants.KEY_SSIS.SEED_SSI:
+            crypto.sign(powerfulKeySSI, dataToSign, (err, signature) => {
+                if (err) {
+                    return callback(err);
+                }
+                const digitalProof = {
+                    signature: crypto.encodeBase58(signature),
+                    publicKey: crypto.encodeBase58(powerfulKeySSI.getPublicKey("raw"))
+                };
+                return callback(undefined, digitalProof);
+            });
+            break;
 
-    crypto.sign(powerfulKeySSI, dataToSign, (err, signature) => {
-        if (err) {
-            return callback(err);
-        }
-        const digitalProof = {
-            signature: crypto.encodeBase58(signature),
-            publicKey: crypto.encodeBase58(powerfulKeySSI.getPublicKey("raw"))
-        };
-
-        return callback(undefined, digitalProof);
-    });
+        case constants.KEY_SSIS.CONST_SSI:
+        case constants.KEY_SSIS.ARRAY_SSI:
+        case constants.KEY_SSIS.WALLET_SSI:
+            return callback(undefined, {signature:"",publicKey:""})
+            break;
+        default:
+            console.log("Unknown digital proof for " + ssiType + " Defaulting to ConstSSI")
+            return callback(undefined, {signature:"",publicKey:""})
+    }
 }
 
 const getObservable = (keySSI, fromVersion, authToken, timeout) => {

@@ -10,10 +10,6 @@ const buildSeedSSI = (domain, specificString, control, vn, hint, callback) => {
     return buildTemplateKeySSI(SSITypes.SEED_SSI, domain, specificString, control, vn, hint, callback);
 };
 
-const buildWalletSSI = (domain, specificString, control, vn, hint, callback) => {
-    return buildTemplateKeySSI(SSITypes.WALLET_SSI, domain, specificString, control, vn, hint, callback);
-};
-
 const buildSReadSSI = (domain,  specificString, control, vn, hint, callback) => {
     return buildTemplateKeySSI(SSITypes.SREAD_SSI, domain, specificString, control, vn, hint, callback);
 };
@@ -50,6 +46,13 @@ const buildTemplateKeySSI = (ssiType, domain, specificString, control, vn, hint,
         callback(undefined, keySSI);
     }
     return keySSI;
+};
+
+
+const buildWalletSSI = (domain, arrayWIthCredentials) => {
+    let ssi  = buildArraySSI(domain, arrayWIthCredentials);
+    ssi.cast(SSITypes.WALLET_SSI);
+    return parse(ssi.getIdentifier());
 };
 
 const buildArraySSI = (domain, arr, vn, hint, callback) => {

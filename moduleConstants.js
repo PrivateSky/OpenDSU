@@ -34,6 +34,9 @@ module.exports = {
 		SERVER: "server",
 		VAULT: "vault",
 		MOBILE: "mobile",
-	}
-
+	},
+	KEY_SSIS:undefined
 }
+
+const keySSIResolver = require("key-ssi-resolver");
+module.exports.KEY_SSIS = keySSIResolver.SSITypes;

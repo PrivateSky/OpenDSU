@@ -66,9 +66,9 @@ const loadWallet = (domain, secret, callback) => {
     if(typeof domain === "undefined"){
         return callback(Error("A domain was not specified"));
     }
-    let tmpKeySSI = keySSISpace.buildWalletSSI(domain);
+    let tmpKeySSI = keySSISpace.buildWalletSSI(domain, secret);
 
-    tmpKeySSI.getBoundSeedSSI(secret, (err, seedSSI) => {
+    tmpKeySSI.getBoundSeedSSI((err, seedSSI) => {
         if (err) {
             return callback(err);
         }

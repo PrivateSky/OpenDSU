@@ -91,114 +91,7 @@ const getMultipleBricks = (hashLinkSSIList, authToken, callback) => {
     }
     hashLinkSSIList.forEach(hashLinkSSI => getBrick(hashLinkSSI, authToken, callback));
 };
-// const getMultipleBricks = (hashLinkSSIList, authToken, callback) => {
-//     if (typeof authToken === 'function') {
-//         callback = authToken;
-//         authToken = undefined;
-//     }
-//     const dlDomain = hashLinkSSIList[0].getDLDomain();
-//     const bricksHashes = hashLinkSSIList.map((hashLinkSSI) => hashLinkSSI.getHash());
-//     const stringOfHashes = bricksHashes.join("|");
-//     if (dlDomain === constants.DOMAINS.VAULT && typeof config.get(constants.CACHE.VAULT_TYPE) !== "undefined") {
-//         return cachedBricking.getMultipleBricks(bricksHashes, callback);
-//     }
-//     if($$.environmentType === constants.ENVIRONMENT_TYPES.BROWSER_ENVIRONMENT_TYPE ||
-//     $$.environmentType === constants.ENVIRONMENT_TYPES.SERVICE_WORKER_ENVIRONMENT_TYPE){
-//         cache.get(stringOfHashes, (err, bricks) => {
-//             if (err || typeof bricks === "undefined") {
-//                 console.log("Error /////////////////", err);
-//                 getBricks();
-//             } else {
-//                 console.log('Getting file from cache', stringOfHashes);
-//                 if (bricksHashes.length === 1) {
-//                     console.log("brickHashes.length === 1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~`");
-//                     return callback(undefined, bricks)
-//                 }
-//                 // bricks.forEach(brick => callback(undefined, brick));
-//             }
-//         });
-//     }else{
-//         getBricks();
-//     }
-//     function getBricks(){
-//         bdns.getBrickStorages(dlDomain, (err, brickStorageArray) => {
-//             if (!brickStorageArray.length) {
-//                 return callback('No storage provided');
-//             }
-//
-//             let index = 0;
-//             const size = 50;
-//             const queries = [];
-//
-//             while (index < bricksHashes.length) {
-//                 const hashQuery = `${bricksHashes.slice(index, size + index).join('&hashes=')}`;
-//                 index += size;
-//                 queries.push(Promise.allSettled(brickStorageArray.map((storage) => {
-//                     return fetch(`${storage}/bricks/downloadMultipleBricks/${dlDomain}/?hashes=${hashQuery}`)
-//                 })));
-//             }
-//
-//             Promise.all(queries).then((responses) => {
-//                 Promise.all(responses.reduce((acc, response) => {
-//                     const batch = response.find((item) => item.status === 'fulfilled');
-//
-//                     acc.push(batch.value.arrayBuffer());
-//                     return acc;
-//                 }, [])).then(
-//                     (dataArray) => {
-//                         if ($$.environmentType === constants.ENVIRONMENT_TYPES.BROWSER_ENVIRONMENT_TYPE ||
-//                             $$.environmentType === constants.ENVIRONMENT_TYPES.SERVICE_WORKER_ENVIRONMENT_TYPE) {
-//                             let len = 0;
-//                             dataArray.forEach(arr => len += arr.byteLength);
-//                             const newBuffer = new Buffer(len);
-//                             let currentPos = 0;
-//                             while (dataArray.length > 0) {
-//                                 const arrBuf = dataArray.shift();
-//                                 const partialDataView = new DataView(arrBuf);
-//                                 for (let i = 0; i < arrBuf.byteLength; i++) {
-//                                     newBuffer.writeUInt8(partialDataView.getUint8(i), currentPos);
-//                                     currentPos += 1;
-//                                 }
-//                             }
-//                             return cache.put(stringOfHashes, newBuffer, err => {
-//                                 if (err) {
-//                                     console.log("Error at putting ++++++++++++++++++++++++++++++++++", stringOfHashes)
-//                                     return callback(err);
-//                                 }
-//                                 return parseResponse(newBuffer, callback);
-//                             });
-//                         }
-//                         const bricksBuffer = Buffer.concat(dataArray);
-//                         return cache.put(stringOfHashes, bricksBuffer, err => {
-//                             if (err) {
-//                                 console.log("Error at putting ++++++++++++++++++++++++++++++++++", stringOfHashes)
-//                                 return callback(err);
-//                             }
-//                             return parseResponse(bricksBuffer, callback);
-//                         });
-//                         function parseResponse(response, callback) {
-//                             const BRICK_MAX_SIZE_IN_BYTES = 4;
-//
-//                             if (response.length > 0) {
-//                                 const brickSizeBuffer = response.slice(0, BRICK_MAX_SIZE_IN_BYTES);
-//
-//                                 const brickSize = brickSizeBuffer.readUInt32BE();
-//                                 const brickData = response.slice(BRICK_MAX_SIZE_IN_BYTES, brickSize + BRICK_MAX_SIZE_IN_BYTES);
-//                                 callback(null, brickData);
-//
-//                                 response = response.slice(brickSize + BRICK_MAX_SIZE_IN_BYTES);
-//
-//                                 return parseResponse(response, callback);
-//                             }
-//                         }
-//                     });
-//             }).catch((err) => {
-//                 callback(err);
-//             });
-//         })
-//     }
-//
-// };
+
 
 /**
  * Put brick
@@ -241,7 +134,10 @@ const putBrick = (keySSI, brick, authToken, callback) => {
 
         promiseRunner.runAll(brickStorageArray, setBrick, null, (err, results) => {
             if (err || !results.length) {
-                return callback({ message: 'Brick not created' });
+                if(!err){
+                    err = new Error('Failed to create bricks in:' + brickStorageArray );
+                }
+                return callback(err);
             }
 
             const foundBrick = results[0];
