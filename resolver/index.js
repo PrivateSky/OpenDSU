@@ -52,29 +52,23 @@ const loadDSU = (keySSI, options, callback) => {
 };
 
 const createWallet = (templateKeySSI, dsuTypeSSI, options, callback) => {
-    let keySSI = keySSISpace.parse(templateKeySSI);
     if (typeof options === "function") {
         callback = options;
         options = {};
     }
-
     options.dsuTypeSSI = dsuTypeSSI;
 
     const keySSIResolver = initializeResolver(options);
-    keySSIResolver.createDSU(keySSI, options, callback);
+    keySSIResolver.createDSU(templateKeySSI, options, callback);
 }
 
-const loadWallet = (secret, options, callback) => {
-    if (typeof options === "function") {
-        callback = options;
-        options = {
-            domain: "default"
-        };
+const loadWallet = (domain, secret, callback) => {
+    if(typeof domain === "undefined"){
+        return callback(Error("A domain was not specified"));
     }
+    let tmpKeySSI = keySSISpace.buildWalletSSI(domain);
 
-    let tmpKeySSI = keySSISpace.buildWalletSSI(options.domain);
-
-    tmpKeySSI.getSeedSSI(secret, (err, seedSSI) => {
+    tmpKeySSI.getBoundSeedSSI(secret, (err, seedSSI) => {
         if (err) {
             return callback(err);
         }
