@@ -136,7 +136,7 @@ function createDigitalProof(powerfulKeySSI, newHashLinkIdentifier, lastHashLinkI
         dataToSign += lastHashLinkIdentifier;
     }
 
-    return callback(undefined, "somesignature");
+    // return callback(undefined, "somesignature");
 
     crypto.sign(powerfulKeySSI, dataToSign, (err, signature) => {
         if (err) {
