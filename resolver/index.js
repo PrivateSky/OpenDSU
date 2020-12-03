@@ -64,18 +64,18 @@ const createWallet = (templateKeySSI, dsuTypeSSI, options, callback) => {
 
 const loadWallet = (domain, secret, callback) => {
     if(typeof domain === "undefined"){
-        return callback(Error("A domain was not specified"));
+        return callback(createOpenDSUErrorWrapper("A domain was not specified"));
     }
     let tmpKeySSI = keySSISpace.buildWalletSSI(domain, secret);
 
     tmpKeySSI.getBoundSeedSSI((err, seedSSI) => {
         if (err) {
-            return callback(err);
+            return callback(createOpenDSUErrorWrapper("Failed to get bounded SeedSSI", err));
         }
 
         loadDSU(seedSSI, (err, wallet) => {
             if (err) {
-                return callback(err);
+                return callback(createOpenDSUErrorWrapper("Failed to load DSU with SeedSSI" + seedSSI.getIdentifier(true), err));
             }
             callback(undefined, wallet);
         });
