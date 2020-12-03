@@ -51,44 +51,13 @@ const loadDSU = (keySSI, options, callback) => {
     });
 };
 
-const createWallet = (templateKeySSI, dsuTypeSSI, options, callback) => {
-    if (typeof options === "function") {
-        callback = options;
-        options = {};
-    }
-    options.dsuTypeSSI = dsuTypeSSI;
 
-    const keySSIResolver = initializeResolver(options);
-    keySSIResolver.createDSU(templateKeySSI, options, callback);
-}
 
-const loadWallet = (domain, secret, callback) => {
-    if(typeof domain === "undefined"){
-        return callback(createOpenDSUErrorWrapper("A domain was not specified"));
-    }
-    let tmpKeySSI = keySSISpace.buildWalletSSI(domain, secret);
-
-    tmpKeySSI.getBoundSeedSSI((err, seedSSI) => {
-        if (err) {
-            return callback(createOpenDSUErrorWrapper("Failed to get bounded SeedSSI", err));
-        }
-
-        loadDSU(seedSSI, (err, wallet) => {
-            if (err) {
-                return callback(createOpenDSUErrorWrapper("Failed to load DSU with SeedSSI" + seedSSI.getIdentifier(true), err));
-            }
-            callback(undefined, wallet);
-        });
-    });
-}
-
-const createCustomDSU = () => {
-
-};
 
 const getHandler = () => {
-
+    throw Error("Not available yet");
 };
+
 
 function invalidateDSUCache(dsuKeySSI) {
     // console.log("Invalidating cache ...................");
@@ -99,9 +68,6 @@ function invalidateDSUCache(dsuKeySSI) {
 module.exports = {
     createDSU,
     loadDSU,
-    createWallet,
-    loadWallet,
-    createCustomDSU,
     getHandler,
     registerDSUFactory,
     invalidateDSUCache

@@ -4,7 +4,7 @@ function ErrorWrapper(message, err){
     try{
         throw Error(message);
     }catch (e) {
-        this.currentStack = e.stack;
+        this.currentStack = e.stack.toString();
     }
 }
 
