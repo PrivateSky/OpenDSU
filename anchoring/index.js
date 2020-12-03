@@ -23,6 +23,10 @@ const versions = (powerfulKeySSI, authToken, callback) => {
         authToken = undefined;
     }
 
+    if(typeof powerfulKeySSI === "string"){
+         powerfulKeySSI = require("opendsu").loadApi("keyssi").parse(powerfulKeySSI);
+    }
+    
     const dlDomain = powerfulKeySSI.getDLDomain();
     const anchorId = powerfulKeySSI.getAnchorId();
     if (dlDomain === constants.DOMAINS.VAULT && isValidVaultCache()) {
@@ -154,6 +158,7 @@ function createDigitalProof(powerfulKeySSI, newHashLinkIdentifier, lastHashLinkI
         case constants.KEY_SSIS.CONST_SSI:
         case constants.KEY_SSIS.ARRAY_SSI:
         case constants.KEY_SSIS.WALLET_SSI:
+
             return callback(undefined, {signature:"",publicKey:""})
             break;
         default:
