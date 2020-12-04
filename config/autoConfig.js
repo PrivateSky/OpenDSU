@@ -40,8 +40,20 @@ switch ($$.environmentType) {
 }
 
 if($$.environmentType === constants.ENVIRONMENT_TYPES.SERVICE_WORKER_ENVIRONMENT_TYPE){
-    require("../sc").getMainDSU().readFile("./environment.js", (err, envContent) => {
-        let environment = eval(envContent.toString());
-        require("./autoConfigFromEnvironment.js")(environment);
-    })
+    try{
+        require("../sc").getMainDSU().readFile("/environment.js", (err, envContent) => {
+            if(err){
+                console.trace("Failed reading enviroment.js", err);
+            }
+            try{
+                let environment = eval(envContent.toString());
+                require("./autoConfigFromEnvironment.js")(environment);
+            } catch(err){
+                console.trace("Failed evaling  enviroment.js", err);
+            }
+        })
+    }catch(err){
+        console.trace("Failed reading enviroment.js", err);
+    }
+
 }
