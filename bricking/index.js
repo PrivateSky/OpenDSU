@@ -3,7 +3,13 @@ const bdns = openDSU.loadApi("bdns");
 const {fetch, doPut} = openDSU.loadApi("http");
 const constants = require("../moduleConstants");
 const cache = require("../cache/cachedStores").getCache(constants.CACHE.ENCRYPTED_BRICKS_CACHE);
+const cachedBricking = require("./cachedBricking");
 const promiseRunner = require("../utils/promise-runner");
+const config = openDSU.loadApi("config");
+
+const isValidVaultCache = () => {
+    return typeof config.get(constants.CACHE.VAULT_TYPE) !== "undefined" && config.get(constants.CACHE.VAULT_TYPE) !== constants.CACHE.NO_CACHE;
+}
 
 /**
  * Get brick
@@ -20,6 +26,9 @@ const getBrick = (hashLinkSSI, authToken, callback) => {
         authToken = undefined;
     }
 
+    // if (dlDomain === constants.DOMAINS.VAULT && isValidVaultCache()) {
+    //     return cachedBricking.getBrick(brickHash, callback);
+    // }
     if (typeof cache === "undefined") {
         __getBrickFromEndpoint();
     } else {
@@ -114,7 +123,7 @@ const putBrick = (keySSI, brick, authToken, callback) => {
 
                     return resolve(data);
                 });
-                if(putResult) {
+                if (putResult) {
                     putResult.then(resolve).catch(reject);
                 }
             })
@@ -122,8 +131,8 @@ const putBrick = (keySSI, brick, authToken, callback) => {
 
         promiseRunner.runAll(brickStorageArray, setBrick, null, (err, results) => {
             if (err || !results.length) {
-                if(!err){
-                    err = new Error('Failed to create bricks in:' + brickStorageArray );
+                if (!err) {
+                    err = new Error('Failed to create bricks in:' + brickStorageArray);
                 }
                 return callback(err);
             }

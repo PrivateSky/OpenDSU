@@ -4,7 +4,12 @@ const crypto = require("../crypto");
 const {fetch, doPut} = require("../http");
 const constants = require("../moduleConstants");
 const promiseRunner = require("../utils/promise-runner");
+const cachedAnchoring = require("./cachedAnchoring");
+const config = openDSU.loadApi("config");
 
+const isValidVaultCache = () => {
+    return typeof config.get(constants.CACHE.VAULT_TYPE) !== "undefined" && config.get(constants.CACHE.VAULT_TYPE) !== constants.CACHE.NO_CACHE;
+}
 /**
  * Get versions
  * @param {keySSI} powerfulKeySSI
@@ -19,6 +24,11 @@ const versions = (powerfulKeySSI, authToken, callback) => {
     
     const dlDomain = powerfulKeySSI.getDLDomain();
     const anchorId = powerfulKeySSI.getAnchorId();
+
+    // if (dlDomain === constants.DOMAINS.VAULT && isValidVaultCache()) {
+    //     return cachedAnchoring.versions(anchorId, callback);
+    // }
+
 
     bdns.getAnchoringServices(dlDomain, (err, anchoringServicesArray) => {
         if (err) {
@@ -70,6 +80,11 @@ const addVersion = (powerfulKeySSI, newHashLinkSSI, lastHashLinkSSI, zkpValue, c
 
     const dlDomain = powerfulKeySSI.getDLDomain();
     const anchorId = powerfulKeySSI.getAnchorId();
+
+    // if (dlDomain === constants.DOMAINS.VAULT && isValidVaultCache()) {
+    //     return cachedAnchoring.addVersion(anchorId, newHashLinkSSI.getIdentifier(), callback);
+    // }
+
     bdns.getAnchoringServices(dlDomain, (err, anchoringServicesArray) => {
         if (err) {
             return callback(err);
