@@ -39,4 +39,9 @@ switch ($$.environmentType) {
         }
 }
 
-
+if($$.environmentType === constants.ENVIRONMENT_TYPES.SERVICE_WORKER_ENVIRONMENT_TYPE){
+    require("../sc").getMainDSU().readFile("./environment.js", (err, envContent) => {
+        let environment = eval(envContent.toString());
+        require("./autoConfigFromEnvironment.js")(environment);
+    })
+}
