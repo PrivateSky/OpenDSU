@@ -49,10 +49,14 @@ const buildTemplateKeySSI = (ssiType, domain, specificString, control, vn, hint,
 };
 
 
-const buildWalletSSI = (domain, arrayWIthCredentials) => {
-    let ssi  = buildArraySSI(domain, arrayWIthCredentials);
-    ssi.cast(SSITypes.WALLET_SSI);
-    return parse(ssi.getIdentifier());
+const buildWalletSSI = (domain, arrayWIthCredentials, hint) => {
+    try{
+        let ssi  = buildArraySSI(domain, arrayWIthCredentials,undefined,hint);
+        ssi.cast(SSITypes.WALLET_SSI);
+        return parse(ssi.getIdentifier());
+    } catch(err){
+        console.log("Failing to build WalletSSI");
+    }
 };
 
 const buildArraySSI = (domain, arr, vn, hint, callback) => {
