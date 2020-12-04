@@ -21,15 +21,14 @@ const isValidVaultCache = () => {
 const getBrick = (hashLinkSSI, authToken, callback) => {
     const dlDomain = hashLinkSSI.getDLDomain();
     const brickHash = hashLinkSSI.getHash();
-
     if (typeof authToken === 'function') {
         callback = authToken;
         authToken = undefined;
     }
 
-    if (dlDomain === constants.DOMAINS.VAULT && isValidVaultCache()) {
-        return cachedBricking.getBrick(brickHash, callback);
-    }
+    // if (dlDomain === constants.DOMAINS.VAULT && isValidVaultCache()) {
+    //     return cachedBricking.getBrick(brickHash, callback);
+    // }
 
     if (typeof cache === "undefined") {
         __getBrickFromEndpoint();
@@ -86,9 +85,9 @@ const getMultipleBricks = (hashLinkSSIList, authToken, callback) => {
     const dlDomain = hashLinkSSIList[0].getDLDomain();
     const bricksHashes = hashLinkSSIList.map((hashLinkSSI) => hashLinkSSI.getHash());
 
-    if (dlDomain === constants.DOMAINS.VAULT && isValidVaultCache()) {
-        return cachedBricking.getMultipleBricks(bricksHashes, callback);
-    }
+    // if (dlDomain === constants.DOMAINS.VAULT && isValidVaultCache()) {
+    //     return cachedBricking.getMultipleBricks(bricksHashes, callback);
+    // }
     hashLinkSSIList.forEach(hashLinkSSI => getBrick(hashLinkSSI, authToken, callback));
 };
 
@@ -108,15 +107,14 @@ const putBrick = (keySSI, brick, authToken, callback) => {
     }
     const dlDomain = keySSI.getDLDomain();
 
-    if (dlDomain === constants.DOMAINS.VAULT && isValidVaultCache()) {
-        return cachedBricking.putBrick(brick, callback);
-    }
+    // if (dlDomain === constants.DOMAINS.VAULT && isValidVaultCache()) {
+    //     return cachedBricking.putBrick(brick, callback);
+    // }
 
     bdns.getBrickStorages(dlDomain, (err, brickStorageArray) => {
         if (err) {
             return callback(err);
         }
-
         const setBrick = (storage) => {
             return new Promise((resolve, reject) => {
                 const putResult = doPut(`${storage}/bricking/${dlDomain}/put-brick/${dlDomain}`, brick, (err, data) => {
