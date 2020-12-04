@@ -2,14 +2,8 @@ const bdns = require("../bdns");
 const keyssi = require("../keyssi");
 const crypto = require("../crypto");
 const {fetch, doPut} = require("../http");
-const config = require("../config");
-const cachedAnchoring = require("./cachedAnchoring");
 const constants = require("../moduleConstants");
 const promiseRunner = require("../utils/promise-runner");
-
-const isValidVaultCache = () => {
-    return typeof config.get(constants.CACHE.VAULT_TYPE) !== "undefined" && config.get(constants.CACHE.VAULT_TYPE) !== constants.CACHE.NO_CACHE;
-}
 
 /**
  * Get versions
@@ -22,16 +16,9 @@ const versions = (powerfulKeySSI, authToken, callback) => {
         callback = authToken;
         authToken = undefined;
     }
-
-    if(typeof powerfulKeySSI === "string"){
-         powerfulKeySSI = require("opendsu").loadApi("keyssi").parse(powerfulKeySSI);
-    }
     
     const dlDomain = powerfulKeySSI.getDLDomain();
     const anchorId = powerfulKeySSI.getAnchorId();
-    if (dlDomain === constants.DOMAINS.VAULT && isValidVaultCache()) {
-        return cachedAnchoring.versions(anchorId, callback);
-    }
 
     bdns.getAnchoringServices(dlDomain, (err, anchoringServicesArray) => {
         if (err) {
@@ -44,7 +31,7 @@ const versions = (powerfulKeySSI, authToken, callback) => {
 
         //TODO: security issue (which response we trust)
         const fetchAnchor = (service) => {
-            return fetch(`${service}/anchor/${dlDomain}/versions/${powerfulKeySSI.getAnchorId()}`)
+            return fetch(`${service}/anchor/${dlDomain}/versions/${anchorId}`)
                 .then((response) => {
                     return response.json().then((hlStrings) => {
                         const hashLinks = hlStrings.map((hlString) => {
@@ -83,9 +70,6 @@ const addVersion = (powerfulKeySSI, newHashLinkSSI, lastHashLinkSSI, zkpValue, c
 
     const dlDomain = powerfulKeySSI.getDLDomain();
     const anchorId = powerfulKeySSI.getAnchorId();
-    if (dlDomain === constants.DOMAINS.VAULT && isValidVaultCache()) {
-        return cachedAnchoring.addVersion(anchorId, newHashLinkSSI.getIdentifier(), callback);
-    }
     bdns.getAnchoringServices(dlDomain, (err, anchoringServicesArray) => {
         if (err) {
             return callback(err);

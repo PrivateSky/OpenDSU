@@ -1,15 +1,9 @@
 const openDSU = require("opendsu");
 const bdns = openDSU.loadApi("bdns");
 const {fetch, doPut} = openDSU.loadApi("http");
-const config = openDSU.loadApi("config");
-const cachedBricking = require("./cachedBricking");
 const constants = require("../moduleConstants");
 const cache = require("../cache/cachedStores").getCache(constants.CACHE.ENCRYPTED_BRICKS_CACHE);
 const promiseRunner = require("../utils/promise-runner");
-
-const isValidVaultCache = () => {
-  return typeof config.get(constants.CACHE.VAULT_TYPE) !== "undefined" && config.get(constants.CACHE.VAULT_TYPE) !== constants.CACHE.NO_CACHE;
-}
 
 /**
  * Get brick
@@ -25,10 +19,6 @@ const getBrick = (hashLinkSSI, authToken, callback) => {
         callback = authToken;
         authToken = undefined;
     }
-
-    // if (dlDomain === constants.DOMAINS.VAULT && isValidVaultCache()) {
-    //     return cachedBricking.getBrick(brickHash, callback);
-    // }
 
     if (typeof cache === "undefined") {
         __getBrickFromEndpoint();
