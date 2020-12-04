@@ -23,5 +23,6 @@ module.exports.loadApi = function(apiSpaceName){
     }
 }
 
+module.exports.loadAPI = module.exports.loadApi;
 module.exports.constants = require("./moduleConstants.js");
 require("./config/autoConfig");
