@@ -185,6 +185,14 @@ const verifyAuthToken = (jwt, listOfIssuers, callback) => {
     verifyJWT(jwt, rootOfTrustVerificationStrategy, callback);
 };
 
+
+
+function createBloomFilter(options){
+    const BloomFilter = require("psk_dbf");
+    return new BloomFilter(options);
+}
+
+
 module.exports = {
     hash,
     hashSync,
@@ -206,5 +214,6 @@ module.exports = {
     createAuthToken,
     verifyAuthToken,
     createPresentationToken,
+    createBloomFilter,
     JWT_ERRORS,
 };
