@@ -188,7 +188,7 @@ const verifyAuthToken = (jwt, listOfIssuers, callback) => {
 
 
 function createBloomFilter(options){
-    const BloomFilter = require("psk_dbf");
+    const BloomFilter = require("psk-dbf");
     return new BloomFilter(options);
 }
 
