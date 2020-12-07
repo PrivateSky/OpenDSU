@@ -112,7 +112,7 @@ function Response(httpRequest, httpResponse) {
 		httpResponse.on('end', () => {
 			try {
 				if (Array.isArray(rawData)) {
-					rawData = Buffer.from(rawData);
+					rawData = $$.Buffer.from(rawData);
 				}
 				callback(undefined, rawData);
 			} catch (err) {
@@ -184,7 +184,7 @@ function Response(httpRequest, httpResponse) {
 				let jsonContent;
 				try {
 					//do we really need this if ?!
-					if (Buffer.isBuffer(responseBody)) {
+					if ($$.Buffer.isBuffer(responseBody)) {
 						responseBody = responseBody.toString();
 					}
 					jsonContent = JSON.parse(responseBody);

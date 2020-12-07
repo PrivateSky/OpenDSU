@@ -41,9 +41,9 @@ function generateMethodForRequestWithData(httpMethod) {
 
 		const network = getNetworkForOptions(innerUrl);
 
-		if (ArrayBuffer.isView(data) || Buffer.isBuffer(data) || data instanceof ArrayBuffer) {
-			if (!Buffer.isBuffer(data)) {
-				data = Buffer.from(data);
+		if (ArrayBuffer.isView(data) || $$.Buffer.isBuffer(data) || data instanceof ArrayBuffer) {
+			if (!$$.Buffer.isBuffer(data)) {
+				data = $$.Buffer.from(data);
 			}
 
 			options.headers['Content-Type'] = 'application/octet-stream';
@@ -91,7 +91,7 @@ function generateMethodForRequestWithData(httpMethod) {
 			return;
 		}
 
-		if (typeof data !== 'string' && !Buffer.isBuffer(data) && !ArrayBuffer.isView(data)) {
+		if (typeof data !== 'string' && !$$.Buffer.isBuffer(data) && !ArrayBuffer.isView(data)) {
 			data = JSON.stringify(data);
 		}
 

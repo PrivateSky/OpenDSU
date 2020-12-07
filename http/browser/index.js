@@ -40,7 +40,7 @@ function generateMethodForRequestWithData(httpMethod) {
 				buffers.push(data);
 			});
 			data.on("end", function() {
-				const actualContents = Buffer.concat(buffers);
+				const actualContents = $$.Buffer.concat(buffers);
 				xhr.send(actualContents);
 			});
 		}

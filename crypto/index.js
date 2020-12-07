@@ -14,7 +14,7 @@ const hash = (keySSI, data, callback) => {
 };
 
 const hashSync = (keySSI, data)=>{
-    if (typeof data === "object" && !Buffer.isBuffer(data)) {
+    if (typeof data === "object" && !$$.Buffer.isBuffer(data)) {
         data = JSON.stringify(data);
     }
     const hash = cryptoRegistry.getHashFunction(keySSI);
