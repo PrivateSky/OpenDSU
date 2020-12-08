@@ -1,4 +1,8 @@
 const ENVIRONMENT_TYPES = require("../overwrite-require/moduleConstants");
+
+let cachedKeySSIResolver = undefined;
+
+
 module.exports = {
 	ENVIRONMENT_TYPES,
 	CODE_FOLDER: "/code",
@@ -35,8 +39,13 @@ module.exports = {
 		VAULT: "vault",
 		MOBILE: "mobile",
 	},
-	KEY_SSIS:undefined
+	 get KEY_SSIS(){
+		if(cachedKeySSIResolver === undefined){
+			cachedKeySSIResolver = require("key-ssi-resolver");
+		}
+		 return cachedKeySSIResolver.SSITypes;
+	 }
 }
 
-const keySSIResolver = require("key-ssi-resolver");
-module.exports.KEY_SSIS = keySSIResolver.SSITypes;
+
+
