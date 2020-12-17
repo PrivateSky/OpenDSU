@@ -8,12 +8,12 @@ function putBrick(brick, callback) {
     const cache = cachedStores.getCache(storeName);
     crypto.hash(keySSISpace.buildSeedSSI("vault"), brick, (err, brickHash) => {
         if (err) {
-            return callback(err);
+            return callback(createOpenDSUErrorWrapper(`Failed to create brick hash`, err));
         }
 
         cache.put(brickHash, brick, (err, hash) => {
             if (err) {
-                return callback(err);
+                return callback(createOpenDSUErrorWrapper(`Failed to put brick data in cache`, err));
             }
 
             callback(undefined, hash);
@@ -25,7 +25,7 @@ function getBrick(brickHash, callback) {
     const cache = cachedStores.getCache(storeName);
     cache.get(brickHash, (err, brickData) => {
         if (err) {
-            return callback(err);
+            return callback(createOpenDSUErrorWrapper(`Failed to get retrieve brick <${brickHash}> from cache`, err));
         }
 
         callback(undefined, brickData);

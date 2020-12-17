@@ -40,7 +40,7 @@ const loadDSU = (keySSI, options, callback) => {
     const keySSIResolver = initializeResolver(options);
     keySSIResolver.loadDSU(keySSI, options, (err, newDSU) => {
         if (err) {
-            return callback(err);
+            return callback(createOpenDSUErrorWrapper(`Failed to load DSU with keySSI <${keySSI.getIdentifier()}>`, err));
         }
 
         if (typeof dsuInstances[ssiId] === "undefined") {
@@ -60,7 +60,6 @@ const getHandler = () => {
 
 
 function invalidateDSUCache(dsuKeySSI) {
-    // console.log("Invalidating cache ...................");
     const ssiId = dsuKeySSI.getIdentifier();
     delete dsuInstances[ssiId]
 }

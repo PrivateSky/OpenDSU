@@ -2,11 +2,14 @@
 Message Queues API space
 */
 
-let http = require("../index").loadApi("http");
-let bdns = require("../index").loadApi("bdns");
+let http = require("../http");
+let bdns = require("../bdns")
 
 function send(keySSI, message, callback){
     bdns.getAnchoringServices(keySSI, (err, endpoints) => {
+        if(err){
+            return callback(createOpenDSUErrorWrapper(`Failed to get anchoring services from bdns`, err));
+        }
         let url = endpoints[0]+`/mq/send-message/${keySSI}`;
         let options = {body: message};
 
@@ -15,7 +18,7 @@ function send(keySSI, message, callback){
         request.then((response)=>{
             callback(undefined, response);
         }).catch((err)=>{
-            callback(err);
+            return callback(createOpenDSUErrorWrapper(`Failed to send message`, err));
         });
     });
 }

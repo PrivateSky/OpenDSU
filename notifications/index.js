@@ -19,7 +19,7 @@ function publish(keySSI, message, callback){
 		request.then((response)=>{
 			callback(undefined, response);
 		}).catch((err)=>{
-			callback(err);
+			return callback(createOpenDSUErrorWrapper(`Failed to publish message`, err));
 		});
 	});
 }
@@ -29,7 +29,7 @@ function getObservableHandler(keySSI, timeout){
 	let obs = require("../utils/observable").createObservable();
 	bdns.getNotificationEndpoints(keySSI, (err, endpoints) => {
 		if(err || endpoints.length === 0){
-			return callback(new Error("Not available!"));
+			throw (new Error("Not available!"));
 		}
 
 		function makeRequest(){
