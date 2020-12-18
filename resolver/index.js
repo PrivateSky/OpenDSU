@@ -10,9 +10,24 @@ const registerDSUFactory = (type, factory) => {
     KeySSIResolver.DSUFactory.prototype.registerDSUType(type, factory);
 };
 
-const createDSU = (keySSI, options, callback) => {
-    if (typeof keySSI === "string") {
-        keySSI = keySSISpace.parse(keySSI);
+function addDSUInstanceInCache(dsuInstance, callback) {
+    dsuInstance.getKeySSI((err, keySSI) => {
+        if (err) {
+            return callback(createOpenDSUErrorWrapper(`Failed to retrieve keySSI`, err));
+        }
+
+        if(typeof dsuInstances[keySSI] === "undefined"){
+            dsuInstances[keySSI] = dsuInstance;
+        }
+
+        callback(undefined, dsuInstance);
+
+    });
+}
+
+const createDSU = (templateKeySSI, options, callback) => {
+    if (typeof templateKeySSI === "string") {
+        templateKeySSI = keySSISpace.parse(templateKeySSI);
     }
     if (typeof options === "function") {
         callback = options;
@@ -20,7 +35,12 @@ const createDSU = (keySSI, options, callback) => {
     }
 
     const keySSIResolver = initializeResolver(options);
-    keySSIResolver.createDSU(keySSI, options, callback);
+    keySSIResolver.createDSU(templateKeySSI, options, (err, dsuInstance) => {
+        if (err) {
+            return callback(createOpenDSUErrorWrapper(`Failed to create DSU instance`, err));
+        }
+        addDSUInstanceInCache(dsuInstance, callback);
+    });
 };
 
 const loadDSU = (keySSI, options, callback) => {
@@ -38,20 +58,13 @@ const loadDSU = (keySSI, options, callback) => {
         return callback(undefined, dsuInstances[ssiId]);
     }
     const keySSIResolver = initializeResolver(options);
-    keySSIResolver.loadDSU(keySSI, options, (err, newDSU) => {
+    keySSIResolver.loadDSU(keySSI, options, (err, dsuInstance) => {
         if (err) {
-            return callback(createOpenDSUErrorWrapper(`Failed to load DSU with keySSI <${keySSI.getIdentifier()}>`, err));
+            return callback(createOpenDSUErrorWrapper(`Failed to load DSU`, err));
         }
-
-        if (typeof dsuInstances[ssiId] === "undefined") {
-            dsuInstances[ssiId] = newDSU;
-        }
-
-        callback(undefined, newDSU);
+        addDSUInstanceInCache(dsuInstance, callback);
     });
 };
-
-
 
 
 const getHandler = () => {
