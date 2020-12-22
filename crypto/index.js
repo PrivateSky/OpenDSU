@@ -13,7 +13,7 @@ const hash = (keySSI, data, callback) => {
     callback(undefined, hashSync(keySSI, data));
 };
 
-const hashSync = (keySSI, data)=>{
+const hashSync = (keySSI, data) => {
     if (typeof data === "object" && !$$.Buffer.isBuffer(data)) {
         data = JSON.stringify(data);
     }
@@ -48,7 +48,7 @@ const convertASN1SignatureToDer = (ans1Signature) => {
 
 const sign = (keySSI, data, callback) => {
     const sign = cryptoRegistry.getSignFunction(keySSI);
-    if(typeof sign !== "function"){
+    if (typeof sign !== "function") {
         throw Error("Signing not available for " + keySSI.getIdentifier(true));
     } else {
         callback(undefined, sign(data, keySSI.getPrivateKey()));
@@ -106,7 +106,6 @@ const createJWT = (seedSSI, scope, credentials, options, callback) => {
             credentials,
             options,
             hash,
-            encode: encodeBase58,
             sign,
         },
         callback
@@ -118,7 +117,6 @@ const verifyJWT = (jwt, rootOfTrustVerificationStrategy, callback) => {
         {
             jwt,
             rootOfTrustVerificationStrategy,
-            decode: decodeBase58,
             hash,
             verifySignature,
         },
@@ -131,7 +129,7 @@ const createCredential = (issuerSeedSSI, credentialSubjectSReadSSI, callback) =>
 };
 
 const createAuthToken = (holderSeedSSI, scope, credential, callback) => {
-    createJWT(seedSSI, scope, credential, null, callback);
+    createJWT(holderSeedSSI, scope, credential, null, callback);
 };
 
 const createPresentationToken = (holderSeedSSI, scope, credential, callback) => {
@@ -147,16 +145,22 @@ const verifyAuthToken = (jwt, listOfIssuers, callback) => {
         // the JWT doesn't have credentials specified so we cannot check for valid authorizarion
         if (!credentials) return verificationCallback(null, false);
 
+        const currentSubject = jwtUtils.getReadableSSI(subject);
+
         const credentialVerifiers = credentials.map((credential) => {
             return new Promise((resolve) => {
                 verifyJWT(
                     credential,
                     ({ body }, credentialVerificationCallback) => {
                         // check if credential was issued for the JWT that we are verifying the authorization for
-                        const isCredentialIssuedForSubject = body.sub === subject;
+                        const credentialSubject = jwtUtils.getReadableSSI(body.sub);
+                        const isCredentialIssuedForSubject = !!credentialSubject && credentialSubject === currentSubject;
                         if (!isCredentialIssuedForSubject) return credentialVerificationCallback(null, false);
 
-                        const isValidIssuer = listOfIssuers.some((issuer) => issuer === body.iss);
+                        const credentialIssuer = jwtUtils.getReadableSSI(body.iss);
+
+                        const isValidIssuer = listOfIssuers.some((issuer) => !!credentialIssuer
+                            && jwtUtils.getReadableSSI(issuer) === credentialIssuer);
                         credentialVerificationCallback(null, isValidIssuer);
                     },
                     (credentialVerifyError, isCredentialValid) => {
@@ -187,7 +191,7 @@ const verifyAuthToken = (jwt, listOfIssuers, callback) => {
 
 
 
-function createBloomFilter(options){
+function createBloomFilter(options) {
     const BloomFilter = require("psk-dbf");
     return new BloomFilter(options);
 }
@@ -214,6 +218,7 @@ module.exports = {
     createAuthToken,
     verifyAuthToken,
     createPresentationToken,
+    parseJWTSegments: jwtUtils.parseJWTSegments,
     createBloomFilter,
     JWT_ERRORS,
 };

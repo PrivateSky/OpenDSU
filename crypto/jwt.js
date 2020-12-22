@@ -1,4 +1,6 @@
 const keySSIResolver = require("key-ssi-resolver");
+const cryptoRegistry = keySSIResolver.CryptoAlgorithmsRegistry;
+const SSITypes = keySSIResolver.SSITypes;
 const keySSIFactory = keySSIResolver.KeySSIFactory;
 
 const HEADER_TYPE = "SeedSSIJWT";
@@ -18,18 +20,53 @@ const JWT_ERRORS = {
     INVALID_JWT_SIGNATURE: "INVALID_JWT_SIGNATURE",
     ROOT_OF_TRUST_VERIFICATION_FAILED: "ROOT_OF_TRUST_VERIFICATION_FAILED",
     EMPTY_LIST_OF_ISSUERS_PROVIDED: "EMPTY_LIST_OF_ISSUERS_PROVIDED",
+    INVALID_SSI_PROVIDED: "INVALID_SSI_PROVIDED"
+};
+
+const templateSeedSSI = keySSIFactory.createType(SSITypes.SEED_SSI);
+templateSeedSSI.load(SSITypes.SEED_SSI, "default");
+
+function encodeBase58(data) {
+    return cryptoRegistry.getEncodingFunction(templateSeedSSI)(data).toString();
+};
+function decodeBase58(data, keepBuffer) {
+    const decodedValue = cryptoRegistry.getDecodingFunction(templateSeedSSI)(data);
+    if (keepBuffer) {
+        return decodedValue;
+    }
+    return decodedValue ? decodedValue.toString() : null;
 };
 
 function nowEpochSeconds() {
     return Math.floor(new Date().getTime() / 1000);
 }
 
-function createJWT({ seedSSI, scope, credentials, options, hash, encode, sign }, callback) {
-    if(typeof seedSSI === "string"){
+function getReadableSSI(ssi) {
+    if (typeof ssi === "string" && ssi.indexOf('ssi') === 0) {
+        // ssi is actually the readable ssi
+        return ssi;
+    }
+
+    ssi = ssi.getIdentifier ? ssi.getIdentifier() : ssi;
+    let readableSSI = decodeBase58(ssi);
+    if (!readableSSI) {
+        // invalid base58 string
+        return null;
+    }
+    if (readableSSI.indexOf('ssi') !== 0) {
+        // invalid ssi format
+        return null;
+    }
+
+    return readableSSI;
+}
+
+function createJWT({ seedSSI, scope, credentials, options, hash, sign }, callback) {
+    if (typeof seedSSI === "string") {
         const keyssiSpace = require('opendsu').loadApi("keyssi");
-        try{
+        try {
             seedSSI = keyssiSpace.parse(seedSSI);
-        }catch(e){
+        } catch (e) {
             return callback(e);
         }
     }
@@ -37,6 +74,20 @@ function createJWT({ seedSSI, scope, credentials, options, hash, encode, sign },
 
     let { subject, valability, ...optionsRest } = options || {};
     valability = valability || JWT_VALABILITY_SECONDS;
+
+    if (subject) {
+        subject = getReadableSSI(subject);
+    } else {
+        subject = sReadSSI.getIdentifier(true);
+    }
+    if (!subject) {
+        return callback(JWT_ERRORS.INVALID_SSI_PROVIDED);
+    }
+
+    const issuer = sReadSSI.getIdentifier(true);
+    if (!issuer) {
+        return callback(JWT_ERRORS.INVALID_SSI_PROVIDED);
+    }
 
     if (credentials) {
         credentials = Array.isArray(credentials) ? credentials : [credentials];
@@ -48,10 +99,10 @@ function createJWT({ seedSSI, scope, credentials, options, hash, encode, sign },
 
     const now = nowEpochSeconds();
     const body = {
-        sub: subject || sReadSSI.getIdentifier(),
-        // aud: encode(scope),
+        sub: subject,
+        // aud: encodeBase58(scope),
         scope,
-        iss: sReadSSI.getIdentifier(),
+        iss: issuer,
         publicKey: seedSSI.getPublicKey(),
         iat: now,
         nbf: now,
@@ -60,7 +111,7 @@ function createJWT({ seedSSI, scope, credentials, options, hash, encode, sign },
         options: optionsRest,
     };
 
-    const segments = [encode(JSON.stringify(header)), encode(JSON.stringify(body))];
+    const segments = [encodeBase58(JSON.stringify(header)), encodeBase58(JSON.stringify(body))];
 
     const jwtToSign = segments.join(".");
 
@@ -68,8 +119,8 @@ function createJWT({ seedSSI, scope, credentials, options, hash, encode, sign },
         if (hashError) return callback(hashError);
 
         sign(seedSSI, hashResult, (signError, signResult) => {
-            if (signError) return callback(signError);
-            const encodedSignResult = encode(signResult);
+            if (signError || !signResult) return callback(signError);
+            const encodedSignResult = encodeBase58(signResult);
 
             const jwt = `${jwtToSign}.${encodedSignResult}`;
             callback(null, jwt);
@@ -77,30 +128,30 @@ function createJWT({ seedSSI, scope, credentials, options, hash, encode, sign },
     });
 }
 
-function safeParseEncodedJson(decode, data) {
+function safeParseEncodedJson(data, keepBuffer) {
     try {
-        const result = JSON.parse(decode(data));
+        const result = JSON.parse(decodeBase58(data, keepBuffer));
         return result;
     } catch (e) {
         return e;
     }
 }
 
-function parseJWTSegments(jwt, decode, callback) {
+function parseJWTSegments(jwt, callback) {
     if (!jwt) return callback(JWT_ERRORS.EMPTY_JWT_PROVIDED);
     if (typeof jwt !== "string") return callback(JWT_ERRORS.INVALID_JWT_FORMAT);
 
     const segments = jwt.split(".");
     if (segments.length !== 3) return callback(JWT_ERRORS.INVALID_JWT_FORMAT);
 
-    const header = safeParseEncodedJson(decode, segments[0]);
+    const header = safeParseEncodedJson(segments[0]);
     if (header instanceof Error || !header) return callback(JWT_ERRORS.INVALID_JWT_HEADER);
 
-    const body = safeParseEncodedJson(decode, segments[1]);
+    const body = safeParseEncodedJson(segments[1]);
     if (body instanceof Error || !body) return callback(JWT_ERRORS.INVALID_JWT_BODY);
 
     const signatureInput = `${segments[0]}.${segments[1]}`;
-    const signature = decode(segments[2]);
+    const signature = decodeBase58(segments[2], true);
     if (!signature) {
         // the signature couldn't be decoded due to an invalid signature
         return callback(JWT_ERRORS.INVALID_JWT_SIGNATURE);
@@ -130,8 +181,8 @@ function verifyJWTContent(jwtContent, callback) {
     callback(null);
 }
 
-const verifyJWT = ({ jwt, rootOfTrustVerificationStrategy, decode, verifySignature, hash }, callback) => {
-    parseJWTSegments(jwt, decode, (parseError, jwtContent) => {
+const verifyJWT = ({ jwt, rootOfTrustVerificationStrategy, verifySignature, hash }, callback) => {
+    parseJWTSegments(jwt, (parseError, jwtContent) => {
         if (parseError) return callback(parseError);
 
         verifyJWTContent(jwtContent, (verifyError) => {
@@ -167,5 +218,7 @@ const verifyJWT = ({ jwt, rootOfTrustVerificationStrategy, decode, verifySignatu
 module.exports = {
     createJWT,
     verifyJWT,
+    getReadableSSI,
+    parseJWTSegments,
     JWT_ERRORS,
 };
