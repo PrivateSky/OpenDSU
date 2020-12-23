@@ -18,6 +18,7 @@ const options = { subject: DUMMY_IDENTIFIER };
 
 assert.callback("Create and verify valid JWT test", (callback) => {
     const seedSSI = keyssispace.buildSeedSSI("default");
+
     seedSSI.initialize("default", undefined, undefined, undefined, "hint", (err) => {
         if (err) throw err;
 
