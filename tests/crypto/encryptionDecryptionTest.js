@@ -1,12 +1,9 @@
 require("../../../../psknode/bundles/testsRuntime");
 
 const assert = require("double-check").assert;
-const crypto = require("../../index").loadApi("crypto");
-const keySSIResolver = require("key-ssi-resolver");
-const keySSIFactory = keySSIResolver.KeySSIFactory;
-const SSITypes = keySSIResolver.SSITypes;
-
-const seedSSI = keySSIFactory.create(SSITypes.SEED_SSI);
+const crypto = require("../../crypto");
+const keySSISpace = require("../../keyssi");
+const seedSSI = keySSISpace.buildSeedSSI("default");
 assert.callback("Encryption and decryption test", (callback) => {
     seedSSI.initialize("default", undefined, undefined, undefined, "hint", (err) => {
         if (err) {
