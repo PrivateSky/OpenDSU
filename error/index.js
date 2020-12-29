@@ -12,6 +12,28 @@ function createErrorWrapper(message, err){
     return new ErrorWrapper(message, err);
 }
 
+let errorObservers = [];
+function reportUserRelevantError(message, err){
+    errorObservers.forEach( c=> {
+        c(message, err);
+        console.error(message, err);
+    })
+}
+
+function reportUserRelevantWarning(message){
+    errorObservers.forEach( c=> {
+        c(message);
+        console.log(message);
+    })
+}
+
+function observeUserRelevantMessages(callback){
+    errorObservers.push(callback);
+}
+
 module.exports = {
-    createErrorWrapper
+    createErrorWrapper,
+    reportUserRelevantError,
+    reportUserRelevantWarning,
+    observeUserRelevantMessages
 }

@@ -8,6 +8,8 @@
     As you can see, nothing is ever realy updated, even the deletion is done by marking the record with the field "deleted"
  */
 
+const PendingCallMixin = require("../utils/PendingCallMixin");
+
 function BasicDB(storageStrategy){
     let self = this;
     /*

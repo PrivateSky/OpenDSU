@@ -48,6 +48,7 @@ if(!PREVENT_DOUBLE_LOADING_OF_OPENDSU.INITIALISED){
             case "config":return require("./config"); break;
             case "system":return require("./system"); break;
             case "db":return require("./db"); break;
+            case "error":return require("./error"); break;
             default: throw new Error("Unknown API space " + apiSpaceName);
         }
     }
