@@ -10,6 +10,23 @@ const buildSeedSSI = (domain, specificString, control, vn, hint, callback) => {
     return buildTemplateKeySSI(SSITypes.SEED_SSI, domain, specificString, control, vn, hint, callback);
 };
 
+const createSeedSSI = (domain, vn, hint, callback) => {
+    if(typeof vn == "function"){
+        callback = vn;
+        vn = undefined;
+    }
+
+    if(typeof hint == "function"){
+        callback = hint;
+        hint = undefined;
+    }
+
+    let seedSSI = keySSIFactory.createType(SSITypes.SEED_SSI);
+
+    seedSSI.initialize(domain, undefined, undefined, vn, hint, callback );
+    return seedSSI;
+};
+
 const buildSReadSSI = (domain,  specificString, control, vn, hint, callback) => {
     return buildTemplateKeySSI(SSITypes.SREAD_SSI, domain, specificString, control, vn, hint, callback);
 };
@@ -72,6 +89,7 @@ const buildSymmetricalEncryptionSSI = (domain, encryptionKey, control, vn, hint,
 module.exports = {
     parse,
     buildSeedSSI,
+    createSeedSSI,
     buildWalletSSI,
     buildSReadSSI,
     buildSZeroAccessSSI,

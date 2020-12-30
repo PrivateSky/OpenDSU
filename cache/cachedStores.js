@@ -142,7 +142,7 @@ function FSCache(folderName) {
             const filePath =path.join(folderPath, key)
             fs.readFile(filePath, (err, data) => {
                 if (err) {
-                    return callback(createOpenDSUErrorWrapper(`Failed to read file <${filePath}>`, err));
+                    return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to read file <${filePath}>`, err));
                 }
 
                 let content = data;

@@ -19,7 +19,7 @@ function publish(keySSI, message, callback){
 		request.then((response)=>{
 			callback(undefined, response);
 		}).catch((err)=>{
-			return callback(createOpenDSUErrorWrapper(`Failed to publish message`, err));
+			return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to publish message`, err));
 		});
 	});
 }

@@ -9,6 +9,7 @@
                 console.log(err.message);
             } else {
                 volatileMemory = JSON.parse(data);
+                console.log("BigFileStorageStrategy loading state:",volatileMemory);
             }
             if(afterInitialisation) afterInitialisation();
         });
@@ -17,14 +18,20 @@
     }
     function autoStore(){
         if(storeFunction){
-            storeFunction(JSON.stringify(volatileMemory));
+            let storedState = JSON.stringify(volatileMemory);
+            storeFunction(storedState, function(err, res){
+                if(err){
+                    reportUserRelevantError(createOpenDSUErrorWrapper("Failed to autostore db file", err));
+                }
+                console.log("BigFileStorageStrategy storing state:",storedState, volatileMemory);
+            });
         }
     }
 
     function getTable(tableName){
         let table = volatileMemory[tableName];
         if(!table){
-            table = volatileMemory[tableName] = [];
+            table = volatileMemory[tableName] = {};
         }
         return table;
     }

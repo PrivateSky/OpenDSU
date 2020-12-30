@@ -8,7 +8,7 @@ let bdns = require("../bdns")
 function send(keySSI, message, callback){
     bdns.getAnchoringServices(keySSI, (err, endpoints) => {
         if(err){
-            return callback(createOpenDSUErrorWrapper(`Failed to get anchoring services from bdns`, err));
+            return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to get anchoring services from bdns`, err));
         }
         let url = endpoints[0]+`/mq/send-message/${keySSI}`;
         let options = {body: message};
@@ -18,7 +18,7 @@ function send(keySSI, message, callback){
         request.then((response)=>{
             callback(undefined, response);
         }).catch((err)=>{
-            return callback(createOpenDSUErrorWrapper(`Failed to send message`, err));
+            return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to send message`, err));
         });
     });
 }

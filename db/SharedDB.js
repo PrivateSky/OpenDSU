@@ -7,17 +7,27 @@
 function getSharedDB(keySSI, dbName){
     let dbModule = require("./index.js");
     let storageDSU;
-    let pendingRead;
-
-    function doStorageDSUInitialisation(dsu){
-        storageDSU = dsu;
-        if(pendingRead){
-            pendingRead()
-        }
-    }
+    let shareableSSI;
+    let skipFirstRead = false;
+    let pendingReadFunctionCallback = undefined;
 
     if(!dbName){
         throw new Error("Please provide a database name");
+    }
+
+
+    function doStorageDSUInitialisation(dsu, ssi, skip) {
+        storageDSU = dsu;
+        shareableSSI = ssi;
+        skipFirstRead = skip;
+        if(pendingReadFunctionCallback){
+            if (!skipFirstRead) {
+                console.log("Reading state during initialisation for:",keySSI.getAnchorId());
+                readFunction(pendingReadFunctionCallback);
+            } else {
+                pendingReadFunctionCallback(undefined, "{}");
+            }
+        }
     }
 
     let resolver = require("../resolver");
@@ -28,19 +38,19 @@ function getSharedDB(keySSI, dbName){
     if(keySSI.getTypeName() === constants.KEY_SSIS.SEED_SSI){
         let writableDSU;
         function createWritableDSU(){
-            let writableSSI = keySSIApis.buildTemplateKeySSI(constants.KEY_SSIS.SEED_SSI, keySSI.getDLDomain);
+            let writableSSI = keySSIApis.buildTemplateKeySSI(constants.KEY_SSIS.SEED_SSI, keySSI.getDLDomain());
             resolver.createDSU(writableSSI, function(err,res){
                 writableDSU = res;
                 createWrapperDSU();
             });
         }
         function createWrapperDSU(){
-            resolver.createDSU(keySSI, function(err,res){
-                doStorageDSUInitialisation(res);
-                storageDSU.mount("/data", writableDSU.getCreationSSI(), function(err,res){
+            resolver.createDSUForExistingSSI(keySSI, function(err,res){
+                res.mount("/data", writableDSU.getCreationSSI(), function(err, resSSI){
                     if(err){
-                        reportUserRelevantError("Failed to create writable DSU while initialising shared database " + dbName, err);
+                        return reportUserRelevantError("Failed to create writable DSU while initialising shared database " + dbName, err);
                     }
+                    doStorageDSUInitialisation(res, keySSI.derive(), true);
                 });
             });
         }
@@ -49,24 +59,23 @@ function getSharedDB(keySSI, dbName){
     } else {
         resolver.loadDSU(keySSI, function(err,res){
             if(err){
-                reportUserRelevantError("Failed to load thr DSU of a shared database " + dbName, err);
+                reportUserRelevantError("Failed to load the DSU of a shared database " + dbName, err);
             }
-            doStorageDSUInitialisation(res);
+            doStorageDSUInitialisation(res, keySSI, false);
         });
     }
 
 
-    function doRead(callback){
-        storageDSU.readFile(`/data/${dbName}`, callback);
-    }
-
     function readFunction(callback){
         if(storageDSU){
-            doRead(callback);
-        } else {
-            pendingRead = function(){
-                doRead(callback);
+            if(skipFirstRead) {
+                callback(undefined, "{}");
+            } else {
+                console.log("Reading state for:",keySSI.getAnchorId());
+                storageDSU.readFile(`/data/${dbName}`, callback);
             }
+        } else {
+            pendingReadFunctionCallback = callback;
         }
     }
 
@@ -81,6 +90,10 @@ function getSharedDB(keySSI, dbName){
         setTimeout(function(){
             db.finishInitialisation();
         },1)
+    }
+
+    db.getShareableSSI = function(){
+        return shareableSSI;
     }
     return db;
 }

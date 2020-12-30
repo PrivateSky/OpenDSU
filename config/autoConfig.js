@@ -25,6 +25,7 @@ switch ($$.environmentType) {
     case constants.ENVIRONMENT_TYPES.SERVICE_WORKER_ENVIRONMENT_TYPE:
         if (typeof self !== "undefined") {
             self.createOpenDSUErrorWrapper          = errorModule.createErrorWrapper;
+            self.OpenDSUSafeCallback                 = errorModule.OpenDSUSafeCallback;
             self.reportUserRelevantWarning          = errorModule.reportUserRelevantWarning;
             self.reportUserRelevantError            = errorModule.reportUserRelevantError;
         }
@@ -32,6 +33,7 @@ switch ($$.environmentType) {
     case constants.ENVIRONMENT_TYPES.BROWSER_ENVIRONMENT_TYPE:
         if (typeof window !== "undefined") {
             window.createOpenDSUErrorWrapper        = errorModule.createErrorWrapper;
+            window.OpenDSUSafeCallback              = errorModule.OpenDSUSafeCallback;
             window.reportUserRelevantWarning        = errorModule.reportUserRelevantWarning;
             window.reportUserRelevantError          = errorModule.reportUserRelevantError;
         }
@@ -40,6 +42,7 @@ switch ($$.environmentType) {
     default:
         if (typeof global !== "undefined") {
             global.createOpenDSUErrorWrapper        = errorModule.createErrorWrapper;
+            global.OpenDSUSafeCallback              = errorModule.OpenDSUSafeCallback;
             global.reportUserRelevantWarning        = errorModule.reportUserRelevantWarning;
             global.reportUserRelevantError          = errorModule.reportUserRelevantError;
         }

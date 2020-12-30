@@ -29,7 +29,6 @@ module.exports.bindAutoPendingFunctions = function(obj, exceptionList){
                obj.addSerialPendingCall( function(next){
                    let callback = args[args.length -1];
                    if(typeof callback === "function"){
-                       console.log("call next");
                        args[args.length -1] = function(...args){
                            callback(...args);
                            next();

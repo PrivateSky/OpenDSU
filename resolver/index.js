@@ -13,7 +13,7 @@ const registerDSUFactory = (type, factory) => {
 function addDSUInstanceInCache(dsuInstance, callback) {
     dsuInstance.getKeySSI((err, keySSI) => {
         if (err) {
-            return callback(createOpenDSUErrorWrapper(`Failed to retrieve keySSI`, err));
+            return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to retrieve keySSI`, err));
         }
 
         if(typeof dsuInstances[keySSI] === "undefined"){
@@ -37,10 +37,28 @@ const createDSU = (templateKeySSI, options, callback) => {
     const keySSIResolver = initializeResolver(options);
     keySSIResolver.createDSU(templateKeySSI, options, (err, dsuInstance) => {
         if (err) {
-            return callback(createOpenDSUErrorWrapper(`Failed to create DSU instance`, err));
+            return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to create DSU instance`, err));
         }
-        addDSUInstanceInCache(dsuInstance, callback);
+        dsuInstance.dsuLog("DSU created on " + Date.now(), addInCache);
+        function addInCache(){
+            addDSUInstanceInCache(dsuInstance, function(){
+            callback(undefined, dsuInstance)
+            });
+        }
     });
+};
+
+
+const createDSUForExistingSSI = (ssi, options, callback) => {
+    if(typeof options === "function"){
+        callback = options;
+        options = {};
+    }
+    if(!options){
+        options = {};
+    }
+    options.useSSIAsIdentifier = true;
+    createDSU(ssi, options, callback);
 };
 
 const loadDSU = (keySSI, options, callback) => {
@@ -60,7 +78,7 @@ const loadDSU = (keySSI, options, callback) => {
     const keySSIResolver = initializeResolver(options);
     keySSIResolver.loadDSU(keySSI, options, (err, dsuInstance) => {
         if (err) {
-            return callback(createOpenDSUErrorWrapper(`Failed to load DSU`, err));
+            return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to load DSU`, err));
         }
         addDSUInstanceInCache(dsuInstance, callback);
     });
@@ -79,6 +97,7 @@ function invalidateDSUCache(dsuKeySSI) {
 
 module.exports = {
     createDSU,
+    createDSUForExistingSSI,
     loadDSU,
     getHandler,
     registerDSUFactory,

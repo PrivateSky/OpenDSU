@@ -63,7 +63,6 @@ function BasicDB(storageStrategy){
         Get a single row from a table
      */
     this.getRecord = function(tableName, key, callback){
-        console.log("getRecord Log:", tableName, key, callback);
         storageStrategy.getRecord(tableName, key, function(err,res){
             if(err || res.__deleted){
                 return callback( createOpenDSUErrorWrapper(`Missing record in table ${tableName} and key ${key}`, err));

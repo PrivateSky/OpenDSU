@@ -7,7 +7,7 @@ function addVersion(anchorId, newHashLinkId, callback) {
     const cache = cachedStores.getCache(storeName);
     cache.get(anchorId, (err, hashLinkIds) => {
         if (err) {
-            return callback(createOpenDSUErrorWrapper(`Failed to get anchor <${anchorId}> from cache`, err));
+            return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to get anchor <${anchorId}> from cache`, err));
         }
 
         if (typeof hashLinkIds === "undefined") {
@@ -23,7 +23,7 @@ function versions(anchorId, callback) {
     const cache = cachedStores.getCache(storeName);
     cache.get(anchorId, (err, hashLinkIds) => {
         if (err) {
-            return callback(createOpenDSUErrorWrapper(`Failed to get anchor <${anchorId}> from cache`, err));
+            return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to get anchor <${anchorId}> from cache`, err));
         }
 
         if (typeof hashLinkIds === "undefined") {
