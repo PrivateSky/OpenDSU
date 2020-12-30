@@ -28,7 +28,7 @@ function PendingCallMixin(target) {
         const fn = serialPendingCalls.shift();
         if (typeof fn !== "undefined") {
             try {
-                fn(function (arg) {
+                fn(function () {
                     setTimeout(() => {
                         next();
                     }, 0);

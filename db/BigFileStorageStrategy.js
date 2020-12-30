@@ -5,7 +5,11 @@
     }
     if(loadFunction){
         loadFunction( (err, data) => {
-            volatileMemory = JSON.parse(data);
+            if(err){
+                console.log(err.message);
+            } else {
+                volatileMemory = JSON.parse(data);
+            }
             if(afterInitialisation) afterInitialisation();
         });
     } else {
@@ -72,7 +76,7 @@
     this.getRecord = function(tableName, key, callback){
         let tbl = getTable(tableName);
         let record = tbl[key];
-        if( record=== undefined){
+        if( record === undefined){
             return callback(new Error("Can't retrieve a record for key "+ key))
         }
         callback(undefined,record);

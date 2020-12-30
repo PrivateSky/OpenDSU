@@ -27,7 +27,6 @@ function getSharedDB(keySSI, dbName){
 
     if(keySSI.getTypeName() === constants.KEY_SSIS.SEED_SSI){
         let writableDSU;
-
         function createWritableDSU(){
             let writableSSI = keySSIApis.buildTemplateKeySSI(constants.KEY_SSIS.SEED_SSI, keySSI.getDLDomain);
             resolver.createDSU(writableSSI, function(err,res){
@@ -38,13 +37,15 @@ function getSharedDB(keySSI, dbName){
         function createWrapperDSU(){
             resolver.createDSU(keySSI, function(err,res){
                 doStorageDSUInitialisation(res);
-                storageDSU.mount("/data", writableDSU.getKeySSI(), function(err,res){
+                storageDSU.mount("/data", writableDSU.getCreationSSI(), function(err,res){
                     if(err){
                         reportUserRelevantError("Failed to create writable DSU while initialising shared database " + dbName, err);
                     }
                 });
             });
         }
+
+        createWritableDSU();
     } else {
         resolver.loadDSU(keySSI, function(err,res){
             if(err){
@@ -69,15 +70,18 @@ function getSharedDB(keySSI, dbName){
         }
     }
 
-    function writeFunction(dbState){
+    function writeFunction(dbState,callback){
         storageDSU.writeFile(`/data/${dbName}`,dbState, callback);
     }
     let storageStrategy = dbModule.getBigFileStorageStrategy(readFunction, writeFunction, onInitialisationDone);
-    function onInitialisationDone(){
-        db.finishInitialisation();
-    }
 
     let db = bindAutoPendingFunctions(dbModule.getBasicDB(storageStrategy), {});
+
+    function onInitialisationDone(){
+        setTimeout(function(){
+            db.finishInitialisation();
+        },1)
+    }
     return db;
 }
 

@@ -24,10 +24,20 @@ module.exports.bindAutoPendingFunctions = function(obj, exceptionList){
    function getWrapper(func){
        return function(...args){
            if(isInitialised){
-               func.call(...args);
+               func(...args);
            } else {
-               obj.addSerialPendingCall(function(){
-                   func.call(...args);
+               obj.addSerialPendingCall( function(next){
+                   let callback = args[args.length -1];
+                   if(typeof callback === "function"){
+                       console.log("call next");
+                       args[args.length -1] = function(...args){
+                           callback(...args);
+                           next();
+                       }
+                   } else {
+                       next();
+                   }
+                   func(...args);
                })
            }
        }.bind(obj);
