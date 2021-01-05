@@ -32,20 +32,9 @@ assert.callback("DB Indexing test", (testFinishCallback) => {
             let storageSSI = keySSIApis.createSeedSSI("default");
 
             let mydb = db.getSharedDB(storageSSI, "testDb");
-
-            setTimeout(function(){
-                mydb.insertRecord("test", "key1", {value:"v1"});
-            },100)
-
-            setTimeout(function(){
-                mydb.updateRecord("test", "key1", {value:"v2"});
-            },1000)
-
-
-            setTimeout(function(){
-                mydb.updateRecord("test", "key1", {value:"v3"});
-            },2000)
-
+            mydb.insertRecord("test", "key1", {value:"v1"});
+            mydb.updateRecord("test", "key1", {value:"v2"});
+            mydb.updateRecord("test", "key1", {value:"v3"});
 
            setTimeout(function(){
                testPersistence(mydb.getShareableSSI());
@@ -54,7 +43,9 @@ assert.callback("DB Indexing test", (testFinishCallback) => {
     });
 }, 6000);
 /*
-TODO: check why the final timeot of 5000 ms leadas to the test failure. What takes so much?
+TODO:
+ - check why the final timeot of 5000 ms leadas to the test failure. What takes so much?
+ - compare with SharedDBTest... those timeouts make a difference. Why?
 
  */
 

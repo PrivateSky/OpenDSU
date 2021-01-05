@@ -15,9 +15,11 @@ function BasicDB(storageStrategy){
     /*
         Get the whole content of the table and asynchorunsly return an array with all the  records satisfying the condition tested by the filterFunction
      */
-    this.filterTable = function(tableName, filterFunction, callback){
+    this.filter = function(tableName, filterFunction, callback){
         storageStrategy.filterTable(tableName, filterFunction, callback);
     };
+
+    this.query = this.filter;
 
     function getDefaultCallback(message, tableName, key){
         return function (err,res){
