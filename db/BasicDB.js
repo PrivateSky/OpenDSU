@@ -42,7 +42,7 @@ function BasicDB(storageStrategy){
     };
 
     /*
-        Update a record, return error if does not exists
+        Update a record, does not return an error if does not exists
      */
     this.updateRecord = function(tableName, key, record, callback){
         callback = callback?callback:getDefaultCallback("Updating a record", tableName, key);
@@ -51,8 +51,12 @@ function BasicDB(storageStrategy){
             record.__version++;
             storageStrategy.updateRecord(tableName, key, record, callback);
         }
-        if(record.__version == undefined){
+
+        if(record.__version === undefined){
             self.getRecord(tableName,key, function(err,res){
+                if(err || !res){
+                    res = {__version:-1};
+                }
                 record.__version = res.__version;
                 doVersionIncAndUpdate();
             });

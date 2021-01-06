@@ -54,7 +54,7 @@ function getSharedDB(keySSI, dbName){
                 });
             });
         }
-
+        reportUserRelevantWarning("Creating a new shared database");
         createWritableDSU();
     } else {
         resolver.loadDSU(keySSI, function(err,res){
@@ -62,6 +62,7 @@ function getSharedDB(keySSI, dbName){
                 reportUserRelevantError("Failed to load the DSU of a shared database " + dbName, err);
             }
             doStorageDSUInitialisation(res, keySSI, false);
+            reportUserRelevantWarning("Loading a shared database");
         });
     }
 
