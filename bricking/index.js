@@ -144,16 +144,13 @@ const putBrick = (keySSI, brick, authToken, callback) => {
                 return callback(undefined, brickHash)
             }
 
-            cache
-                .put(brickHash, brick, (err) => {
+            cache.put(brickHash, brick, (err) => {
                     if (err) {
                         return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to put brick <${brickHash}> in cache`, err));
                     }
                     callback(undefined, brickHash);
                 })
-                .catch((err) => {
-                    callback(err);
-                });
+
         });
     });
 };

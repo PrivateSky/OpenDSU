@@ -8,10 +8,11 @@
     As you can see, nothing is ever realy updated, even the deletion is done by marking the record with the field "deleted"
  */
 
-const PendingCallMixin = require("../utils/PendingCallMixin");
+const ObservableMixin  = require("../utils/ObservableMixin");
 
 function BasicDB(storageStrategy){
     let self = this;
+    ObservableMixin(this);
     /*
         Get the whole content of the table and asynchorunsly return an array with all the  records satisfying the condition tested by the filterFunction
      */

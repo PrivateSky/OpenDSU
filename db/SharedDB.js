@@ -5,6 +5,7 @@
     This scheme is useful to share the database without sharing the SeedSSI of the wrapper DSU as this is usually used for signing, etc
  */
 function getSharedDB(keySSI, dbName){
+    let db;
     let dbModule = require("./index.js");
     let storageDSU;
     let shareableSSI;
@@ -15,20 +16,21 @@ function getSharedDB(keySSI, dbName){
         throw new Error("Please provide a database name");
     }
 
-
-    function doStorageDSUInitialisation(dsu, ssi, skip) {
-        storageDSU = dsu;
-        shareableSSI = ssi;
-        skipFirstRead = skip;
-        if(pendingReadFunctionCallback){
-            if (!skipFirstRead) {
-                console.log("Reading state during initialisation for:",keySSI.getAnchorId());
-                readFunction(pendingReadFunctionCallback);
-            } else {
-                pendingReadFunctionCallback(undefined, "{}");
+    let doStorageDSUInitialisation = registerMandatoryCallback(
+            function (dsu, ssi, skip) {
+            storageDSU = dsu;
+            shareableSSI = ssi;
+            skipFirstRead = skip;
+            if(pendingReadFunctionCallback){
+                if (!skipFirstRead) {
+                    console.log("Reading state during initialisation for:",keySSI.getAnchorId());
+                    readFunction(pendingReadFunctionCallback);
+                } else {
+                    pendingReadFunctionCallback(undefined, "{}");
+                }
             }
-        }
-    }
+            db.dispatchEvent("initialised", storageDSU);
+        });
 
     let resolver = require("../resolver");
     let keySSIApis = require("../keyssi");
@@ -85,7 +87,7 @@ function getSharedDB(keySSI, dbName){
     }
     let storageStrategy = dbModule.getBigFileStorageStrategy(readFunction, writeFunction, onInitialisationDone);
 
-    let db = bindAutoPendingFunctions(dbModule.getBasicDB(storageStrategy), {});
+    db = bindAutoPendingFunctions(dbModule.getBasicDB(storageStrategy), {});
 
     function onInitialisationDone(){
         setTimeout(function(){

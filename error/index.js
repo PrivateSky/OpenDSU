@@ -13,6 +13,29 @@ function createErrorWrapper(message, err){
     return ErrorWrapper(message, err);
 }
 
+function registerMandatoryCallback(callback, timeout){
+    if(timeout == undefined){
+        timeout = 5000; //5 seconds
+    }
+    let callbackCalled = false;
+    let callStackErr = false;
+    try{
+        throw new Error("Callback should be called");
+    } catch(err){
+        callStackErr = err;
+    }
+    setTimeout(function(){
+        if(!callbackCalled){
+            reportUserRelevantError("Expected callback not called after " + timeout + " seconds. The calling stack is here: ", callStackErr);
+        }
+    }, timeout);
+
+    return function(...args){
+        callbackCalled = true;
+        callback(...args);
+    };
+}
+
 function OpenDSUSafeCallback(callback){
     if(callback) {
         return callback;
@@ -50,5 +73,6 @@ module.exports = {
     reportUserRelevantError,
     reportUserRelevantWarning,
     observeUserRelevantMessages,
-    OpenDSUSafeCallback
+    OpenDSUSafeCallback,
+    registerMandatoryCallback,
 }
