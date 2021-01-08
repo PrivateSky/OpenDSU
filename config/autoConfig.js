@@ -27,8 +27,8 @@ switch ($$.environmentType) {
             self.createOpenDSUErrorWrapper          = errorModule.createErrorWrapper;
             self.OpenDSUSafeCallback                = errorModule.OpenDSUSafeCallback;
             self.reportUserRelevantWarning          = errorModule.reportUserRelevantWarning;
-            self.reportUserRelevantInfo             = errorModule.reportUserRelevantWarning;
-            self.reportDevRelevantInfo              = errorModule.reportUserRelevantWarning;
+            self.reportUserRelevantInfo             = errorModule.reportUserRelevantInfo;
+            self.reportDevRelevantInfo              = errorModule.reportDevRelevantInfo;
             self.reportUserRelevantError            = errorModule.reportUserRelevantError;
             self.registerMandatoryCallback          = errorModule.registerMandatoryCallback
         }
@@ -38,10 +38,10 @@ switch ($$.environmentType) {
             window.createOpenDSUErrorWrapper        = errorModule.createErrorWrapper;
             window.OpenDSUSafeCallback              = errorModule.OpenDSUSafeCallback;
             window.reportUserRelevantWarning        = errorModule.reportUserRelevantWarning;
-            window.reportUserRelevantInfo           = errorModule.reportUserRelevantWarning;
-            window.reportDevRelevantInfo            = errorModule.reportUserRelevantWarning;
+            window.reportUserRelevantInfo           = errorModule.reportUserRelevantInfo;
+            window.reportDevRelevantInfo            = errorModule.reportDevRelevantInfo;
             window.reportUserRelevantError          = errorModule.reportUserRelevantError;
-            window.registerMandatoryCallback          = errorModule.registerMandatoryCallback
+            window.registerMandatoryCallback        = errorModule.registerMandatoryCallback
         }
         break;
     case constants.ENVIRONMENT_TYPES.NODEJS_ENVIRONMENT_TYPE:
@@ -51,7 +51,7 @@ switch ($$.environmentType) {
             global.OpenDSUSafeCallback              = errorModule.OpenDSUSafeCallback;
             global.reportUserRelevantWarning        = errorModule.reportUserRelevantWarning;
             global.reportUserRelevantError          = errorModule.reportUserRelevantError;
-            global.reportDevRelevantInfo            = errorModule.reportUserRelevantWarning;
+            global.reportDevRelevantInfo            = errorModule.reportDevRelevantInfo;
             global.reportUserRelevantError          = errorModule.reportUserRelevantError;
             global.registerMandatoryCallback        = errorModule.registerMandatoryCallback
         }

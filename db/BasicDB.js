@@ -50,7 +50,11 @@ function BasicDB(storageStrategy){
 
         function doVersionIncAndUpdate(){
             record.__version++;
-            storageStrategy.updateRecord(tableName, key, record, callback);
+            if(record.__version == 0){
+                storageStrategy.insertRecord(tableName, key, record, callback);
+            } else {
+                storageStrategy.updateRecord(tableName, key, record, callback);
+            }
         }
 
         if(record.__version === undefined){

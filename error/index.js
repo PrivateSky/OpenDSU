@@ -6,10 +6,22 @@ function ErrorWrapper(message, err){
         newErr = e;
     }
     newErr.previousError = err;
+    newErr.debug_message = message;
+    if(err){
+        newErr.debug_stack   = err.stack;
+    }
     return newErr;
 }
 
 function createErrorWrapper(message, err){
+    if(typeof message !== "string"){
+        if(typeof err != "undefined"){
+            err = message;
+            message = "Wrong usage of createErrorWrapper";
+        } else {
+            message = "Wrong usage of createErrorWrapper";
+        }
+    }
     return ErrorWrapper(message, err);
 }
 
@@ -50,6 +62,9 @@ function OpenDSUSafeCallback(callback){
 }
 
 let errorObservers = [];
+let infoObservers = [];
+let warnObservers = [];
+let devObservers = [];
 function reportUserRelevantError(message, err){
     errorObservers.forEach( c=> {
         c(message, err);
@@ -58,20 +73,43 @@ function reportUserRelevantError(message, err){
 }
 
 function reportUserRelevantWarning(message){
-    errorObservers.forEach( c=> {
+    warnObservers.forEach( c=> {
         c(message);
     })
-    console.trace(message);
+    console.log(">>>",message);
 }
 
-function observeUserRelevantMessages(callback){
-    errorObservers.push(callback);
+
+function reportUserRelevantInfo(message){
+    infoObservers.forEach( c=> {
+        c(message);
+    })
+    console.log(">>>",message);
+}
+
+function reportDevRelevantInfo(message){
+    devObservers.forEach( c=> {
+        c(message);
+    })
+    console.log(">>>",message);
+}
+
+function observeUserRelevantMessages(type, callback){
+    switch(type){
+        case "error": errorObservers.push(callback);break;
+        case "info": infoObservers.push(callback);break;
+        case "warn": warnObservers.push(callback);break;
+        case "dev": devObservers.push(callback);break;
+        default: devObservers.push(callback);break;
+    }
 }
 
 module.exports = {
     createErrorWrapper,
     reportUserRelevantError,
     reportUserRelevantWarning,
+    reportUserRelevantInfo,
+    reportDevRelevantInfo,
     observeUserRelevantMessages,
     OpenDSUSafeCallback,
     registerMandatoryCallback,
