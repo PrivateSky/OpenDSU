@@ -49,7 +49,9 @@ function runAll(listEntries, executeEntry, validateResults, callback) {
 
       return callback("FAILED");
     })
-    .catch((error) => callback(error));
+    .catch(( error) => {
+      callback(error)
+    });
 }
 
 function runOneSuccessful(listEntries, executeEntry, callback) {

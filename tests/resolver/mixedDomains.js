@@ -21,7 +21,6 @@ assert.callback("Resolver DSU Creation with different domains", (testFinishCallb
                 }
 
                 createDSUWithMultipleDomains()
-
             });
         })
     })()
@@ -43,8 +42,8 @@ assert.callback("Resolver DSU Creation with different domains", (testFinishCallb
             if (err) {
                 throw err;
             }
-            assert.equal(hashLinkSSI.getDLDomain(), DOMAIN_2)
 
+            assert.equal(hashLinkSSI.getDLDomain(), DOMAIN_2)
             testFinishCallback()
         })
     }

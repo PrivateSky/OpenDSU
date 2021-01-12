@@ -42,11 +42,13 @@
     this.filterTable = function(tableName, filterFunction, callback){
         let tbl = getTable(tableName);
         let result = [];
-        tbl.forEach( function(item){
+        for(let n in tbl){
+            let item = tbl[n];
             if(filterFunction(item)){
+                item.__key = n;
                 result.push(item);
             }
-        })
+        }
         callback(undefined,result);
     };
 

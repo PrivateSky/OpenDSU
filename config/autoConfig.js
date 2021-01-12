@@ -25,9 +25,12 @@ switch ($$.environmentType) {
     case constants.ENVIRONMENT_TYPES.SERVICE_WORKER_ENVIRONMENT_TYPE:
         if (typeof self !== "undefined") {
             self.createOpenDSUErrorWrapper          = errorModule.createErrorWrapper;
-            self.OpenDSUSafeCallback                 = errorModule.OpenDSUSafeCallback;
+            self.OpenDSUSafeCallback                = errorModule.OpenDSUSafeCallback;
             self.reportUserRelevantWarning          = errorModule.reportUserRelevantWarning;
+            self.reportUserRelevantInfo             = errorModule.reportUserRelevantInfo;
+            self.reportDevRelevantInfo              = errorModule.reportDevRelevantInfo;
             self.reportUserRelevantError            = errorModule.reportUserRelevantError;
+            self.registerMandatoryCallback          = errorModule.registerMandatoryCallback
         }
         break;
     case constants.ENVIRONMENT_TYPES.BROWSER_ENVIRONMENT_TYPE:
@@ -35,7 +38,10 @@ switch ($$.environmentType) {
             window.createOpenDSUErrorWrapper        = errorModule.createErrorWrapper;
             window.OpenDSUSafeCallback              = errorModule.OpenDSUSafeCallback;
             window.reportUserRelevantWarning        = errorModule.reportUserRelevantWarning;
+            window.reportUserRelevantInfo           = errorModule.reportUserRelevantInfo;
+            window.reportDevRelevantInfo            = errorModule.reportDevRelevantInfo;
             window.reportUserRelevantError          = errorModule.reportUserRelevantError;
+            window.registerMandatoryCallback        = errorModule.registerMandatoryCallback
         }
         break;
     case constants.ENVIRONMENT_TYPES.NODEJS_ENVIRONMENT_TYPE:
@@ -45,6 +51,9 @@ switch ($$.environmentType) {
             global.OpenDSUSafeCallback              = errorModule.OpenDSUSafeCallback;
             global.reportUserRelevantWarning        = errorModule.reportUserRelevantWarning;
             global.reportUserRelevantError          = errorModule.reportUserRelevantError;
+            global.reportDevRelevantInfo            = errorModule.reportDevRelevantInfo;
+            global.reportUserRelevantError          = errorModule.reportUserRelevantError;
+            global.registerMandatoryCallback        = errorModule.registerMandatoryCallback
         }
 }
 

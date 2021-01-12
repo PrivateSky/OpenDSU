@@ -39,12 +39,13 @@ const createDSU = (templateKeySSI, options, callback) => {
         if (err) {
             return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to create DSU instance`, err));
         }
-        dsuInstance.dsuLog("DSU created on " + Date.now(), addInCache);
+
         function addInCache(){
             addDSUInstanceInCache(dsuInstance, function(){
             callback(undefined, dsuInstance)
             });
         }
+        dsuInstance.dsuLog("DSU created on " + Date.now(), addInCache);
     });
 };
 

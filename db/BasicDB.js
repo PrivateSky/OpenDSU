@@ -8,16 +8,19 @@
     As you can see, nothing is ever realy updated, even the deletion is done by marking the record with the field "deleted"
  */
 
-const PendingCallMixin = require("../utils/PendingCallMixin");
+const ObservableMixin  = require("../utils/ObservableMixin");
 
 function BasicDB(storageStrategy){
     let self = this;
+    ObservableMixin(this);
     /*
         Get the whole content of the table and asynchorunsly return an array with all the  records satisfying the condition tested by the filterFunction
      */
-    this.filterTable = function(tableName, filterFunction, callback){
+    this.filter = function(tableName, filterFunction, callback){
         storageStrategy.filterTable(tableName, filterFunction, callback);
     };
+
+    this.query = this.filter;
 
     function getDefaultCallback(message, tableName, key){
         return function (err,res){
@@ -40,17 +43,25 @@ function BasicDB(storageStrategy){
     };
 
     /*
-        Update a record, return error if does not exists
+        Update a record, does not return an error if does not exists
      */
     this.updateRecord = function(tableName, key, record, callback){
         callback = callback?callback:getDefaultCallback("Updating a record", tableName, key);
 
         function doVersionIncAndUpdate(){
             record.__version++;
-            storageStrategy.updateRecord(tableName, key, record, callback);
+            if(record.__version == 0){
+                storageStrategy.insertRecord(tableName, key, record, callback);
+            } else {
+                storageStrategy.updateRecord(tableName, key, record, callback);
+            }
         }
-        if(record.__version == undefined){
+
+        if(record.__version === undefined){
             self.getRecord(tableName,key, function(err,res){
+                if(err || !res){
+                    res = {__version:-1};
+                }
                 record.__version = res.__version;
                 doVersionIncAndUpdate();
             });
