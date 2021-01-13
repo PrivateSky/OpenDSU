@@ -1,6 +1,9 @@
 const KeySSIResolver = require("key-ssi-resolver");
 const keySSISpace = require("opendsu").loadApi("keyssi");
-const dsuInstances = {};
+const cache = require("../cache");
+
+let dsuCache = cache.getMemoryCache("DSUs");
+
 const initializeResolver = (options) => {
     options = options || {};
     return KeySSIResolver.initialize(options);
@@ -11,17 +14,12 @@ const registerDSUFactory = (type, factory) => {
 };
 
 function addDSUInstanceInCache(dsuInstance, callback) {
-    dsuInstance.getKeySSI((err, keySSI) => {
+    dsuInstance.getKeySSIAsString((err, keySSI) => {
         if (err) {
             return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to retrieve keySSI`, err));
         }
-
-        if(typeof dsuInstances[keySSI] === "undefined"){
-            dsuInstances[keySSI] = dsuInstance;
-        }
-
+        dsuCache.set(keySSI, dsuInstance);
         callback(undefined, dsuInstance);
-
     });
 }
 
@@ -41,9 +39,7 @@ const createDSU = (templateKeySSI, options, callback) => {
         }
 
         function addInCache(){
-            addDSUInstanceInCache(dsuInstance, function(){
-            callback(undefined, dsuInstance)
-            });
+            addDSUInstanceInCache(dsuInstance, callback);
         }
         dsuInstance.dsuLog("DSU created on " + Date.now(), addInCache);
     });
@@ -73,8 +69,9 @@ const loadDSU = (keySSI, options, callback) => {
     }
 
     const ssiId = keySSI.getIdentifier();
-    if (dsuInstances[ssiId]) {
-        return callback(undefined, dsuInstances[ssiId]);
+    let fromCache = dsuCache.get(ssiId);
+    if (fromCache){
+        return callback(undefined, fromCache);
     }
     const keySSIResolver = initializeResolver(options);
     keySSIResolver.loadDSU(keySSI, options, (err, dsuInstance) => {
@@ -92,8 +89,11 @@ const getHandler = () => {
 
 
 function invalidateDSUCache(dsuKeySSI) {
-    const ssiId = dsuKeySSI.getIdentifier();
-    delete dsuInstances[ssiId]
+    let  ssiId = dsuKeySSI;
+    if(typeof dsuKeySSI != "string"){
+        ssiId = dsuKeySSI.getIdentifier();
+    }
+    delete dsuCache.set(ssiId,undefined);
 }
 
 module.exports = {

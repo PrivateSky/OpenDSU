@@ -48,7 +48,11 @@ function BDNS() {
                 callback(undefined, bdnsCache[dlDomain].anchoringServices);
             })
         }
-        callback(undefined, bdnsCache[dlDomain].anchoringServices);
+        if(dlDomain !== undefined){
+            callback(undefined, bdnsCache[dlDomain].anchoringServices);
+        } else {
+            callback(new Error("undefined domain does not exist"));
+        }
     };
 
     this.getReplicas = (dlDomain, callback) => {

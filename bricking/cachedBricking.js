@@ -1,11 +1,11 @@
 const openDSU = require("opendsu");
 const crypto = openDSU.loadApi("crypto");
 const keySSISpace = openDSU.loadApi("keyssi");
-const cachedStores = require("../cache/cachedStores");
+const cachedStores = require("../cache/");
 const storeName = "bricks";
 
 function putBrick(brick, callback) {
-    const cache = cachedStores.getCache(storeName);
+    const cache = cachedStores.getCacheForVault(storeName);
     crypto.hash(keySSISpace.buildSeedSSI("vault"), brick, (err, brickHash) => {
         if (err) {
             return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to create brick hash`, err));
@@ -22,7 +22,7 @@ function putBrick(brick, callback) {
 }
 
 function getBrick(brickHash, callback) {
-    const cache = cachedStores.getCache(storeName);
+    const cache = cachedStores.getCacheForVault(storeName);
     cache.get(brickHash, (err, brickData) => {
         if (err) {
             return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to get retrieve brick <${brickHash}> from cache`, err));

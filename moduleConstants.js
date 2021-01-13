@@ -18,6 +18,7 @@ module.exports = {
 	BDNS_ROOT_HOSTS: "BDNS_ROOT_HOSTS",
 	CACHE: {
 		FS: "fs",
+		MEMORY: "memory",
 		INDEXED_DB: "cache.indexedDB",
 		VAULT_TYPE: "cache.vaultType",
 		BASE_FOLDER: "internal-volume/cache",

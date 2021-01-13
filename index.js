@@ -44,7 +44,7 @@ if(!PREVENT_DOUBLE_LOADING_OF_OPENDSU.INITIALISED){
             case "notifications":return require("./notifications"); break;
             case "resolver":return require("./resolver"); break;
             case "sc":return require("./sc"); break;
-            case "cache":return require("./cache/cachedStores"); break;
+            case "cache":return require("./cache"); break;
             case "config":return require("./config"); break;
             case "system":return require("./system"); break;
             case "db":return require("./db"); break;

@@ -30,7 +30,7 @@ function getSharedDB(keySSI, dbName){
                 }
             }
             db.dispatchEvent("initialised", storageDSU);
-        });
+        }, 10000);
 
     let resolver = require("../resolver");
     let keySSIApis = require("../keyssi");
