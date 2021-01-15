@@ -3,7 +3,7 @@ const dc = require("double-check");
 const { assert } = dc;
 
 const resolver = require("../../resolver");
-const keySSI = require("../../keyssi")
+const keySSI = require("../../keyssi");
 
 
 const testIntegration = require("../../../../psknode/tests/util/tir");
