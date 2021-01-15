@@ -60,8 +60,17 @@ function generateMethodForRequestWithData(httpMethod) {
 	};
 }
 
+function doGet(url, callback){
+	fetch(url)
+		.then(response => response.text())
+		.then(data => callback(undefined, data))
+		.catch(err => callback(err));
+
+}
+
 module.exports = {
 	fetch: fetch,
 	doPost: generateMethodForRequestWithData('POST'),
-	doPut: generateMethodForRequestWithData('PUT')
+	doPut: generateMethodForRequestWithData('PUT'),
+	doGet
 }
