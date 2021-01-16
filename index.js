@@ -3,6 +3,11 @@ html API space
 */
 
 let constants = require("./moduleConstants.js");
+
+
+
+
+
 switch ($$.environmentType) {
     case constants.ENVIRONMENT_TYPES.SERVICE_WORKER_ENVIRONMENT_TYPE:
         if (typeof self !== "undefined") {
@@ -29,8 +34,7 @@ switch ($$.environmentType) {
 
 if(!PREVENT_DOUBLE_LOADING_OF_OPENDSU.INITIALISED){
     PREVENT_DOUBLE_LOADING_OF_OPENDSU.INITIALISED = true;
-
-    let loadApi = function(apiSpaceName){
+    function loadApi(apiSpaceName){
         switch (apiSpaceName) {
             case "http":return require("./http"); break;
             case "crypto":return require("./crypto"); break;
@@ -53,11 +57,66 @@ if(!PREVENT_DOUBLE_LOADING_OF_OPENDSU.INITIALISED){
         }
     }
 
+     function setGlobalVariable(name, value){
+        switch ($$.environmentType) {
+            case constants.ENVIRONMENT_TYPES.SERVICE_WORKER_ENVIRONMENT_TYPE:
+                if (typeof self !== "undefined") {
+                    self[name] = value;
+                } else {
+                    reportUserRelevantError("self not defined in Service Workers");
+                }
+                break;
+            case constants.ENVIRONMENT_TYPES.BROWSER_ENVIRONMENT_TYPE:
+                if (typeof window !== "undefined") {
+                    window[name] = value;
+                }else {
+                    reportUserRelevantError("window not defined in browser environment");
+                }
+                break;
+            case constants.ENVIRONMENT_TYPES.NODEJS_ENVIRONMENT_TYPE:
+            default:
+                if (typeof global !== "undefined") {
+                    global[name] = value;
+                } else {
+                    reportUserRelevantError("global not defined in nodejs environment");
+                }
+        }
+    };
+
+    function getGlobalVariable(name){
+        switch ($$.environmentType) {
+            case constants.ENVIRONMENT_TYPES.SERVICE_WORKER_ENVIRONMENT_TYPE:
+                return self[name];
+            case constants.ENVIRONMENT_TYPES.BROWSER_ENVIRONMENT_TYPE:
+                return window[name];
+            case constants.ENVIRONMENT_TYPES.NODEJS_ENVIRONMENT_TYPE:
+            default:
+                return global[name];
+        }
+    };
+
+    function globalVariableExists(name){
+        switch ($$.environmentType) {
+            case constants.ENVIRONMENT_TYPES.SERVICE_WORKER_ENVIRONMENT_TYPE:
+                return typeof self[name] != "undefined";
+            case constants.ENVIRONMENT_TYPES.BROWSER_ENVIRONMENT_TYPE:
+                return typeof window[name] != "undefined";
+            case constants.ENVIRONMENT_TYPES.NODEJS_ENVIRONMENT_TYPE:
+            default:
+                return typeof global[name] != "undefined";
+        }
+    };
+
     PREVENT_DOUBLE_LOADING_OF_OPENDSU.loadApi = loadApi;
-    PREVENT_DOUBLE_LOADING_OF_OPENDSU.loadAPI = loadApi;
+    PREVENT_DOUBLE_LOADING_OF_OPENDSU.loadAPI = loadApi; //upper case version just
+    PREVENT_DOUBLE_LOADING_OF_OPENDSU.globalVariableExists = setGlobalVariable;
+    PREVENT_DOUBLE_LOADING_OF_OPENDSU.setGlobalVariable = setGlobalVariable;
+    PREVENT_DOUBLE_LOADING_OF_OPENDSU.getGlobalVariable = getGlobalVariable;
     PREVENT_DOUBLE_LOADING_OF_OPENDSU.constants = constants;
+    setGlobalVariable("setGlobalVariable",setGlobalVariable);
+    setGlobalVariable("getGlobalVariable",getGlobalVariable);
+    setGlobalVariable("globalVariableExists",globalVariableExists);
     require("./config/autoConfig");
-
 }
-
 module.exports = PREVENT_DOUBLE_LOADING_OF_OPENDSU;
+

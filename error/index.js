@@ -13,7 +13,7 @@ function ErrorWrapper(message, err){
     return newErr;
 }
 
-function createErrorWrapper(message, err){
+function createOpenDSUErrorWrapper(message, err){
     if(typeof message !== "string"){
         if(typeof err != "undefined"){
             err = message;
@@ -104,8 +104,12 @@ function observeUserRelevantMessages(type, callback){
     }
 }
 
+function printOpenDSUError(...args){
+    console.log(...args);
+}
+
 module.exports = {
-    createErrorWrapper,
+    createOpenDSUErrorWrapper,
     reportUserRelevantError,
     reportUserRelevantWarning,
     reportUserRelevantInfo,
@@ -113,4 +117,5 @@ module.exports = {
     observeUserRelevantMessages,
     OpenDSUSafeCallback,
     registerMandatoryCallback,
+    printOpenDSUError
 }
