@@ -28,7 +28,7 @@ function runSinglePromise(executePromise, promiseInput) {
     });
 }
 
-function runAll(listEntries, executeEntry, validateResults, callback) {
+function runAll(listEntries, executeEntry, validateResults, callback, debugInfo) {
   if (typeof validateResults !== "function") {
     validateResults = validateMajorityRunAllWithSuccess;
   }
@@ -47,7 +47,7 @@ function runAll(listEntries, executeEntry, validateResults, callback) {
         return callback(null, successExecutionResults);
       }
 
-      return callback("FAILED");
+      return callback(new Error("FAILED to runAll " + debugInfo));
     })
     .catch(( error) => {
       callback(error)
@@ -82,7 +82,7 @@ function runOneSuccessful(listEntries, executeEntry, callback) {
   executeForSingleEntry(entry);
 }
 
-function runEnoughForMajority(listEntries, executeEntry, initialRunCount, validateResults, callback) {
+function runEnoughForMajority(listEntries, executeEntry, initialRunCount, validateResults, callback, debugInfo) {
   const totalCount = listEntries.length;
 
   if (!initialRunCount || typeof initialRunCount !== "number") {
@@ -111,7 +111,7 @@ function runEnoughForMajority(listEntries, executeEntry, initialRunCount, valida
 
     if (!remainingEntries.length) {
       // the results weren't validated, but we don't have any other entry to run
-      return callback("FAILED");
+      return callback(new Error("FAILED to run enough in majority"+debugInfo));
     }
 
     const nextEntry = remainingEntries.shift();

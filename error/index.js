@@ -104,8 +104,23 @@ function observeUserRelevantMessages(type, callback){
     }
 }
 
+function printErrorWrapper(ew){
+    let level = 0;
+     while(ew){
+         console.log("Error at layer ",level," :", ew);
+         level++;
+         ew = ew.previousError;
+     }
+}
+
 function printOpenDSUError(...args){
-    console.log(...args);
+        for( let elem of args){
+        if( typeof elem.previousError !=  "undefined"){
+            printErrorWrapper(elem);
+        } else {
+            console.log(elem);
+        }
+    }
 }
 
 module.exports = {
