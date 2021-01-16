@@ -1,4 +1,4 @@
-function ErrorWrapper(message, err){
+function ErrorWrapper(message, err, otherErrors){
     let newErr;
     try{
         throw Error(message);
@@ -10,10 +10,13 @@ function ErrorWrapper(message, err){
     if(err){
         newErr.debug_stack   = err.stack;
     }
+    if(otherErrors){
+        newErr.otherErrors = otherErrors;
+    }
     return newErr;
 }
 
-function createOpenDSUErrorWrapper(message, err){
+function createOpenDSUErrorWrapper(message, err, otherErrors){
     if(typeof message !== "string"){
         if(typeof err != "undefined"){
             err = message;
@@ -22,7 +25,7 @@ function createOpenDSUErrorWrapper(message, err){
             message = "Wrong usage of createErrorWrapper";
         }
     }
-    return ErrorWrapper(message, err);
+    return ErrorWrapper(message, err, otherErrors);
 }
 
 function registerMandatoryCallback(callback, timeout){
@@ -114,7 +117,7 @@ function printErrorWrapper(ew){
 }
 
 function printOpenDSUError(...args){
-        for( let elem of args){
+    for( let elem of args){
         if( typeof elem.previousError !=  "undefined"){
             printErrorWrapper(elem);
         } else {

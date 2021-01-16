@@ -47,14 +47,20 @@ function runAll(listEntries, executeEntry, validateResults, callback, debugInfo)
         return callback(null, successExecutionResults);
       }
 
-      return callback(new Error("FAILED to runAll " + debugInfo));
+      let baseError = debugInfo;
+      if(errorExecutions.length){
+        if(baseError){
+          baseError = createOpenDSUErrorWrapper("Error found during runAll", errorExecutions[0], debugInfo);
+        }
+      }
+      return callback(createOpenDSUErrorWrapper("FAILED to runAll " , baseError));
     })
     .catch(( error) => {
       callback(error)
     });
 }
 
-function runOneSuccessful(listEntries, executeEntry, callback) {
+function runOneSuccessful(listEntries, executeEntry, callback, debugInfo) {
   if (!listEntries.length) {
     return callback("EMPTY_LIST");
   }

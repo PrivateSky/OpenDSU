@@ -7,12 +7,6 @@ function generateMethodForRequestWithData(httpMethod) {
 
 		const xhr = new XMLHttpRequest();
 
-		if(typeof options.headers !== "undefined"){
-			for(let name in options.headers){
-				xhr.setRequestHeader(name, options.headers[name]);
-			}
-		}
-
 		xhr.onload = function () {
 			if (xhr.readyState === 4 && (xhr.status >= 200 && xhr.status < 300)) {
 				const data = xhr.response;
@@ -33,6 +27,11 @@ function generateMethodForRequestWithData(httpMethod) {
 
 		xhr.open(httpMethod, url, true);
 		//xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+		if(typeof options.headers !== "undefined"){
+			for(let name in options.headers){
+				xhr.setRequestHeader(name, options.headers[name]);
+			}
+		}
 
 		if(data && data.pipe && typeof data.pipe === "function"){
 			const buffers = [];
