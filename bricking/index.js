@@ -96,16 +96,16 @@ const getMultipleBricks = (hashLinkSSIList, authToken, callback) => {
  * Put brick
  * @param {keySSI} keySSI
  * @param {ReadableStream} brick
- * @param {string} authToken
+ * @param {string=} bricksDomain
  * @param {function} callback
  * @returns {string} brickhash
  */
-const putBrick = (keySSI, brick, authToken, callback) => {
-    if (typeof authToken === 'function') {
-        callback = authToken;
-        authToken = undefined;
+const putBrick = (keySSI, brick, bricksDomain, callback) => {
+    if (typeof bricksDomain === 'function') {
+        callback = bricksDomain;
+        bricksDomain = undefined;
     }
-    const dlDomain = keySSI.getDLDomain();
+    const dlDomain = bricksDomain || keySSI.getDLDomain();
 
     if (dlDomain === constants.DOMAINS.VAULT && isValidVaultCache()) {
         return cachedBricking.putBrick(brick, callback);
