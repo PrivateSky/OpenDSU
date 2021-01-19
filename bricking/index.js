@@ -105,7 +105,8 @@ const putBrick = (keySSI, brick, authToken, callback) => {
         callback = authToken;
         authToken = undefined;
     }
-    const dlDomain = keySSI.getDLDomain();
+
+    const dlDomain = keySSI.getBricksDomain();
 
     if (dlDomain === constants.DOMAINS.VAULT && isValidVaultCache()) {
         return cachedBricking.putBrick(brick, callback);
