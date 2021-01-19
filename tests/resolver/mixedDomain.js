@@ -29,13 +29,11 @@ assert.callback("Resolver DSU Creation with different domains", (testFinishCallb
 
 
     function createDSUWithMultipleDomains() {
-        const defaultTemplate = keySSI.buildTemplateKeySSI(
-            'seed',
-            DOMAIN_1,
-            undefined,
-            undefined,
-            undefined,
-            `${BRICKS_DOMAIN_KEY}=${DOMAIN_2}`
+        const defaultTemplate = keySSI.buildTemplateKeySSIWithConfigMap({
+                ssiType: 'seed',
+                domain: DOMAIN_1,
+                hint: `${BRICKS_DOMAIN_KEY}=${DOMAIN_2}`
+            }
         )
         resolver.createDSU(defaultTemplate, (err, dsu) => {
             if (err) {

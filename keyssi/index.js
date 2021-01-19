@@ -65,6 +65,21 @@ const buildTemplateKeySSI = (ssiType, domain, specificString, control, vn, hint,
     return keySSI;
 };
 
+const buildTemplateKeySSIWithConfigMap = (keySSIConfig, callback) => {
+    const {ssiType, domain, specificString, control, vn, hint} = keySSIConfig
+    if (!ssiType || !domain) {
+        throw new Error('"ssiType" and "domain" are required for KeySSITemplate creation')
+    }
+
+    const keySSI = keySSIFactory.createType(ssiType);
+    keySSI.load(ssiType, domain, specificString, control, vn, hint);
+    if (typeof callback === "function") {
+        callback(undefined, keySSI);
+    }
+
+    return keySSI;
+};
+
 
 const buildWalletSSI = (domain, arrayWIthCredentials, hint) => {
     try{
@@ -95,6 +110,7 @@ module.exports = {
     buildSZeroAccessSSI,
     buildHashLinkSSI,
     buildTemplateKeySSI,
+    buildTemplateKeySSIWithConfigMap,
     buildArraySSI,
     buildSymmetricalEncryptionSSI
 };
