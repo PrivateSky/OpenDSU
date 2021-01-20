@@ -4,13 +4,18 @@
  */
 
 const getMainDSU = () => {
-    if (typeof rawDossier === "undefined") {
+
+    if (!globalVariableExists("rawDossier")) {
         throw Error("Main DSU does not exist in the current context.");
     }
+    return getGlobalVariable("rawDossier");
+};
 
-    return rawDossier;
+const setMainDSU = (mainDSU) => {
+    return setGlobalVariable("rawDossier", mainDSU);
 };
 
 module.exports = {
-    getMainDSU
+    getMainDSU,
+    setMainDSU
 }

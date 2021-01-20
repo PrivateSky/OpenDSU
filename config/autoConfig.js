@@ -21,39 +21,14 @@ switch ($$.environmentType) {
 
 config.set(constants.CACHE.BASE_FOLDER_CONFIG_PROPERTY, constants.CACHE.BASE_FOLDER);
 
-switch ($$.environmentType) {
-    case constants.ENVIRONMENT_TYPES.SERVICE_WORKER_ENVIRONMENT_TYPE:
-        if (typeof self !== "undefined") {
-            self.createOpenDSUErrorWrapper          = errorModule.createErrorWrapper;
-            self.OpenDSUSafeCallback                = errorModule.OpenDSUSafeCallback;
-            self.reportUserRelevantWarning          = errorModule.reportUserRelevantWarning;
-            self.reportUserRelevantInfo             = errorModule.reportUserRelevantInfo;
-            self.reportDevRelevantInfo              = errorModule.reportDevRelevantInfo;
-            self.reportUserRelevantError            = errorModule.reportUserRelevantError;
-            self.registerMandatoryCallback          = errorModule.registerMandatoryCallback
-        }
-        break;
-    case constants.ENVIRONMENT_TYPES.BROWSER_ENVIRONMENT_TYPE:
-        if (typeof window !== "undefined") {
-            window.createOpenDSUErrorWrapper        = errorModule.createErrorWrapper;
-            window.OpenDSUSafeCallback              = errorModule.OpenDSUSafeCallback;
-            window.reportUserRelevantWarning        = errorModule.reportUserRelevantWarning;
-            window.reportUserRelevantInfo           = errorModule.reportUserRelevantInfo;
-            window.reportDevRelevantInfo            = errorModule.reportDevRelevantInfo;
-            window.reportUserRelevantError          = errorModule.reportUserRelevantError;
-            window.registerMandatoryCallback        = errorModule.registerMandatoryCallback
-        }
-        break;
-    case constants.ENVIRONMENT_TYPES.NODEJS_ENVIRONMENT_TYPE:
-    default:
-        if (typeof global !== "undefined") {
-            global.createOpenDSUErrorWrapper        = errorModule.createErrorWrapper;
-            global.OpenDSUSafeCallback              = errorModule.OpenDSUSafeCallback;
-            global.reportUserRelevantWarning        = errorModule.reportUserRelevantWarning;
-            global.reportUserRelevantError          = errorModule.reportUserRelevantError;
-            global.reportDevRelevantInfo            = errorModule.reportDevRelevantInfo;
-            global.reportUserRelevantError          = errorModule.reportUserRelevantError;
-            global.registerMandatoryCallback        = errorModule.registerMandatoryCallback
-        }
-}
+setGlobalVariable("createOpenDSUErrorWrapper", errorModule.createOpenDSUErrorWrapper);
+setGlobalVariable("OpenDSUSafeCallback", errorModule.OpenDSUSafeCallback);
+setGlobalVariable("reportUserRelevantWarning", errorModule.reportUserRelevantWarning);
+setGlobalVariable("reportUserRelevantInfo", errorModule.reportUserRelevantInfo);
+setGlobalVariable("reportDevRelevantInfo", errorModule.reportDevRelevantInfo);
+setGlobalVariable("reportUserRelevantError", errorModule.reportUserRelevantError);
+setGlobalVariable("registerMandatoryCallback", errorModule.registerMandatoryCallback);
+setGlobalVariable("printOpenDSUError", errorModule.printOpenDSUError);
+
+
 

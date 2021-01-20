@@ -151,7 +151,7 @@ const putBrick = (keySSI, brick, authToken, callback) => {
                     callback(undefined, brickHash);
                 })
 
-        });
+        }, new Error("Storing a brick"));
     });
 };
 

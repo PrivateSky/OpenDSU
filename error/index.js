@@ -1,4 +1,4 @@
-function ErrorWrapper(message, err){
+function ErrorWrapper(message, err, otherErrors){
     let newErr;
     try{
         throw Error(message);
@@ -10,10 +10,13 @@ function ErrorWrapper(message, err){
     if(err){
         newErr.debug_stack   = err.stack;
     }
+    if(otherErrors){
+        newErr.otherErrors = otherErrors;
+    }
     return newErr;
 }
 
-function createErrorWrapper(message, err){
+function createOpenDSUErrorWrapper(message, err, otherErrors){
     if(typeof message !== "string"){
         if(typeof err != "undefined"){
             err = message;
@@ -22,7 +25,7 @@ function createErrorWrapper(message, err){
             message = "Wrong usage of createErrorWrapper";
         }
     }
-    return ErrorWrapper(message, err);
+    return ErrorWrapper(message, err, otherErrors);
 }
 
 function registerMandatoryCallback(callback, timeout){
@@ -104,8 +107,27 @@ function observeUserRelevantMessages(type, callback){
     }
 }
 
+function printErrorWrapper(ew){
+    let level = 0;
+     while(ew){
+         console.log("Error at layer ",level," :", ew);
+         level++;
+         ew = ew.previousError;
+     }
+}
+
+function printOpenDSUError(...args){
+    for( let elem of args){
+        if( typeof elem.previousError !=  "undefined"){
+            printErrorWrapper(elem);
+        } else {
+            console.log(elem);
+        }
+    }
+}
+
 module.exports = {
-    createErrorWrapper,
+    createOpenDSUErrorWrapper,
     reportUserRelevantError,
     reportUserRelevantWarning,
     reportUserRelevantInfo,
@@ -113,4 +135,5 @@ module.exports = {
     observeUserRelevantMessages,
     OpenDSUSafeCallback,
     registerMandatoryCallback,
+    printOpenDSUError
 }

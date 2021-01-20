@@ -54,7 +54,7 @@ const versions = (powerfulKeySSI, authToken, callback) => {
                 });
         };
 
-        promiseRunner.runOneSuccessful(anchoringServicesArray, fetchAnchor, callback);
+        promiseRunner.runOneSuccessful(anchoringServicesArray, fetchAnchor, callback, new Error("get Anchoring Service"));
     });
 };
 
@@ -127,7 +127,7 @@ const addVersion = (powerfulKeySSI, newHashLinkSSI, lastHashLinkSSI, zkpValue, c
                 })
             };
 
-            promiseRunner.runOneSuccessful(anchoringServicesArray, addAnchor, callback);
+            promiseRunner.runOneSuccessful(anchoringServicesArray, addAnchor, callback, new Error("Storing a brick"));
         });
     });
 };
