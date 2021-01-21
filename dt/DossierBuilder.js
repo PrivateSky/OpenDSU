@@ -60,6 +60,14 @@ const resolver = openDSU.loadApi("resolver");
  *          ]
  *     }
  * </pre>
+ *
+ * each entry in the copy list should be:
+ * <pre>
+ *     {
+ *         "from": "...",
+ *         "to": "..."
+ *     }
+ * </pre>
  */
 const DossierBuilder = function() {
     /**
