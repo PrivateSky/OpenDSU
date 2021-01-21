@@ -72,7 +72,14 @@ const DossierBuilder = function() {
             fs.readFile(pathOrObject, (err, data) => {
                 if (err)
                     return callback(err);
-                let cfg = handle_defaults(JSON.parse(data.toString()));
+                let cfg;
+
+                try {
+                    cfg = handle_defaults(JSON.parse(data.toString()));
+                } catch (e) {
+                    return callback(e);
+                }
+
                 callback(undefined, cfg);
             });
         } else
