@@ -107,7 +107,7 @@ const DossierBuilder = function() {
      */
     let execute = function (dossier, func, arguments, callback) {
         let arg = arguments.pop();
-        if (!!! arg)
+        if (! arg)
             return callback();
         let options = typeof arg === 'object' && arg.options ? arg.options : undefined;
         func(dossier, arg, options, (err, result) => {
@@ -188,7 +188,8 @@ const DossierBuilder = function() {
                 type: "seed",
                 arguments: {
                     path: path.join(mount_obj.arguments.path, n, "seed")
-                }
+                },
+                options: options
             };
         });
         execute(bar, mount, arguments, callback);
@@ -250,14 +251,6 @@ const DossierBuilder = function() {
                 return callback(err);
             callback(undefined, data.toString());
         });
-    }
-
-    let getThemeDossierSeed = function (themeName, conf, callback) {
-        readFile(path.join(conf.themes_folder, themeName, "seed"), callback);
-    }
-
-    let getCardinalDossierSeed = function (conf, callback) {
-        readFile(`${conf.cardinal_seed}`, callback);
     }
 
     let storeKeySSI = function (seed_path, keySSI, callback) {
