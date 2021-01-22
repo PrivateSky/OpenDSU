@@ -1,7 +1,7 @@
 const KeySSIResolver = require("key-ssi-resolver");
 const keySSISpace = require("opendsu").loadApi("keyssi");
 const cache = require("../cache");
-
+const sc = require("../sc");
 let dsuCache = cache.getMemoryCache("DSUs");
 
 const initializeResolver = (options) => {
@@ -41,7 +41,15 @@ const createDSU = (templateKeySSI, options, callback) => {
         function addInCache(){
             addDSUInstanceInCache(dsuInstance, callback);
         }
-        dsuInstance.dsuLog("DSU created on " + Date.now(), addInCache);
+
+        dsuInstance.getKeySSIAsObject((err, keySSI) => {
+            if (err) {
+                return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to get SeedSSI`, err));
+            }
+
+            sc.registerKeySSI(keySSI);
+            dsuInstance.dsuLog("DSU created on " + Date.now(), addInCache);
+        });
     });
 };
 
@@ -74,6 +82,7 @@ const loadDSU = (keySSI, options, callback) => {
         return callback(undefined, fromCache);
     }
     const keySSIResolver = initializeResolver(options);
+    sc.registerKeySSI(keySSI);
     keySSIResolver.loadDSU(keySSI, options, (err, dsuInstance) => {
         if (err) {
             return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to load DSU`, err));
