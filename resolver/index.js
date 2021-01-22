@@ -1,7 +1,7 @@
 const KeySSIResolver = require("key-ssi-resolver");
 const keySSISpace = require("opendsu").loadApi("keyssi");
 const cache = require("../cache");
-const sc = require("../sc");
+const sc = require("../sc").createSecurityContext();
 let dsuCache = cache.getMemoryCache("DSUs");
 
 const initializeResolver = (options) => {

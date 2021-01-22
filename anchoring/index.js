@@ -1,6 +1,7 @@
 const bdns = require("../bdns");
 const keyssi = require("../keyssi");
 const crypto = require("../crypto");
+const sc = require("../sc");
 const {fetch, doPut} = require("../http");
 const constants = require("../moduleConstants");
 const promiseRunner = require("../utils/promise-runner");
@@ -157,12 +158,17 @@ function createDigitalProof(powerfulKeySSI, newHashLinkIdentifier, lastHashLinkI
         case constants.KEY_SSIS.CONST_SSI:
         case constants.KEY_SSIS.ARRAY_SSI:
         case constants.KEY_SSIS.WALLET_SSI:
-
             return callback(undefined, {signature:"",publicKey:""})
-            break;
         default:
-            console.log("Unknown digital proof for " + ssiType + " Defaulting to ConstSSI")
-            return callback(undefined, {signature:"",publicKey:""})
+            const securityContext = sc.createSecurityContext();
+            const keySSI = securityContext.getKeySSI(powerfulKeySSI);
+            securityContext.sign(powerfulKeySSI, dataToSign, (err, signature) => {
+                if (err) {
+                    return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to sign data`, err));
+                }
+
+                return callback(undefined, {signature, publicKey: keySSI.getPublicKey()})
+            });
     }
 }
 
