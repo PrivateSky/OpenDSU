@@ -20,7 +20,7 @@ const resolver = openDSU.loadApi("resolver");
  *     {
  *          "dossier_seed": "./seed",
  *          "domain": "default",
- *          "bundles_path": "./../../../privatesky/psknode/bundles",
+ *          "bundles_path": "../../privatesky/psknode/bundles",
  *          "delete": ["/"],
  *          "folders": ["src"],
  *          "copy": [],
@@ -32,7 +32,7 @@ const resolver = openDSU.loadApi("resolver");
  *      {
  *          "dossier_seed": "./seed",
  *          "domain": "default",
- *          "bundles_path": "./../../privatesky/psknode/bundles",
+ *          "bundles_path": "../privatesky/psknode/bundles",
  *          "delete": [
  *              "/"
  *          ],
