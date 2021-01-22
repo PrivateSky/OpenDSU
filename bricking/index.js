@@ -135,7 +135,7 @@ const putBrick = (keySSI, brick, authToken, callback) => {
                 if (!err) {
                     err = new Error('Failed to create bricks in:' + brickStorageArray);
                 }
-                return callback(err);
+                return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper("Failed to create bricks",err));
             }
 
             const foundBrick = results[0];

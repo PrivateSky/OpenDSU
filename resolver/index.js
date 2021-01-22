@@ -38,7 +38,11 @@ const createDSU = (templateKeySSI, options, callback) => {
             return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to create DSU instance`, err));
         }
 
-        function addInCache(){
+        function addInCache(err, result){
+            if (err)
+            {
+                return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to create DSU instance`, err));
+            }
             addDSUInstanceInCache(dsuInstance, callback);
         }
 

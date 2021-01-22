@@ -8,7 +8,7 @@ const resolver = require('../../resolver');
 const keySSI = require("../../keyssi")
 
 
-assert.callback('Create DSU on custom domain', (testfinished) => {
+assert.callback('Create DSU on already configured domain', (testfinished) => {
 
     dc.createTestFolder('createDSU',(err,folder) => {
         testIntegration.launchApiHubTestNode(10, folder, (err) => {
@@ -17,8 +17,7 @@ assert.callback('Create DSU on custom domain', (testfinished) => {
                 throw err;
             }
 
-            const domain = 'testdomain';
-            prepareBDNSContext(folder);
+            const domain = 'default';
             createdsu(domain ,(err, keySSI, dsuHashLink) => {
 
                 loadDsuAndCheck(err, keySSI, dsuHashLink, () => {
@@ -34,30 +33,11 @@ assert.callback('Create DSU on custom domain', (testfinished) => {
 
 }, 5000);
 
-function prepareBDNSContext(folder)
-{
-
-    let bdns = {
-        'testdomain': {
-            "replicas": [],
-            "brickStorages": [
-                "$ORIGIN"
-            ],
-            "anchoringServices": [
-                "$ORIGIN"
-            ]
-        }
-    }
-
-    require('fs').writeFileSync(folder+'/external-volume/config/bdns.hosts', JSON.stringify(bdns));
-
-}
-
 
 function createdsu(domain, keySSICallback)
 {
     const keyssitemplate = keySSI.buildTemplateKeySSI('seed',domain);
-    resolver.createDSU(keyssitemplate, {bricksDomain: domain}, (err, dsu) => {
+    resolver.createDSU(keyssitemplate,(err, dsu) => {
         if (err)
         {
             throw err;
