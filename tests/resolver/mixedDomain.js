@@ -1,4 +1,6 @@
 require("../../../../psknode/bundles/testsRuntime");
+const keySSIResolver = require("key-ssi-resolver");
+const { BRICKS_DOMAIN_KEY } = require("../../moduleConstants");
 const dc = require("double-check");
 const { assert } = dc;
 
@@ -27,8 +29,15 @@ assert.callback("Resolver DSU Creation with different domains", (testFinishCallb
 
 
     function createDSUWithMultipleDomains() {
-        const defaultTemplate = keySSI.buildTemplateKeySSI('seed', DOMAIN_1)
-        resolver.createDSU(defaultTemplate, {bricksDomain: DOMAIN_2}, (err, dsu) => {
+        const hintJSON = {}
+        hintJSON[`${BRICKS_DOMAIN_KEY}`] = DOMAIN_2
+        const defaultTemplate = keySSI.buildTemplateKeySSIWithConfigMap({
+                ssiType: 'seed',
+                domain: DOMAIN_1,
+                hint: JSON.stringify(hintJSON)
+            }
+        )
+        resolver.createDSU(defaultTemplate, (err, dsu) => {
             if (err) {
                 throw err;
             }
