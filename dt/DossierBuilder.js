@@ -204,7 +204,7 @@ const DossierBuilder = function() {
     }
 
     let createDossier = function (conf, callback) {
-        resolver.createDSU(keyssi.buildSeedSSI(conf.domain), (err, bar) => {
+        resolver.createDSU(keyssi.buildTemplateSeedSSI(conf.domain), (err, bar) => {
             if (err)
                 return callback(err);
             updateDossier(bar, conf, callback);
