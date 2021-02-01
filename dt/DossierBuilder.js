@@ -172,7 +172,7 @@ const DossierBuilder = function(){
         writeFile(seed_path, keySSI, callback);
     };
 
-    let runCommand = function(bar, command, cfg, callback){
+    let runCommand = function(bar, command, callback){
         let cmd = command.split(/\s+/);
         switch (cmd.shift().toLowerCase()){
             case operations.DELETE:
@@ -230,7 +230,7 @@ const DossierBuilder = function(){
         if (commands.length === 0)
             return saveDSU(bar, cfg, callback);
         let cmd = commands.shift();
-        runCommand(bar, cmd, cfg, (err, updated_bar) => {
+        runCommand(bar, cmd, (err, updated_bar) => {
             if (err)
                 return callback(err);
             updateDossier(updated_bar, cfg, commands, callback);
