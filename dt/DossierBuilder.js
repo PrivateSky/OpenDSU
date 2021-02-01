@@ -46,7 +46,7 @@ const DossierBuilder = function(){
         options = options || {ignoreMounts: false};
         console.log("Deleting " + path);
         needsUpdating = true;
-        bar.delete(path, options, callback);
+        bar.delete(path, options, err => callback(err, bar));
     };
 
     let addFolder = function (folder_root = "/") {
@@ -58,7 +58,7 @@ const DossierBuilder = function(){
             options = options || {batch: false, encrypt: false};
             console.log("Adding Folder " + folder_root + arg)
             needsUpdating = true;
-            bar.addFolder(arg, folder_root, options, callback);
+            bar.addFolder(arg, folder_root, options, err => callback(err, bar));
         };
     };
 
@@ -70,7 +70,7 @@ const DossierBuilder = function(){
         options = options || {encrypt: true, ignoreMounts: false}
         console.log("Copying file " + arg.from + " to " + arg.to)
         needsUpdating = true;
-        bar.addFile(arg.from, arg.to, options, callback)
+        bar.addFile(arg.from, arg.to, options, err => callback(err, bar));
     };
 
     let mount = function (bar, arg, options, callback) {
@@ -84,8 +84,7 @@ const DossierBuilder = function(){
                 return callback(err);
             let seed = data.toString();
             console.log("Mounting " + arg.seed_path + " with seed " + seed + " to " + arg.mount_point);
-            needsUpdating = false;
-            bar.mount(arg.mount_point, seed, callback);
+            bar.mount(arg.mount_point, seed, err => callback(err, bar));
         });
     };
 
@@ -102,12 +101,14 @@ const DossierBuilder = function(){
     };
 
     let evaluate_mount = function(bar, cmd, callback){
-        if (needsUpdating)
-            return refreshDSU(bar, (err, updatedDossier, keySSIstring) => {
+        if (needsUpdating) {
+            refreshDSU(bar, (err, updatedDossier, keySSIstring) => {
                 if (err)
                     return callback(err);
                 evaluate_mount(updatedDossier, cmd, callback)
             });
+            return;
+        }
 
         let arguments = {
             "seed_path": cmd[0],
@@ -191,21 +192,29 @@ const DossierBuilder = function(){
     };
 
     let saveDSU = function(bar, cfg, callback){
-        refreshDSU(bar, (err, loadedDossier, barKeySSI) => {
-            if (err)
-                return callback(err);
-            storeKeySSI(cfg.seed, barKeySSI, callback);
-        });
+        if (needsUpdating) {
+            refreshDSU(bar, (err, loadedDossier, barKeySSI) => {
+                if (err)
+                    return callback(err);
+                storeKeySSI(cfg.seed, barKeySSI, callback);
+            });
+        } else {
+            bar.getKeySSIAsString((err, barKeySSI) => {
+                if (err)
+                    return callback(err);
+                storeKeySSI(cfg.seed, barKeySSI, callback);
+            });
+        }
     };
 
     let updateDossier = function(bar, cfg, commands, callback) {
         if (commands.length === 0)
             return saveDSU(bar, cfg, callback);
         let cmd = commands.shift();
-        runCommand(bar, cmd, cfg, (err, result) => {
+        runCommand(bar, cmd, cfg, (err, updated_bar) => {
             if (err)
                 return callback(err);
-            updateDossier(bar, cfg, commands, callback);
+            updateDossier(updated_bar, cfg, commands, callback);
         });
     };
 
