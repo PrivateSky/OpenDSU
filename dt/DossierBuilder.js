@@ -176,12 +176,10 @@ const DossierBuilder = function(){
         let cmd = command.split(/\s+/);
         switch (cmd.shift().toLowerCase()){
             case operations.DELETE:
-                execute(bar, del, cmd, callback);               // allows for multi argument delete
-                //del(bar, cmd[0], callback);
+                execute(bar, del, cmd, callback);
                 break;
             case operations.ADD_FOLDER:
-                execute(bar, addFolder(), cmd, callback);       // allows for multi argument add folder
-                //addFolder()(bar, cmd[0], callback);
+                execute(bar, addFolder(), cmd, callback);
                 break;
             case operations.ADD_FILE:
                 let arg = {
