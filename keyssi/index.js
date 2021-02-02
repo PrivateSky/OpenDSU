@@ -6,9 +6,7 @@ const parse = (ssiString, options) => {
     return keySSIFactory.create(ssiString, options);
 };
 
-const buildSeedSSI = (domain, specificString, control, vn, hint, callback) => {
-    return buildTemplateKeySSI(SSITypes.SEED_SSI, domain, specificString, control, vn, hint, callback);
-};
+
 
 const createSeedSSI = (domain, vn, hint, callback) => {
     if(typeof vn == "function"){
@@ -27,15 +25,23 @@ const createSeedSSI = (domain, vn, hint, callback) => {
     return seedSSI;
 };
 
-const buildSReadSSI = (domain,  specificString, control, vn, hint, callback) => {
+const buildSeedSSI = function(){
+    throw new Error("Obsoleted, use buildTemplateSeedSSI");
+}
+
+const buildTemplateSeedSSI = (domain, specificString, control, vn, hint, callback) => {
+    return buildTemplateKeySSI(SSITypes.SEED_SSI, domain, specificString, control, vn, hint, callback);
+};
+
+const buildTemplateSReadSSI = (domain,  specificString, control, vn, hint, callback) => {
     return buildTemplateKeySSI(SSITypes.SREAD_SSI, domain, specificString, control, vn, hint, callback);
 };
 
-const buildSZeroAccessSSI = (domain,  specificString, control, vn, hint, callback) => {
+const buildTemplateSZeroAccessSSI = (domain,  specificString, control, vn, hint, callback) => {
     return buildTemplateKeySSI(SSITypes.SZERO_ACCESS_SSI, domain, specificString, control, vn, hint, callback);
 };
 
-const buildHashLinkSSI = (domain, specificString, control, vn, hint, callback) => {
+const buildTemplateHashLinkSSI = (domain, specificString, control, vn, hint, callback) => {
     return buildTemplateKeySSI(SSITypes.HASH_LINK_SSI, domain,  specificString, control, vn, hint, callback);
 };
 
@@ -65,10 +71,25 @@ const buildTemplateKeySSI = (ssiType, domain, specificString, control, vn, hint,
     return keySSI;
 };
 
+const buildTemplateKeySSIWithConfigMap = (keySSIConfig, callback) => {
+    const {ssiType, domain, specificString, control, vn, hint} = keySSIConfig
+    if (!ssiType || !domain) {
+        throw new Error('"ssiType" and "domain" are required for KeySSITemplate creation')
+    }
 
-const buildWalletSSI = (domain, arrayWIthCredentials, hint) => {
+    const keySSI = keySSIFactory.createType(ssiType);
+    keySSI.load(ssiType, domain, specificString, control, vn, hint);
+    if (typeof callback === "function") {
+        callback(undefined, keySSI);
+    }
+
+    return keySSI;
+};
+
+
+const buildTemplateWalletSSI = (domain, arrayWIthCredentials, hint) => {
     try{
-        let ssi  = buildArraySSI(domain, arrayWIthCredentials,undefined,hint);
+        let ssi  = buildTemplateArraySSI(domain, arrayWIthCredentials,undefined,hint);
         ssi.cast(SSITypes.WALLET_SSI);
         return parse(ssi.getIdentifier());
     } catch(err){
@@ -76,7 +97,7 @@ const buildWalletSSI = (domain, arrayWIthCredentials, hint) => {
     }
 };
 
-const buildArraySSI = (domain, arr, vn, hint, callback) => {
+const buildTemplateArraySSI = (domain, arr, vn, hint, callback) => {
     const arraySSI = keySSIFactory.createType(SSITypes.ARRAY_SSI);
     arraySSI.initialize(domain, arr, vn, hint);
     return arraySSI;
@@ -88,13 +109,15 @@ const buildSymmetricalEncryptionSSI = (domain, encryptionKey, control, vn, hint,
 
 module.exports = {
     parse,
-    buildSeedSSI,
     createSeedSSI,
-    buildWalletSSI,
-    buildSReadSSI,
-    buildSZeroAccessSSI,
-    buildHashLinkSSI,
+    buildSeedSSI,
+    buildTemplateSeedSSI,
+    buildTemplateWalletSSI,
+    buildTemplateSReadSSI,
+    buildTemplateSZeroAccessSSI,
+    buildTemplateHashLinkSSI,
     buildTemplateKeySSI,
-    buildArraySSI,
+    buildTemplateKeySSIWithConfigMap,
+    buildTemplateArraySSI,
     buildSymmetricalEncryptionSSI
 };
