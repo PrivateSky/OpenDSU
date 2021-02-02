@@ -22,7 +22,7 @@ assert.callback('Build array SSI test', (callback) => {
 
 assert.callback('Pass non-array object check', (callback) => {
   try {
-    const arraySSI = keySSISpace.buildArraySSI('default', 12, 'vn0', 'hint');
+    keySSISpace.buildArraySSI('default', 12, 'vn0', 'hint');
   } catch (err) {
     console.log(err);
     callback();
