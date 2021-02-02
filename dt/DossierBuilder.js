@@ -124,6 +124,7 @@ const DossierBuilder = function(){
     let evaluate_mount = function(bar, cmd, callback){
         if (needsUpdating) {
             refreshDSU(bar, (err, updatedDossier, keySSIstring) => {
+
                 if (err)
                     return callback(err);
                 evaluate_mount(updatedDossier, cmd, callback)

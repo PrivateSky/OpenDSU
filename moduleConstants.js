@@ -34,6 +34,7 @@ module.exports = {
 		BRICKS_STORE: "bricks",
 		ANCHORS_STORE: "anchors"
 	},
+	BRICKS_DOMAIN_KEY: "bricksDomain",
 	LOADER_ENVIRONMENT_JSON:{
 		AGENT: "agent",
 		SERVER: "server",

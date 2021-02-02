@@ -105,7 +105,8 @@ const putBrick = (keySSI, brick, authToken, callback) => {
         callback = authToken;
         authToken = undefined;
     }
-    const dlDomain = keySSI.getDLDomain();
+
+    const dlDomain = keySSI.getBricksDomain();
 
     if (dlDomain === constants.DOMAINS.VAULT && isValidVaultCache()) {
         return cachedBricking.putBrick(brick, callback);
@@ -135,7 +136,7 @@ const putBrick = (keySSI, brick, authToken, callback) => {
                 if (!err) {
                     err = new Error('Failed to create bricks in:' + brickStorageArray);
                 }
-                return callback(err);
+                return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper("Failed to create bricks",err));
             }
 
             const foundBrick = results[0];

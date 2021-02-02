@@ -5,7 +5,7 @@ const keyssispace = require("../../index").loadApi("keyssi");
 const crypto = require("../../index").loadApi("crypto");
 
 assert.callback("Sign and verify signature test", (callback) => {
-    const seedSSI = keyssispace.buildSeedSSI("default");
+    const seedSSI = keyssispace.buildTemplateSeedSSI("default");
 
     seedSSI.initialize("default", undefined, undefined, undefined, "hint", (err) => {
         if (err) {
@@ -35,7 +35,7 @@ assert.callback("Sign and verify signature test", (callback) => {
 });
 
 assert.callback("Sign and verify signature test with sRead", (callback) => {
-    const seedSSI = keyssispace.buildSeedSSI("default");
+    const seedSSI = keyssispace.buildTemplateSeedSSI("default");
 
     seedSSI.initialize("default", undefined, undefined, undefined, "hint", (err) => {
         if (err) {

@@ -6,7 +6,7 @@ const storeName = "bricks";
 
 function putBrick(brick, callback) {
     const cache = cachedStores.getCacheForVault(storeName);
-    crypto.hash(keySSISpace.buildSeedSSI("vault"), brick, (err, brickHash) => {
+    crypto.hash(keySSISpace.buildTemplateSeedSSI("vault"), brick, (err, brickHash) => {
         if (err) {
             return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to create brick hash`, err));
         }
