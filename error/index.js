@@ -52,7 +52,7 @@ function registerMandatoryCallback(callback, timeout){
 }
 
 function OpenDSUSafeCallback(callback){
-    if(callback) {
+    if(callback && typeof callback === 'function') {
         return callback;
     }
     else return function(err, res){
