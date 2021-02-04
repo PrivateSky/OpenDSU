@@ -261,10 +261,19 @@ const DossierBuilder = function(){
                 return createDossier(cfg, commands, callback);
             }
 
-            console.log("Dossier updating...");
-            resolver.loadDSU(content.toString(), (err, bar) => {
-                if (err)
-                    return callback(err);
+            let identifier = content.toString();
+            resolver.loadDSU(identifier, (err, bar) => {
+                if (err){
+                    console.log("DSU not available. Creating a new DSU for", identifier);
+                    return resolver.createDSU(identifier, {useSSIAsIdentifier: true}, (err, bar)=>{
+                        if(err){
+                            return callback(err);
+                        }
+
+                        updateDossier(bar, cfg, commands, callback);
+                    });
+                }
+                console.log("Dossier updating...");
                 updateDossier(bar, cfg, commands, callback);
             });
         });
