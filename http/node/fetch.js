@@ -66,7 +66,12 @@ function fetch(url, options = {}) {
 
 	let promise = new Promise((resolve, reject) => {
 		decipherUrl(url, options);
-		let request = protocol.request(url, {}, (response) => {
+
+		if(options && options.method && options.method.toLowerCase() !== "get"){
+			throw Error("http.fetch on nodejs environment should be used only for GET requests for the moment. Use http.doPost instead.");
+		}
+
+		let request = protocol.request(url, options, (response) => {
 			resolve(new Response(request, response));
 		});
 
