@@ -36,8 +36,14 @@ function BDNS() {
     this.getBrickStorages = (dlDomain, callback) => {
         if (!isInitialized) {
             return this.addPendingCall(() => {
+                if (dlDomain === undefined){
+                    callback(new Error("The domain is not defined"));
+                }
                 callback(undefined, bdnsCache[dlDomain].brickStorages);
             })
+        }
+        if (dlDomain === undefined){
+            callback(new Error("The domain is not defined"));
         }
         callback(undefined, bdnsCache[dlDomain].brickStorages);
     };
