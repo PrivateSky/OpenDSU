@@ -95,16 +95,16 @@ const addVersion = (powerfulKeySSI, newHashLinkSSI, lastHashLinkSSI, zkpValue, c
             return callback('No anchoring service provided');
         }
 
-        const hash = {
+        const hashLinkIds = {
             last: lastHashLinkSSI ? lastHashLinkSSI.getIdentifier() : null,
             new: newHashLinkSSI.getIdentifier()
         };
-        createDigitalProof(powerfulKeySSI, hash.new, hash.last, zkpValue, (err, digitalProof) => {
+        createDigitalProof(powerfulKeySSI, hashLinkIds.new, hashLinkIds.last, zkpValue, (err, digitalProof) => {
             if (err) {
                 return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to create digital proof`, err));
             }
             const body = {
-                hash,
+                hashLinkIds,
                 digitalProof,
                 zkp: zkpValue
             };
