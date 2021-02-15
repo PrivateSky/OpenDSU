@@ -33,8 +33,6 @@ const operations = {
  */
 const DossierBuilder = function(){
 
-    let needsUpdating = false;
-
     /**
      * recursively executes the provided func with the dossier and each of the provided arguments
      * @param {DSU Archive} dossier: The DSU instance
@@ -66,7 +64,6 @@ const DossierBuilder = function(){
         }
         options = options || {ignoreMounts: false};
         console.log("Deleting " + path);
-        needsUpdating = true;
         bar.delete(path, options, err => callback(err, bar));
     };
 
@@ -78,7 +75,6 @@ const DossierBuilder = function(){
             }
             options = options || {batch: false, encrypt: false};
             console.log("Adding Folder " + folder_root + arg)
-            needsUpdating = true;
             bar.addFolder(arg, folder_root, options, err => callback(err, bar));
         };
     };
@@ -90,7 +86,6 @@ const DossierBuilder = function(){
         }
         options = options || {encrypt: true, ignoreMounts: false}
         console.log("Copying file " + arg.from + " to " + arg.to)
-        needsUpdating = true;
         bar.addFile(arg.from, arg.to, options, err => callback(err, bar));
     };
 
@@ -122,16 +117,6 @@ const DossierBuilder = function(){
     };
 
     let evaluate_mount = function(bar, cmd, callback){
-        if (needsUpdating) {
-            refreshDSU(bar, (err, updatedDossier, keySSIstring) => {
-
-                if (err)
-                    return callback(err);
-                evaluate_mount(updatedDossier, cmd, callback)
-            });
-            return;
-        }
-
         let arguments = {
             "seed_path": cmd[0],
             "mount_point": cmd[1]
@@ -197,34 +182,12 @@ const DossierBuilder = function(){
         }
     };
 
-    let refreshDSU = function(bar, callback){
+    let saveDSU = function(bar, cfg, callback){
         bar.getKeySSIAsString((err, barKeySSI) => {
             if (err)
                 return callback(err);
-
-            resolver.loadDSU(barKeySSI, (err, loadedDossier) => {
-                if (err)
-                    return callback(err);
-                needsUpdating = false;
-                callback(undefined, loadedDossier, barKeySSI);
-            });
+            storeKeySSI(cfg.seed, barKeySSI, callback);
         });
-    };
-
-    let saveDSU = function(bar, cfg, callback){
-        if (needsUpdating) {
-            refreshDSU(bar, (err, loadedDossier, barKeySSI) => {
-                if (err)
-                    return callback(err);
-                storeKeySSI(cfg.seed, barKeySSI, callback);
-            });
-        } else {
-            bar.getKeySSIAsString((err, barKeySSI) => {
-                if (err)
-                    return callback(err);
-                storeKeySSI(cfg.seed, barKeySSI, callback);
-            });
-        }
     };
 
     let updateDossier = function(bar, cfg, commands, callback) {
