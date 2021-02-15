@@ -1,0 +1,25 @@
+/*
+    W3CDID is functioning as an interface for the didresolver
+ */
+
+function W3CDID(){
+    this.getController = function(callback){
+
+    };
+
+    this.getPublicKey = function(callback){
+
+    };
+
+    this.getPrivateKey = function(callback){
+
+    };
+
+    this.sign = function(hash, callback){
+
+    };
+
+    this.verify = function(hash, signature, callback){
+
+    };
+}
