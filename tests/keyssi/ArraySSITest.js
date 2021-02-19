@@ -5,7 +5,7 @@ const keySSISpace = require('../../keyssi');
 const crypto = require('../../crypto');
 
 assert.callback('Build array SSI test', (callback) => {
-  const arraySSI = keySSISpace.buildArraySSI('default', ['openDsu', 16], 'vn0', 'hint');
+  const arraySSI = keySSISpace.createArraySSI('default', ['openDsu', 16], 'vn0', 'hint');
 
   const vn = arraySSI.getVn();
   const hint = arraySSI.getHint();
@@ -22,7 +22,7 @@ assert.callback('Build array SSI test', (callback) => {
 
 assert.callback('Pass non-array object check', (callback) => {
   try {
-    keySSISpace.buildArraySSI('default', 12, 'vn0', 'hint');
+    keySSISpace.createArraySSI('default', 12, 'vn0', 'hint');
   } catch (err) {
     console.log(err);
     callback();
