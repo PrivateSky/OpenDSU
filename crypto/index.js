@@ -9,11 +9,16 @@ templateSeedSSI.load(SSITypes.SEED_SSI, "default");
 
 const { JWT_ERRORS } = jwtUtils;
 
+const getCryptoFunctionForKeySSI = (keySSI, cryptoFunctionType)=>{
+    return cryptoRegistry.getCryptoFunction(keySSI, cryptoFunctionType);
+}
 const hash = (keySSI, data, callback) => {
+    console.log("This function is obsolete");
     callback(undefined, hashSync(keySSI, data));
 };
 
 const hashSync = (keySSI, data) => {
+    console.log("This function is obsolete");
     if (typeof data === "object" && !$$.Buffer.isBuffer(data)) {
         data = JSON.stringify(data);
     }
@@ -22,11 +27,13 @@ const hashSync = (keySSI, data) => {
 }
 
 const encrypt = (keySSI, buffer, callback) => {
+    console.log("This function is obsolete");
     const encrypt = cryptoRegistry.getEncryptionFunction(keySSI);
     callback(undefined, encrypt(buffer, keySSI.getEncryptionKey()));
 };
 
 const decrypt = (keySSI, encryptedBuffer, callback) => {
+    console.log("This function is obsolete");
     const decrypt = cryptoRegistry.getDecryptionFunction(keySSI);
     let decryptedBuffer;
     try {
@@ -70,11 +77,13 @@ const generateEncryptionKey = (keySSI, callback) => {
 };
 
 const encode = (keySSI, data) => {
+    console.log("This function is obsolete");
     const encode = cryptoRegistry.getEncodingFunction(keySSI);
     return encode(data);
 };
 
 const decode = (keySSI, data) => {
+    console.log("This function is obsolete");
     const decode = cryptoRegistry.getDecodingFunction(keySSI);
     return decode(data);
 };
@@ -203,6 +212,7 @@ function createBloomFilter(options) {
 
 
 module.exports = {
+    getCryptoFunctionForKeySSI,
     hash,
     hashSync,
     generateRandom,
