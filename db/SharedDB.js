@@ -40,7 +40,7 @@ function getSharedDB(keySSI, dbName){
     if(keySSI.getTypeName() === constants.KEY_SSIS.SEED_SSI){
         let writableDSU;
         function createWritableDSU(){
-            let writableSSI = keySSIApis.buildTemplateKeySSI(constants.KEY_SSIS.SEED_SSI, keySSI.getDLDomain());
+            let writableSSI = keySSIApis.createTemplateKeySSI(constants.KEY_SSIS.SEED_SSI, keySSI.getDLDomain());
             resolver.createDSU(writableSSI, function(err,res){
                 writableDSU = res;
                 createWrapperDSU();
