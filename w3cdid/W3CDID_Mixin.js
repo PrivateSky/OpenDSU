@@ -1,17 +1,24 @@
 /*
     W3CDID Minxin is abstracting the DID document for OpenDSU compatible DID methods
+
+    did:whatever   resolved to an OpenDSU abstraction: W3CDIDDocument
+    verify signatures
+    sign
+    send and receive encrypted messages
+
+
  */
 
 function W3CDID_Mixin(){
-    this.getController = function(callback){
+    this.getControllerKey = function(callback){
 
     };
 
-    this.getPublicKey = function(callback){
+    this.getPublicKeys = function(callback){
 
     };
 
-    this.getPrivateKey = function(callback){
+    this.findPrivateKeysInSecurityContext = function(callback){
 
     };
 
