@@ -6,18 +6,15 @@ const storeName = "bricks";
 
 function putBrick(brick, callback) {
     const cache = cachedStores.getCacheForVault(storeName);
-    crypto.hash(keySSISpace.buildTemplateSeedSSI("vault"), brick, (err, brickHash) => {
+    const hash = crypto.getCryptoFunctionForKeySSI(keySSISpace.createTemplateSeedSSI("vault"), "hash");
+    const brickHash = hash(brick);
+
+    cache.put(brickHash, brick, (err, hash) => {
         if (err) {
-            return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to create brick hash`, err));
+            return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to put brick data in cache`, err));
         }
 
-        cache.put(brickHash, brick, (err, hash) => {
-            if (err) {
-                return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to put brick data in cache`, err));
-            }
-
-            callback(undefined, hash);
-        });
+        callback(undefined, hash);
     });
 }
 

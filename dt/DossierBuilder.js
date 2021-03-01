@@ -130,7 +130,7 @@ const DossierBuilder = function(){
 
     let createDossier = function (conf, commands, callback) {
         console.log("creating a new dossier...")
-        resolver.createDSU(keyssi.buildTemplateSeedSSI(conf.domain), (err, bar) => {
+        resolver.createDSU(keyssi.createTemplateSeedSSI(conf.domain), (err, bar) => {
             if (err)
                 return callback(err);
             updateDossier(bar, conf, commands, callback);
