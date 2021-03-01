@@ -3,12 +3,17 @@
     OpenDSU W3C compatible DID method
         - compatible with SeedSSIs
 
-        did:ssi:pk:domain::publickey:
-        did:ssi:alias:domain:string:pubkey:
-        did:method:string
-        - a set of APIs and an extensible resolver that can embed arbitrary resolvers ( did:ssi:w3c:domainAsMethod:specificString) masquerading as ledger domains for KeySSIs
+        //urgent
+        did:ssi:pk:domain::publickey::
+        did:ssi:alias:domain:string:pubkey::
+        //next if we need
+        did:ssi:sread:domain::hash_pubkey::
+        did:ssi:const:domain:value:::
 
-        pluginisable resolver
+        + a pluginisable resolver  that can embed arbitrary resolvers ( did::specificString).
+        did:method:string
+
+        TODO: analise the implementation of resolvers  masquerading as ledger domains
 
  */
 
