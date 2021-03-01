@@ -36,7 +36,7 @@ assert.callback('Create DSU on already configured domain', (testfinished) => {
 
 function createdsu(domain, keySSICallback)
 {
-    const keyssitemplate = keySSI.buildTemplateKeySSI('seed',domain);
+    const keyssitemplate = keySSI.createTemplateKeySSI('seed',domain);
     resolver.createDSU(keyssitemplate,(err, dsu) => {
         if (err)
         {

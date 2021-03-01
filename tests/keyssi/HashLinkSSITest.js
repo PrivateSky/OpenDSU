@@ -5,7 +5,7 @@ const keySSISpace = require('../../keyssi');
 const crypto = require('../../crypto');
 
 assert.callback('Create hash link with buildTemplate test', (callback) => {
-  keySSISpace.buildTemplateKeySSI('hl', 'default', undefined, undefined, 'vn0', 'hint', (err, ssi) => {
+  keySSISpace.createTemplateKeySSI('hl', 'default', undefined, undefined, 'vn0', 'hint', (err, ssi) => {
     const vn = ssi.getVn();
     const hint = ssi.getHint();
     const type = ssi.getTypeName();

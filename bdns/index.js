@@ -87,6 +87,7 @@ function BDNS() {
     };
 
     this.setBDNSHosts = (bdnsHosts) => {
+        isInitialized = true;
         bdnsCache = bdnsHosts;
     }
 }

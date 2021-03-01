@@ -5,7 +5,7 @@ const keySSISpace = require('../../keyssi');
 const crypto = require('../../crypto');
 
 assert.callback('Test buildWalletSSI ', (callback) => {
-  const walletSSI = keySSISpace.buildWalletSSI('default', ['cred1', 'cred2'], 'hint');
+  const walletSSI = keySSISpace.createTemplateWalletSSI('default', ['cred1', 'cred2'], 'hint');
 
   const hint = walletSSI.getHint();
   const type = walletSSI.getTypeName();

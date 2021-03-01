@@ -12,10 +12,9 @@ const bdns = opendsu.loadApi("bdns");
 
 assert.callback('Setting and testing a custom bdns', (testfinished) => {
 
-    dc.createTestFolder('setcustombdns',(err,folder) => {
+    dc.createTestFolder('setcustombdns', (err, folder) => {
         testIntegration.launchApiHubTestNode(10, folder, (err) => {
-            if (err)
-            {
+            if (err) {
                 throw err;
             }
             const dlDomain = 'custom_bdns';
@@ -23,9 +22,11 @@ assert.callback('Setting and testing a custom bdns', (testfinished) => {
             const anchor_address = ['address4', 'address5', 'address6']
             const replicas = 10
 
-            const seedSSI = keyssispace.buildTemplateSeedSSI(dlDomain);
-            seedSSI.initialize(dlDomain, undefined, undefined, undefined, "hint", (err) => {
-
+            const seedSSI = keyssispace.createTemplateSeedSSI(dlDomain);
+            seedSSI.initialize(dlDomain, undefined, undefined, undefined, (err) => {
+                if (err) {
+                    throw err;
+                }
                 let custom_bdns = {
                     'custom_bdns': {
                         "replicas": replicas,
@@ -36,19 +37,22 @@ assert.callback('Setting and testing a custom bdns', (testfinished) => {
                             anchor_address
                         ]
                     }
-                }
+                };
 
                 bdns.setBDNSHosts(custom_bdns);
 
                 bdns.getRawInfo(dlDomain, (err, rawInfo) => {
+                    if (err) {
+                        throw err;
+                    }
                     assert.equal(brick_address, rawInfo.brickStorages[0]);
                     assert.equal(anchor_address, rawInfo.anchoringServices[0]);
                     assert.equal(replicas, rawInfo.replicas);
                     testfinished()
                 });
-                });
             });
-        })
+        });
+    })
 }, 5000);
 
 

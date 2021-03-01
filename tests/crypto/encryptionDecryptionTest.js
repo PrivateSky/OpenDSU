@@ -11,20 +11,12 @@ assert.callback("Encryption and decryption test", (callback) => {
         }
 
         const data = "some data";
-        crypto.encrypt(seedSSI, data, (err, encryptedData) => {
-            if (err) {
-                throw err;
-            }
-
-            crypto.decrypt(seedSSI, encryptedData, (err, plainData) => {
-                if (err) {
-                    throw err;
-                }
-
-
-                assert.true(data === plainData.toString());
-                callback();
-            });
-        });
+        const encryptionKey = seedSSI.getEncryptionKey();
+        const encrypt = crypto.getCryptoFunctionForKeySSI(seedSSI, "encryption");
+        const decrypt = crypto.getCryptoFunctionForKeySSI(seedSSI, "decryption");
+        const encryptedData = encrypt(data, encryptionKey)
+        const plainData = decrypt(encryptedData, encryptionKey);
+        assert.true(data === plainData.toString());
+        callback();
     });
 });
