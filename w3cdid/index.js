@@ -6,7 +6,6 @@
  */
 
 
-
 /*
     Create a new W3CDID based on SeedSSI
  */
