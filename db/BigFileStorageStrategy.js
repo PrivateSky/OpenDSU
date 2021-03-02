@@ -1,9 +1,8 @@
 
-    function BigFileStorageStrategy(loadFunction, storeFunction, afterInitialisation){
-    let volatileMemory = {
+function BigFileStorageStrategy(loadFunction, storeFunction, afterInitialisation){
+    let volatileMemory = {}
 
-    }
-    if(loadFunction){
+    if (loadFunction) {
         loadFunction( (err, data) => {
             if(err){
                 console.log(err.message);
@@ -16,6 +15,7 @@
     } else {
         if(afterInitialisation) afterInitialisation();
     }
+
     function autoStore(){
         if(storeFunction){
             let storedState = JSON.stringify(volatileMemory);

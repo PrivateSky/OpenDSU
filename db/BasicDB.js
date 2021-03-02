@@ -5,16 +5,17 @@
          - the "__version" field
          - the "__previousRecord" field  pointing to the previous version of the record
 
-    As you can see, nothing is ever realy updated, even the deletion is done by marking the record with the field "deleted"
+    As you can see, nothing is ever really updated, even the deletion is done by marking the record with the field "deleted"
  */
 
 const ObservableMixin  = require("../utils/ObservableMixin");
+const { v4: uuid } = require('uuid');
 
 function BasicDB(storageStrategy){
     let self = this;
     ObservableMixin(this);
     /*
-        Get the whole content of the table and asynchorunsly return an array with all the  records satisfying the condition tested by the filterFunction
+        Get the whole content of the table and asynchronously return an array with all the  records satisfying the condition tested by the filterFunction
      */
     this.filter = function(tableName, filterFunction, callback){
         storageStrategy.filterTable(tableName, filterFunction, callback);
@@ -37,9 +38,47 @@ function BasicDB(storageStrategy){
       Insert a record, return error if already exists
     */
     this.insertRecord = function(tableName, key, record, callback){
-        callback = callback?callback:getDefaultCallback("Inserting a record",tableName, key);
+        callback = callback?callback:getDefaultCallback("Inserting a record", tableName, key);
         record.__version = 0;
-        storageStrategy.insertRecord(tableName,key, record, callback);
+        record.__uuid = uuid();
+        record.__timestamp = Date.now();
+        storageStrategy.insertRecord(tableName, key, record, callback);
+    };
+
+
+    /*
+        Update a record, does not return an error if does not exists
+     */
+    this.upsertRecord = function(tableName, key, record, callback){
+        callback = callback?callback:getDefaultCallback("Updating a record", tableName, key);
+
+        function doVersionIncAndUpdate(){
+            record.__version++;
+            record.__timestamp = Date.now();
+            const previousUuid = record.__uuid;
+            record.__uuid = uuid();
+
+            if(record.__version == 0){
+                storageStrategy.insertRecord(tableName, key, record, callback);
+            } else {
+                record.__previousUuid = previousUuid
+                storageStrategy.updateRecord(tableName, key, record, callback);
+            }
+        }
+
+        if(record.__version === undefined){
+            self.getRecord(tableName, key, function(err,res){
+                if(err || !res){
+                    record = {__version:-1};
+                }
+                if (res) {
+                    record = Object.assign(res, record)
+                }
+                doVersionIncAndUpdate();
+            });
+        } else {
+            doVersionIncAndUpdate()
+        }
     };
 
     /*
@@ -50,17 +89,25 @@ function BasicDB(storageStrategy){
 
         function doVersionIncAndUpdate(){
             record.__version++;
+            record.__timestamp = Date.now();
+            const previousUuid = record.__uuid;
+            record.__uuid = uuid();
+
             if(record.__version == 0){
                 storageStrategy.insertRecord(tableName, key, record, callback);
             } else {
+                record.__previousUuid = previousUuid
                 storageStrategy.updateRecord(tableName, key, record, callback);
             }
         }
 
         if(record.__version === undefined){
-            self.getRecord(tableName,key, function(err,res){
+            self.getRecord(tableName, key, function(err,res){
                 if(err || !res){
                     res = {__version:-1};
+                }
+                if (res) {
+                    record.__previousUuid = res.__uuid;
                 }
                 record.__version = res.__version;
                 doVersionIncAndUpdate();
@@ -100,6 +147,7 @@ function BasicDB(storageStrategy){
     this.deleteRecord = function(tableName, key, callback){
         self.getRecord(tableName, key, function(err, record){
             record.__version++;
+            record.__timestamp = Date.now();
             record.__deleted = true;
             storageStrategy.updateRecord(tableName, key, record, callback);
         })
