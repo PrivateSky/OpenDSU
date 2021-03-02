@@ -36,9 +36,9 @@ const createTemplateSeedSSI = (domain, specificString, control, vn, hint, callba
     return createTemplateKeySSI(SSITypes.SEED_SSI, domain, specificString, control, vn, hint, callback);
 };
 
-const createHashLinkSSI = (domain, hash, vn) => {
+const createHashLinkSSI = (domain, hash, vn, hint) => {
     const hashLinkSSI = keySSIFactory.createType(SSITypes.HASH_LINK_SSI)
-    hashLinkSSI.initialize(domain, hash, vn);
+    hashLinkSSI.initialize(domain, hash, vn, hint);
     return hashLinkSSI;
 };
 
