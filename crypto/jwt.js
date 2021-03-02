@@ -29,6 +29,7 @@ templateSeedSSI.load(SSITypes.SEED_SSI, "default");
 function encodeBase58(data) {
     return cryptoRegistry.getEncodingFunction(templateSeedSSI)(data).toString();
 };
+
 function decodeBase58(data, keepBuffer) {
     const decodedValue = cryptoRegistry.getDecodingFunction(templateSeedSSI)(data);
     if (keepBuffer) {
@@ -61,7 +62,7 @@ function getReadableSSI(ssi) {
     return readableSSI;
 }
 
-function createJWT({ seedSSI, scope, credentials, options, hash, sign }, callback) {
+function createJWT({seedSSI, scope, credentials, options, sign}, callback) {
     if (typeof seedSSI === "string") {
         const keyssiSpace = require('opendsu').loadApi("keyssi");
         try {
@@ -72,7 +73,7 @@ function createJWT({ seedSSI, scope, credentials, options, hash, sign }, callbac
     }
     const sReadSSI = seedSSI.derive();
 
-    let { subject, valability, ...optionsRest } = options || {};
+    let {subject, valability, ...optionsRest} = options || {};
     valability = valability || JWT_VALABILITY_SECONDS;
 
     if (subject) {
@@ -114,17 +115,14 @@ function createJWT({ seedSSI, scope, credentials, options, hash, sign }, callbac
     const segments = [encodeBase58(JSON.stringify(header)), encodeBase58(JSON.stringify(body))];
 
     const jwtToSign = segments.join(".");
+    const hashFn = require("../crypto").getCryptoFunctionForKeySSI(seedSSI, "hash");
+    const hashResult = hashFn(jwtToSign);
+    sign(seedSSI, hashResult, (signError, signResult) => {
+        if (signError || !signResult) return callback(signError);
+        const encodedSignResult = encodeBase58(signResult);
 
-    hash(seedSSI, jwtToSign, (hashError, hashResult) => {
-        if (hashError) return callback(hashError);
-
-        sign(seedSSI, hashResult, (signError, signResult) => {
-            if (signError || !signResult) return callback(signError);
-            const encodedSignResult = encodeBase58(signResult);
-
-            const jwt = `${jwtToSign}.${encodedSignResult}`;
-            callback(null, jwt);
-        });
+        const jwt = `${jwtToSign}.${encodedSignResult}`;
+        callback(null, jwt);
     });
 }
 
@@ -157,7 +155,7 @@ function parseJWTSegments(jwt, callback) {
         return callback(JWT_ERRORS.INVALID_JWT_SIGNATURE);
     }
 
-    return callback(null, { header, body, signature, signatureInput });
+    return callback(null, {header, body, signature, signatureInput});
 }
 
 function isJwtExpired(body) {
@@ -169,7 +167,7 @@ function isJwtNotActive(body) {
 }
 
 function verifyJWTContent(jwtContent, callback) {
-    const { header, body } = jwtContent;
+    const {header, body} = jwtContent;
 
     if (header.typ !== HEADER_TYPE) return callback(JWT_ERRORS.INVALID_JWT_HEADER_TYPE);
     if (!body.iss) return callback(JWT_ERRORS.INVALID_JWT_ISSUER);
@@ -181,35 +179,33 @@ function verifyJWTContent(jwtContent, callback) {
     callback(null);
 }
 
-const verifyJWT = ({ jwt, rootOfTrustVerificationStrategy, verifySignature, hash }, callback) => {
+const verifyJWT = ({jwt, rootOfTrustVerificationStrategy, verifySignature}, callback) => {
     parseJWTSegments(jwt, (parseError, jwtContent) => {
         if (parseError) return callback(parseError);
 
         verifyJWTContent(jwtContent, (verifyError) => {
             if (verifyError) return callback(verifyError);
 
-            const { header, body, signatureInput, signature } = jwtContent;
-            const { iss: sReadSSIString, publicKey } = body;
+            const {header, body, signatureInput, signature} = jwtContent;
+            const {iss: sReadSSIString, publicKey} = body;
 
             const sReadSSI = keySSIFactory.create(sReadSSIString);
+            const hashFn = require("../crypto").getCryptoFunctionForKeySSI(sReadSSI, "hash");
+            const hash = hashFn(signatureInput);
+            verifySignature(sReadSSI, hash, signature, publicKey, (verifyError, verifyResult) => {
+                if (verifyError || !verifyResult) return callback(JWT_ERRORS.INVALID_JWT_SIGNATURE);
 
-            hash(sReadSSI, signatureInput, (error, hash) => {
-                if (error) return callback(error);
-                verifySignature(sReadSSI, hash, signature, publicKey, (verifyError, verifyResult) => {
-                    if (verifyError || !verifyResult) return callback(JWT_ERRORS.INVALID_JWT_SIGNATURE);
+                if (typeof rootOfTrustVerificationStrategy === "function") {
+                    rootOfTrustVerificationStrategy({header, body}, (verificationError, verificationResult) => {
+                        if (verificationError || !verificationResult) {
+                            return callback(JWT_ERRORS.ROOT_OF_TRUST_VERIFICATION_FAILED);
+                        }
+                        callback(null, true);
+                    });
+                    return;
+                }
 
-                    if (typeof rootOfTrustVerificationStrategy === "function") {
-                        rootOfTrustVerificationStrategy({ header, body }, (verificationError, verificationResult) => {
-                            if (verificationError || !verificationResult) {
-                                return callback(JWT_ERRORS.ROOT_OF_TRUST_VERIFICATION_FAILED);
-                            }
-                            callback(null, true);
-                        });
-                        return;
-                    }
-
-                    callback(null, true);
-                });
+                callback(null, true);
             });
         });
     });

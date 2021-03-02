@@ -101,10 +101,13 @@ const generateRandom = (length) => {
 }
 
 const encodeBase58 = (data) => {
-    return encode(templateSeedSSI, data);
+    const encodeFn = getCryptoFunctionForKeySSI(templateSeedSSI, "encoding");
+    return encodeFn(data);
 };
+
 const decodeBase58 = (data) => {
-    return decode(templateSeedSSI, data);
+    const decodeFn = getCryptoFunctionForKeySSI(templateSeedSSI, "decoding");
+    return decodeFn(data);
 };
 
 const createJWT = (seedSSI, scope, credentials, options, callback) => {
@@ -114,7 +117,6 @@ const createJWT = (seedSSI, scope, credentials, options, callback) => {
             scope,
             credentials,
             options,
-            hash,
             sign,
         },
         callback
@@ -126,7 +128,6 @@ const verifyJWT = (jwt, rootOfTrustVerificationStrategy, callback) => {
         {
             jwt,
             rootOfTrustVerificationStrategy,
-            hash,
             verifySignature,
         },
         callback
