@@ -47,32 +47,33 @@ function BasicDB(storageStrategy){
 
 
     /*
-        Update a record, does not return an error if does not exists
+        Upsert a record, does not return an error if does not exists
      */
-    this.upsertRecord = function(tableName, key, record, callback){
+    this.upsertRecord = function(tableName, key, newRecord, callback){
         callback = callback?callback:getDefaultCallback("Updating a record", tableName, key);
+        let currentRecord
 
         function doVersionIncAndUpdate(){
-            record.__version++;
-            record.__timestamp = Date.now();
-            const previousUuid = record.__uuid;
-            record.__uuid = uuid();
+            newRecord.__version++;
+            newRecord.__timestamp = Date.now();
+            newRecord.__uuid = uuid();
 
-            if(record.__version == 0){
+            if (newRecord.__version == 0) {
                 storageStrategy.insertRecord(tableName, key, record, callback);
             } else {
-                record.__previousUuid = previousUuid
                 storageStrategy.updateRecord(tableName, key, record, callback);
             }
         }
 
-        if(record.__version === undefined){
+        if (newRecord.__version === undefined) {
+            // TODO - 2x get record for update refactor
             self.getRecord(tableName, key, function(err,res){
                 if(err || !res){
-                    record = {__version:-1};
+                    newRecord = Object.assign(newRecord, {__version:-1});
                 }
                 if (res) {
-                    record = Object.assign(res, record)
+                    currentRecord = res;
+                    newRecord.__version = currentRecord.__version;
                 }
                 doVersionIncAndUpdate();
             });
@@ -82,48 +83,19 @@ function BasicDB(storageStrategy){
     };
 
     /*
-        Update a record, does not return an error if does not exists
+        Update a record
      */
-    this.updateRecord = function(tableName, key, record, callback){
-        callback = callback?callback:getDefaultCallback("Updating a record", tableName, key);
-
-        function doVersionIncAndUpdate(){
-            record.__version++;
-            record.__timestamp = Date.now();
-            const previousUuid = record.__uuid;
-            record.__uuid = uuid();
-
-            if(record.__version == 0){
-                storageStrategy.insertRecord(tableName, key, record, callback);
-            } else {
-                record.__previousUuid = previousUuid
-                storageStrategy.updateRecord(tableName, key, record, callback);
-            }
-        }
-
-        if(record.__version === undefined){
-            self.getRecord(tableName, key, function(err,res){
-                if(err || !res){
-                    res = {__version:-1};
-                }
-                if (res) {
-                    record.__previousUuid = res.__uuid;
-                }
-                record.__version = res.__version;
-                doVersionIncAndUpdate();
-            });
-        } else {
-            doVersionIncAndUpdate()
-        }
+    this.updateRecord = function(tableName, key, record, callback) {
+        return this.upsertRecord(tableName, key, record, callback);
     };
 
     /*
         Get a single row from a table
      */
-    this.getRecord = function(tableName, key, callback){
+    this.getRecord = function(tableName, key, callback) {
         storageStrategy.getRecord(tableName, key, function(err,res){
             if(err || res.__deleted){
-                return callback( createOpenDSUErrorWrapper(`Missing record in table ${tableName} and key ${key}`, err));
+                return callback(createOpenDSUErrorWrapper(`Missing record in table ${tableName} and key ${key}`, err));
             }
             callback(undefined,res);
         });

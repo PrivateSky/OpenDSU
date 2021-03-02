@@ -69,14 +69,20 @@ function BigFileStorageStrategy(loadFunction, storeFunction, afterInitialisation
         Update a record, return error if does not exists
      */
     this.updateRecord = function(tableName, key, record, callback){
-        let tbl = getTable(tableName);
-        if(tbl[key] === undefined){
-            return callback(new Error("Can't update a record for key "+ key))
-        }
-        record.__previousRecord = tbl[key] ;
-        tbl[key] = record;
-        autoStore();
-        callback(undefined, record);
+        let currentRecord = this.getRecord(tableName, key, (err, currentRecord) => {
+            if (err) {
+                return callback(err)
+            }
+            if (!currentRecord) {
+                return callback(new Error("Can't update a record for key "+ key))
+            }
+
+            record.__previousRecord = currentRecord;
+            currentRecord = record;
+            autoStore();
+            callback(undefined, currentRecord);
+        })
+
     };
 
     /*
@@ -84,11 +90,31 @@ function BigFileStorageStrategy(loadFunction, storeFunction, afterInitialisation
      */
     this.getRecord = function(tableName, key, callback){
         let tbl = getTable(tableName);
-        let record = tbl[key];
-        if( record === undefined){
-            return callback(new Error("Can't retrieve a record for key "+ key))
+        let record;
+        if (typeof key === 'string') {
+            record = tbl[key];
+            if( record == undefined){
+                return callback(new Error("Can't retrieve a record for key " + key))
+            }
+            callback(undefined, record);
         }
-        callback(undefined,record);
+        else {
+            record = tbl[key[0]]
+            for (let i = 1; i <= key.length; i++) {
+                if (record == undefined){
+                    return callback(new Error("Can't retrieve a record for key " + + " in: " + key.concat(".")))
+                }
+
+                if (i === key.length) {
+                    break
+                }
+                else {
+                    record = record[key[i]];
+                }
+            }
+
+            callback(undefined, record);
+        }
     };
 }
 module.exports = BigFileStorageStrategy;
