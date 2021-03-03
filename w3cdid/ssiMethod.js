@@ -4,7 +4,7 @@
 function PK_DIDMethod(){
     let pkDocument = require("./pkDocument");
     this.create = function(SeedSSI, callback){
-        callback(null, pkDocument.initiateDIDDocument(alias, SeedSSI));
+        callback(null, pkDocument.initiateDIDDocument(SeedSSI));
     }
 
     this.resolve = function(tokens, callback){

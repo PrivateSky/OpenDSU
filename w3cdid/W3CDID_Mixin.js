@@ -58,4 +58,4 @@ function W3CDID_Mixin(){
     };
 }
 
-module.exports.W3CDID_Mixin = W3CDID_Mixin;
+module.exports = W3CDID_Mixin;
