@@ -56,13 +56,37 @@ function BigFileStorageStrategy(loadFunction, storeFunction, afterInitialisation
       Insert a record, return error if already exists
     */
     this.insertRecord = function(tableName, key, record, callback){
-        let tbl = getTable(tableName);
-        if(tbl[key] !== undefined){
-            return callback(new Error("Can't insert a new record for key "+ key))
+        let currentParent = getTable(tableName)
+
+        if (typeof key === 'string') {
+            if (currentParent[key] != undefined) {
+                return callback(new Error("Can't insert a new record for key " + key))
+            }
+
+            currentParent[key] = record;
+            autoStore();
+            callback(undefined, record);
         }
-        tbl[key] = record;
-        autoStore();
-        callback(undefined, record);
+        else {
+            let currentKey = key[0];
+            for (let i = 1; i <= key.length; i++) {
+                if (currentParent[currentKey] == undefined){
+                    currentParent[currentKey] = {}
+                }
+
+                if (i === key.length) {
+                    break
+                }
+                else {
+                    currentParent = currentParent[currentKey]
+                    currentKey = key[i];
+                }
+            }
+
+            currentParent[currentKey] = record;
+            autoStore();
+            callback(undefined, record);
+        }
     };
 
     /*

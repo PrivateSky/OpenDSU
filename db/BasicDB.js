@@ -59,9 +59,9 @@ function BasicDB(storageStrategy){
             newRecord.__uuid = uuid();
 
             if (newRecord.__version == 0) {
-                storageStrategy.insertRecord(tableName, key, record, callback);
+                storageStrategy.insertRecord(tableName, key, newRecord, callback);
             } else {
-                storageStrategy.updateRecord(tableName, key, record, callback);
+                storageStrategy.updateRecord(tableName, key, newRecord, callback);
             }
         }
 
