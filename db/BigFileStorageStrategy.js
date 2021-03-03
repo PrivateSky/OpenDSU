@@ -58,20 +58,24 @@ function BigFileStorageStrategy(loadFunction, storeFunction, afterInitialisation
     this.insertRecord = function(tableName, key, record, callback){
         let currentParent = getTable(tableName)
 
-        if (typeof key === 'string') {
-            if (currentParent[key] != undefined) {
-                return callback(new Error("Can't insert a new record for key " + key))
+        function _insertRecord(currentParent, currentKey) {
+            if (currentParent[currentKey] != undefined) {
+                return callback(new Error("Can't insert a new record for currentKey " + currentKey))
             }
 
-            currentParent[key] = record;
+            currentParent[currentKey] = record;
             autoStore();
             callback(undefined, record);
+        }
+
+        if (typeof key === 'string') {
+            _insertRecord(currentParent, key)
         }
         else {
             let currentKey = key[0];
             for (let i = 1; i <= key.length; i++) {
                 if (currentParent[currentKey] == undefined){
-                    currentParent[currentKey] = {}
+                    currentParent[currentKey] = i === key.length ? undefined : {}
                 }
 
                 if (i === key.length) {
@@ -83,9 +87,7 @@ function BigFileStorageStrategy(loadFunction, storeFunction, afterInitialisation
                 }
             }
 
-            currentParent[currentKey] = record;
-            autoStore();
-            callback(undefined, record);
+            _insertRecord(currentParent, currentKey)
         }
     };
 
