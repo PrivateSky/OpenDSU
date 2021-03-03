@@ -11,14 +11,14 @@
 const ObservableMixin  = require("../utils/ObservableMixin");
 const crypto = require("crypto");
 
-function uuid(bytes = 32) {
+function uid(bytes = 32) {
     // node
     if (process) {
-        return Buffer.from(crypto.randomFillSync(new Uint8Array(bytes))).toString('base64')
+        return crypto.randomBytes(bytes).toString('base64')
     }
     // browser
     else {
-        if (!crypto.getRandomValues) {
+        if (!crypto || !crypto.getRandomValues) {
             throw new Error('crypto.getRandomValues not supported by the browser.')
         }
 
@@ -56,7 +56,7 @@ function BasicDB(storageStrategy){
     this.insertRecord = function(tableName, key, record, callback){
         callback = callback?callback:getDefaultCallback("Inserting a record", tableName, key);
         record.__version = 0;
-        record.__uuid = uuid();
+        record.__uid = uid();
         record.__timestamp = Date.now();
         storageStrategy.insertRecord(tableName, key, record, callback);
     };
@@ -72,7 +72,7 @@ function BasicDB(storageStrategy){
         function doVersionIncAndUpdate(){
             newRecord.__version++;
             newRecord.__timestamp = Date.now();
-            newRecord.__uuid = uuid();
+            newRecord.__uid = uid();
 
             if (newRecord.__version == 0) {
                 storageStrategy.insertRecord(tableName, key, newRecord, callback);
