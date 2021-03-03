@@ -9,7 +9,23 @@
  */
 
 const ObservableMixin  = require("../utils/ObservableMixin");
-const { v4: uuid } = require('uuid');
+const crypto = require("crypto");
+
+function uuid(bytes = 32) {
+    // node
+    if (process) {
+        return Buffer.from(crypto.randomFillSync(new Uint8Array(bytes))).toString('base64')
+    }
+    // browser
+    else {
+        if (!crypto.getRandomValues) {
+            throw new Error('crypto.getRandomValues not supported by the browser.')
+        }
+
+        return btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(bytes))))
+    }
+}
+
 
 function BasicDB(storageStrategy){
     let self = this;
