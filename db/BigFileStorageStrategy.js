@@ -94,21 +94,31 @@ function BigFileStorageStrategy(loadFunction, storeFunction, afterInitialisation
     /*
         Update a record, return error if does not exists
      */
-    this.updateRecord = function(tableName, key, record, callback){
-        let currentRecord = this.getRecord(tableName, key, (err, currentRecord) => {
-            if (err) {
-                return callback(err)
-            }
+    this.updateRecord = function(tableName, key, record, currentRecord, callback){
+        function _updateRecord(record, currentRecord, callback) {
             if (!currentRecord) {
-                return callback(new Error("Can't update a record for key "+ key))
+                return callback(new Error("Can't update a record for key " + key))
             }
 
             record.__previousRecord = currentRecord;
             currentRecord = record;
             autoStore();
             callback(undefined, currentRecord);
-        })
+        }
 
+        if (typeof currentRecord === 'function') {
+            callback = currentRecord
+
+            this.getRecord(tableName, key, (err, currentRecord) => {
+                if (err) {
+                    return callback(err)
+                }
+                _updateRecord(record, currentRecord, callback)
+            })
+        }
+        else {
+            _updateRecord(record, currentRecord, callback)
+        }
     };
 
     /*

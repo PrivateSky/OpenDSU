@@ -69,7 +69,7 @@ function BasicDB(storageStrategy){
         callback = callback?callback:getDefaultCallback("Updating a record", tableName, key);
         let currentRecord
 
-        function doVersionIncAndUpdate(){
+        function doVersionIncAndUpsert(currentRecord){
             newRecord.__version++;
             newRecord.__timestamp = Date.now();
             newRecord.__uid = uid();
@@ -77,12 +77,11 @@ function BasicDB(storageStrategy){
             if (newRecord.__version == 0) {
                 storageStrategy.insertRecord(tableName, key, newRecord, callback);
             } else {
-                storageStrategy.updateRecord(tableName, key, newRecord, callback);
+                storageStrategy.updateRecord(tableName, key, newRecord, currentRecord, callback);
             }
         }
 
         if (newRecord.__version === undefined) {
-            // TODO - 2x get record for update refactor
             self.getRecord(tableName, key, function(err,res){
                 if(err || !res){
                     newRecord = Object.assign(newRecord, {__version:-1});
@@ -91,10 +90,10 @@ function BasicDB(storageStrategy){
                     currentRecord = res;
                     newRecord.__version = currentRecord.__version;
                 }
-                doVersionIncAndUpdate();
+                doVersionIncAndUpsert(currentRecord);
             });
         } else {
-            doVersionIncAndUpdate()
+            doVersionIncAndUpsert()
         }
     };
 
