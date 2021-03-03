@@ -100,9 +100,7 @@ function BigFileStorageStrategy(loadFunction, storeFunction, afterInitialisation
             if (!previousRecord) {
                 return callback(new Error("Can't update a record for key " + key))
             }
-
-            const table = getTable(tableName);
-
+            
             record.__previousRecord = previousRecord;
             self.insertRecord(tableName, key, record, callback, true);
         }
@@ -139,7 +137,7 @@ function BigFileStorageStrategy(loadFunction, storeFunction, afterInitialisation
             record = tbl[key[0]]
             for (let i = 1; i <= key.length; i++) {
                 if (record == undefined){
-                    return callback(new Error("Can't retrieve a record for key " + + " in: " + key.concat(".")))
+                    return callback(new Error("Can't retrieve a record for key " + key.concat(".")))
                 }
 
                 if (i === key.length) {
