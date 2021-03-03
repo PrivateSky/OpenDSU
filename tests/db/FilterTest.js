@@ -4,7 +4,7 @@ const assert = require("double-check").assert;
 const db = require("../../db");
 
 
-assert.callback("DB Indexing test", (callback) => {
+assert.callback("Filter test", (callback) => {
     let strategy = db.getBigFileStorageStrategy();
     let mydb = db.getBasicDB(strategy);
     mydb.insertRecord("test", "key1", {value:"v1"});

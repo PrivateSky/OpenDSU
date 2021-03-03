@@ -63,9 +63,9 @@ function BasicDB(storageStrategy){
 
 
     /*
-        Upsert a record, does not return an error if does not exists
+        Update a record, does not return an error if does not exists
      */
-    this.upsertRecord = function(tableName, key, newRecord, callback){
+    this.updateRecord = function(tableName, key, newRecord, callback){
         callback = callback?callback:getDefaultCallback("Updating a record", tableName, key);
         let currentRecord
 
@@ -95,13 +95,6 @@ function BasicDB(storageStrategy){
         } else {
             doVersionIncAndUpsert()
         }
-    };
-
-    /*
-        Update a record
-     */
-    this.updateRecord = function(tableName, key, record, callback) {
-        return self.upsertRecord(tableName, key, record, callback);
     };
 
     /*
