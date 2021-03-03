@@ -1,10 +1,7 @@
-arequire("../../../../psknode/bundles/testsRuntime");
+require("../../../../psknode/bundles/testsRuntime");
 const assert = require("double-check").assert;
 const dc = require("double-check");
 const db = require("../../db");
-let value = "value";
-
-
 
 const tir = require("../../../../psknode/tests/util/tir");
 
@@ -44,7 +41,7 @@ assert.callback("DB Indexing test", (testFinishCallback) => {
 
             setTimeout(function(){
                 mydb.updateRecord("test", "key1", {value:"v3"});
-            },2000)
+            }, 2000)
 
 
            setTimeout(function(){

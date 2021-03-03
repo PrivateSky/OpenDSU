@@ -1,6 +1,7 @@
 
 function BigFileStorageStrategy(loadFunction, storeFunction, afterInitialisation){
     let volatileMemory = {}
+    let self = this
 
     if (loadFunction) {
         loadFunction( (err, data) => {
@@ -55,11 +56,11 @@ function BigFileStorageStrategy(loadFunction, storeFunction, afterInitialisation
     /*
       Insert a record, return error if already exists
     */
-    this.insertRecord = function(tableName, key, record, callback){
+    this.insertRecord = function(tableName, key, record, callback, reInsert = false){
         let currentParent = getTable(tableName)
 
         function _insertRecord(currentParent, currentKey) {
-            if (currentParent[currentKey] != undefined) {
+            if (!reInsert && currentParent[currentKey] != undefined) {
                 return callback(new Error("Can't insert a new record for currentKey " + currentKey))
             }
 
@@ -95,25 +96,25 @@ function BigFileStorageStrategy(loadFunction, storeFunction, afterInitialisation
         Update a record, return error if does not exists
      */
     this.updateRecord = function(tableName, key, record, currentRecord, callback){
-        function _updateRecord(record, currentRecord, callback) {
-            if (!currentRecord) {
+        function _updateRecord(record, previousRecord, callback) {
+            if (!previousRecord) {
                 return callback(new Error("Can't update a record for key " + key))
             }
 
-            record.__previousRecord = currentRecord;
-            currentRecord = record;
-            autoStore();
-            callback(undefined, currentRecord);
+            const table = getTable(tableName);
+
+            record.__previousRecord = previousRecord;
+            self.insertRecord(tableName, key, record, callback, true);
         }
 
         if (typeof currentRecord === 'function') {
             callback = currentRecord
 
-            this.getRecord(tableName, key, (err, currentRecord) => {
+            this.getRecord(tableName, key, (err, previousRecord) => {
                 if (err) {
                     return callback(err)
                 }
-                _updateRecord(record, currentRecord, callback)
+                _updateRecord(record, previousRecord, callback)
             })
         }
         else {

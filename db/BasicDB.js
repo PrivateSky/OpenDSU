@@ -101,7 +101,7 @@ function BasicDB(storageStrategy){
         Update a record
      */
     this.updateRecord = function(tableName, key, record, callback) {
-        return this.upsertRecord(tableName, key, record, callback);
+        return self.upsertRecord(tableName, key, record, callback);
     };
 
     /*
