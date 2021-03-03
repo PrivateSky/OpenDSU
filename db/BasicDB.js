@@ -2,8 +2,10 @@
     An OpenDSU  BasicDB is a simple noSQL database
     The DB is used with a concept of "table" and rows (records) that have multiple versions
     The support for multiple versions is offered by getVersions function and by automatically managing 2 fields in the records:
-         - the "__version" field
-         - the "__previousRecord" field  pointing to the previous version of the record
+         - the "__version" field representing the height of the graph
+         - the "__previousRecord" field pointing to the previous version of the record
+         - the "__uid" is unique id, is used to quickly determine the unique id of parent node/s for future conflict solving
+         - the "__timestamp" is a timestamp, number of milliseconds elapsed since January 1, 1970 00:00:00 UTC.
 
     As you can see, nothing is ever really updated, even the deletion is done by marking the record with the field "deleted"
  */
