@@ -4,7 +4,7 @@
     The support for multiple versions is offered by getVersions function and by automatically managing 2 fields in the records:
          - the "__version" field representing the height of the graph
          - the "__previousRecord" field pointing to the previous version of the record
-         - the "__uid" is unique id, is used to quickly determine the unique id of parent node/s for future conflict solving
+         - the "__changeId" is unique id, is used to quickly determine the unique id of parent node/s for future conflict solving
          - the "__timestamp" is a timestamp, number of milliseconds elapsed since January 1, 1970 00:00:00 UTC.
 
     As you can see, nothing is ever really updated, even the deletion is done by marking the record with the field "deleted"
@@ -57,10 +57,11 @@ function BasicDB(storageStrategy){
     */
     this.insertRecord = function(tableName, key, record, callback){
         callback = callback?callback:getDefaultCallback("Inserting a record", tableName, key);
-        record.__version = 0;
-        record.__uid = uid();
-        record.__timestamp = Date.now();
-        storageStrategy.insertRecord(tableName, key, record, callback);
+        const sharedDSUMetadata = {}
+        sharedDSUMetadata.__version = 0;
+        sharedDSUMetadata.__changeId = uid();
+        sharedDSUMetadata.__timestamp = Date.now();
+        storageStrategy.insertRecord(tableName, key, Object.assign(sharedDSUMetadata, record), callback);
     };
 
 
@@ -74,7 +75,7 @@ function BasicDB(storageStrategy){
         function doVersionIncAndUpsert(currentRecord){
             newRecord.__version++;
             newRecord.__timestamp = Date.now();
-            newRecord.__uid = uid();
+            newRecord.__changeId = uid();
 
             if (newRecord.__version == 0) {
                 storageStrategy.insertRecord(tableName, key, newRecord, callback);

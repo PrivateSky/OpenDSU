@@ -24,7 +24,8 @@ function BigFileStorageStrategy(loadFunction, storeFunction, afterInitialisation
                 if(err){
                     reportUserRelevantError(createOpenDSUErrorWrapper("Failed to autostore db file", err));
                 }
-                console.log("BigFileStorageStrategy storing state:",storedState, volatileMemory);
+                console.log("BigFileStorageStrategy storing state:");
+                console.dir(volatileMemory, {depth: null})
             });
         }
     }

@@ -15,7 +15,7 @@ assert.callback("DB Indexing test", (testFinishCallback) => {
             mydb.getRecord("test", "key1", function(err,res){
                 console.log("Result is", res);
                 assert.equal(res.__version,2);
-                assert.equal(res.value,"v3");
+                assert.equal(res.value,"v2");
                 testFinishCallback();
             })
         }
@@ -28,9 +28,9 @@ assert.callback("DB Indexing test", (testFinishCallback) => {
             let storageSSI = keySSIApis.createSeedSSI("default");
 
             let mydb = db.getSharedDB(storageSSI, "testDb");
-            mydb.insertRecord("test", "key1", {value:"v1"});
+            mydb.insertRecord("test", "key1", {value:"v0"});
+            mydb.updateRecord("test", "key1", {value:"v1"});
             mydb.updateRecord("test", "key1", {value:"v2"});
-            mydb.updateRecord("test", "key1", {value:"v3"});
 
            setTimeout(function(){
                testPersistence(mydb.getShareableSSI());
