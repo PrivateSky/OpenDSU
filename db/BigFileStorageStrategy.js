@@ -65,7 +65,7 @@ function BigFileStorageStrategy(loadFunction, storeFunction, afterInitialisation
             }
 
             currentParent[currentKey] = record;
-            autoStore();
+            setTimeout(() => autoStore(), 0)
             callback(undefined, record);
         }
 
@@ -100,7 +100,7 @@ function BigFileStorageStrategy(loadFunction, storeFunction, afterInitialisation
             if (!previousRecord) {
                 return callback(new Error("Can't update a record for key " + key))
             }
-            
+
             record.__previousRecord = previousRecord;
             self.insertRecord(tableName, key, record, callback, true);
         }

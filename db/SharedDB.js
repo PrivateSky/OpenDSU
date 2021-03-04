@@ -84,6 +84,7 @@ function getSharedDB(keySSI, dbName){
     function writeFunction(dbState,callback){
         storageDSU.writeFile(`/data/${dbName}`,dbState, callback);
     }
+
     let storageStrategy = dbModule.getBigFileStorageStrategy(readFunction, writeFunction, onInitialisationDone);
 
     db = bindAutoPendingFunctions(dbModule.getBasicDB(storageStrategy), {});
