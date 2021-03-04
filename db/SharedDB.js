@@ -1,5 +1,4 @@
 
-
 /*
     A shared DB is a baseDB stored in a writable DSU mounted in a /data folder in another wrapper DSU.
     This scheme is useful to share the database without sharing the SeedSSI of the wrapper DSU as this is usually used for signing, etc
@@ -85,6 +84,7 @@ function getSharedDB(keySSI, dbName){
     function writeFunction(dbState,callback){
         storageDSU.writeFile(`/data/${dbName}`,dbState, callback);
     }
+
     let storageStrategy = dbModule.getBigFileStorageStrategy(readFunction, writeFunction, onInitialisationDone);
 
     db = bindAutoPendingFunctions(dbModule.getBasicDB(storageStrategy), {});

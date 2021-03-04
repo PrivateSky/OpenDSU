@@ -2,11 +2,8 @@ require("../../../../psknode/bundles/testsRuntime");
 const assert = require("double-check").assert;
 const dc = require("double-check");
 const db = require("../../db");
-let value = "value";
-
-
-
 const tir = require("../../../../psknode/tests/util/tir");
+
 
 assert.callback("DB Indexing test", (testFinishCallback) => {
     dc.createTestFolder("wallet", function (err, folder) {
@@ -18,7 +15,7 @@ assert.callback("DB Indexing test", (testFinishCallback) => {
             mydb.getRecord("test", "key1", function(err,res){
                 console.log("Result is", res);
                 assert.equal(res.__version,2);
-                assert.equal(res.value,"v3");
+                assert.equal(res.value,"v2");
                 testFinishCallback();
             })
         }
@@ -28,33 +25,17 @@ assert.callback("DB Indexing test", (testFinishCallback) => {
                 throw err;
             }
             let keySSIApis = require("../../keyssi");
-            let constants = require("../../moduleConstants");
             let storageSSI = keySSIApis.createSeedSSI("default");
 
             let mydb = db.getSharedDB(storageSSI, "testDb");
-
-            setTimeout(function(){
-                mydb.insertRecord("test", "key1", {value:"v1"});
-            },100)
-
-            setTimeout(function(){
-                mydb.updateRecord("test", "key1", {value:"v2"});
-            },1000)
-
-
-            setTimeout(function(){
-                mydb.updateRecord("test", "key1", {value:"v3"});
-            },2000)
-
+            mydb.insertRecord("test", "key1", {value:"v0"});
+            mydb.updateRecord("test", "key1", {value:"v1"});
+            mydb.updateRecord("test", "key1", {value:"v2"});
 
            setTimeout(function(){
                testPersistence(mydb.getShareableSSI());
-           },3000);
+           },1000);
         });
     });
-}, 6000);
-/*
-TODO: check why the final timeot of 5000 ms leadas to the test failure. What takes so much?
-
- */
+}, 5000);
 

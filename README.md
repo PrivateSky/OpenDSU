@@ -1,6 +1,7 @@
 # OpenDSU SDK as API spaces
 
-htt            :Http client APIs
+
+http            :Http client APIs
 
 crypto          :Recommended Crypto APIs
 

@@ -1,9 +1,9 @@
 
-    function BigFileStorageStrategy(loadFunction, storeFunction, afterInitialisation){
-    let volatileMemory = {
+function BigFileStorageStrategy(loadFunction, storeFunction, afterInitialisation){
+    let volatileMemory = {}
+    let self = this
 
-    }
-    if(loadFunction){
+    if (loadFunction) {
         loadFunction( (err, data) => {
             if(err){
                 console.log(err.message);
@@ -16,6 +16,7 @@
     } else {
         if(afterInitialisation) afterInitialisation();
     }
+
     function autoStore(){
         if(storeFunction){
             let storedState = JSON.stringify(volatileMemory);
@@ -23,7 +24,8 @@
                 if(err){
                     reportUserRelevantError(createOpenDSUErrorWrapper("Failed to autostore db file", err));
                 }
-                console.log("BigFileStorageStrategy storing state:",storedState, volatileMemory);
+                console.log("BigFileStorageStrategy storing state:");
+                console.dir(volatileMemory, {depth: null})
             });
         }
     }
@@ -55,28 +57,68 @@
     /*
       Insert a record, return error if already exists
     */
-    this.insertRecord = function(tableName, key, record, callback){
-        let tbl = getTable(tableName);
-        if(tbl[key] !== undefined){
-            return callback(new Error("Can't insert a new record for key "+ key))
+    this.insertRecord = function(tableName, key, record, callback, reInsert = false){
+        let currentParent = getTable(tableName)
+
+        function _insertRecord(currentParent, currentKey) {
+            if (!reInsert && currentParent[currentKey] != undefined) {
+                return callback(new Error("Can't insert a new record for currentKey " + currentKey))
+            }
+
+            currentParent[currentKey] = record;
+            setTimeout(() => autoStore(), 0)
+            callback(undefined, record);
         }
-        tbl[key] = record;
-        autoStore();
-        callback(undefined, record);
+
+        if (typeof key === 'string') {
+            _insertRecord(currentParent, key)
+        }
+        else {
+            let currentKey = key[0];
+            for (let i = 1; i <= key.length; i++) {
+                if (currentParent[currentKey] == undefined){
+                    currentParent[currentKey] = i === key.length ? undefined : {}
+                }
+
+                if (i === key.length) {
+                    break
+                }
+                else {
+                    currentParent = currentParent[currentKey]
+                    currentKey = key[i];
+                }
+            }
+
+            _insertRecord(currentParent, currentKey)
+        }
     };
 
     /*
         Update a record, return error if does not exists
      */
-    this.updateRecord = function(tableName, key, record, callback){
-        let tbl = getTable(tableName);
-        if(tbl[key] === undefined){
-            return callback(new Error("Can't update a record for key "+ key))
+    this.updateRecord = function(tableName, key, record, currentRecord, callback){
+        function _updateRecord(record, previousRecord, callback) {
+            if (!previousRecord) {
+                return callback(new Error("Can't update a record for key " + key))
+            }
+
+            record.__previousRecord = previousRecord;
+            self.insertRecord(tableName, key, record, callback, true);
         }
-        record.__previousRecord = tbl[key] ;
-        tbl[key] = record;
-        autoStore();
-        callback(undefined, record);
+
+        if (typeof currentRecord === 'function') {
+            callback = currentRecord
+
+            this.getRecord(tableName, key, (err, previousRecord) => {
+                if (err) {
+                    return callback(err)
+                }
+                _updateRecord(record, previousRecord, callback)
+            })
+        }
+        else {
+            _updateRecord(record, currentRecord, callback)
+        }
     };
 
     /*
@@ -84,11 +126,31 @@
      */
     this.getRecord = function(tableName, key, callback){
         let tbl = getTable(tableName);
-        let record = tbl[key];
-        if( record === undefined){
-            return callback(new Error("Can't retrieve a record for key "+ key))
+        let record;
+        if (typeof key === 'string') {
+            record = tbl[key];
+            if( record == undefined){
+                return callback(new Error("Can't retrieve a record for key " + key))
+            }
+            callback(undefined, record);
         }
-        callback(undefined,record);
+        else {
+            record = tbl[key[0]]
+            for (let i = 1; i <= key.length; i++) {
+                if (record == undefined){
+                    return callback(new Error("Can't retrieve a record for key " + key.concat(".")))
+                }
+
+                if (i === key.length) {
+                    break
+                }
+                else {
+                    record = record[key[i]];
+                }
+            }
+
+            callback(undefined, record);
+        }
     };
 }
 module.exports = BigFileStorageStrategy;
