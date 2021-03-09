@@ -1,7 +1,7 @@
-require("../../../../psknode/bundles/testsRuntime");
+require("../../../../../psknode/bundles/testsRuntime");
 const assert = require("double-check").assert;
 
-const db = require("../../db");
+const db = require("../../../db/singleDsuDB");
 
 
 assert.callback("insertRecord key: string, getRecord key: string", (callback) => {

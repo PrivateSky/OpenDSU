@@ -1,3 +1,33 @@
+// const NewState1 = {
+//   'mergedState': {
+//     './file1': {
+//       mostUpToDateUserDSU: 'keySSIUser1',
+//       versions: ['uidA3', 'uidA2', ...]
+//     },
+//     './file2': {
+//       mostUpToDateUserDSU: 'keySSIUser1',
+//       versions: ['uidB3', 'uidB2', ...]
+//     }
+//   },
+//   'usersState': {
+//     'User1KeySSI': {
+//       './file1': '1id1',
+//       './file2': 't9fq3j924rrf'
+//
+//     },
+//     'User2KeySSI': {
+//       './file1': '1id1',
+//       './file2': '2id1', // incoming -> 'afsdf03d4y06' from '2id1' -> yields a conflict
+//     }
+//   },
+//   changesMap: {
+//     't9fq3j924rrf': 'UserKeySSI1',
+//     'j9irg93daag4': 'UserKeySSI3',
+//     'afsdf03d4y06': 'UserKeySSI1',
+//     ...
+//   },
+// }
+
 
 function BigFileStorageStrategy(loadFunction, storeFunction, afterInitialisation){
   let volatileMemory = {

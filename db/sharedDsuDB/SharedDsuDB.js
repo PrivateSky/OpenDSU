@@ -3,9 +3,13 @@
     A shared DB is a baseDB stored in a writable DSU mounted in a /data folder in another wrapper DSU.
     This scheme is useful to share the database without sharing the SeedSSI of the wrapper DSU as this is usually used for signing, etc
  */
+/*
+TODO:
+ */
+/*
 function getSharedDB(keySSI, dbName){
     let db;
-    let dbModule = require("./index.js");
+    let dbModule = require("../singleDsuDB");
     let storageDSU;
     let shareableSSI;
     let skipFirstRead = false;
@@ -31,10 +35,10 @@ function getSharedDB(keySSI, dbName){
             db.dispatchEvent("initialised", storageDSU);
         }, 10000);
 
-    let resolver = require("../resolver");
-    let keySSIApis = require("../keyssi");
-    let constants = require("../moduleConstants");
-    let bindAutoPendingFunctions = require("../utils/BindAutoPendingFunctions").bindAutoPendingFunctions;
+    let resolver = require("../../resolver");
+    let keySSIApis = require("../../keyssi");
+    let constants = require("../../moduleConstants");
+    let bindAutoPendingFunctions = require("../../utils/BindAutoPendingFunctions").bindAutoPendingFunctions;
 
     if(keySSI.getTypeName() === constants.KEY_SSIS.SEED_SSI){
         let writableDSU;
@@ -102,3 +106,4 @@ function getSharedDB(keySSI, dbName){
 }
 
 module.exports.getSharedDB = getSharedDB;
+*/

@@ -1,8 +1,8 @@
-require("../../../../psknode/bundles/testsRuntime");
+require("../../../../../psknode/bundles/testsRuntime");
 const assert = require("double-check").assert;
 const dc = require("double-check");
-const db = require("../../db");
-const tir = require("../../../../psknode/tests/util/tir");
+const db = require("../../../db/singleDsuDB");
+const tir = require("../../../../../psknode/tests/util/tir");
 
 
 assert.callback("DB Indexing test", (testFinishCallback) => {
@@ -24,7 +24,7 @@ assert.callback("DB Indexing test", (testFinishCallback) => {
             if (err) {
                 throw err;
             }
-            let keySSIApis = require("../../keyssi");
+            let keySSIApis = require("../../../keyssi");
             let storageSSI = keySSIApis.createSeedSSI("default");
 
             let mydb = db.getSharedDB(storageSSI, "testDb");

@@ -5,7 +5,7 @@
  */
 function getSharedDB(keySSI, dbName){
     let db;
-    let dbModule = require("../singleDsuDB");
+    let dbModule = require("./index.js");
     let storageDSU;
     let shareableSSI;
     let skipFirstRead = false;
