@@ -101,6 +101,10 @@ const getHandler = (dsuKeySSI, bootEvalScript) => {
 };
 
 
+const getRemoteHandler = (dsuKeySSI, remoteURL, presentation) => {
+    throw Error("Not available yet");
+};
+
 function invalidateDSUCache(dsuKeySSI) {
     let  ssiId = dsuKeySSI;
     if(typeof dsuKeySSI != "string"){
