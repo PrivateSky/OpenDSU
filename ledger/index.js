@@ -3,16 +3,21 @@
 
 
 /*
-    initialise a ledger that is intended to be resolved from a keySSI, the DSU state get anchored in the domain of the keySSIForIdenitication
+    initialise a ledger that is intended to be resolved from a keySSI, the DSU state get anchored in the domain of the keySSI
  */
-function initialiseSecretLedger(keySSIForIdentification, constitutionKeySSI){
+function initialiseDSULedger(keySSI, constitutionKeySSI){
+    /*
+            ToDO: create a DSU for that keySSI
+            mount in /code constitutionKeySSI
+            create folders /worldState &  /history
 
+         */
 }
 
 /*
     initialise a ledger that is intended to be resolved from a BDNS name
  */
-function initialiseSharedLedger(blockchainDomain, constitutionKeySSI){
+function initialisePublicDSULedger(blockchainDomain, constitutionKeySSI){
 
 }
 
@@ -20,21 +25,29 @@ function initialiseSharedLedger(blockchainDomain, constitutionKeySSI){
 /*
     get a handler to a secret ledger
  */
-function getSecretLedger(keySSI){
+function getDSULedger(keySSI){
 
 }
 
 /*
     get a handler to a shared ledger
  */
-function getSharedLedger(blockchainDomain){
+function getPublicLedger(blockchainDomain){
 
 }
 
 
+/*
+    put an openDSU interface in front of the ledger
+ */
+function getDSULedgerAsDB(blockchainDomain){
+
+}
+
 module.exports = {
-    initialiseSecretLedger,
-    initialiseSharedLedger,
+    initialiseDSULedger,
+    initialisePublicDSULedger,
     getSecretLedger,
-    getSharedLedger
+    getSharedLedger,
+    getDSULedgerAsDB
 }

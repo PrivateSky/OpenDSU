@@ -96,7 +96,7 @@ const loadDSU = (keySSI, options, callback) => {
 };
 
 
-const getHandler = () => {
+const getHandler = (dsuKeySSI, bootEvalScript) => {
     throw Error("Not available yet");
 };
 
