@@ -28,10 +28,7 @@ function createOpenDSUErrorWrapper(message, err, otherErrors){
     return ErrorWrapper(message, err, otherErrors);
 }
 
-function registerMandatoryCallback(callback, timeout){
-    if(timeout == undefined){
-        timeout = 5000; //5 seconds
-    }
+function registerMandatoryCallback(callback, timeout = 5000){
     let callbackCalled = false;
     let callStackErr = false;
     try{

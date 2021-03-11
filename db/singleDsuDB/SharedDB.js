@@ -45,14 +45,9 @@ function getSharedDB(keySSI, dbName){
                 createWrapperDSU();
             });
         }
-        function createWrapperDSU(){
+        function createWrapperDSU() {
             resolver.createDSUForExistingSSI(keySSI, function(err,res){
-                res.mount("/data", writableDSU.getCreationSSI(), function(err, resSSI){
-                    if(err){
-                        return reportUserRelevantError("Failed to create writable DSU while initialising shared database " + dbName, err);
-                    }
-                    doStorageDSUInitialisation(res, keySSI.derive(), true);
-                });
+                doStorageDSUInitialisation(res, keySSI.derive(), true);
             });
         }
         reportUserRelevantWarning("Creating a new shared database");
@@ -81,8 +76,8 @@ function getSharedDB(keySSI, dbName){
         }
     }
 
-    function writeFunction(dbState,callback){
-        storageDSU.writeFile(`/data/${dbName}`,dbState, callback);
+    function writeFunction(dbState, callback){
+        storageDSU.writeFile(`/data/${dbName}`, dbState, callback);
     }
 
     let storageStrategy = dbModule.getBigFileStorageStrategy(readFunction, writeFunction, onInitialisationDone);
@@ -98,6 +93,7 @@ function getSharedDB(keySSI, dbName){
     db.getShareableSSI = function(){
         return shareableSSI;
     }
+
     return db;
 }
 

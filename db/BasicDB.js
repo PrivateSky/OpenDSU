@@ -10,8 +10,8 @@
     As you can see, nothing is ever really updated, even the deletion is done by marking the record with the field "deleted"
  */
 
-const ObservableMixin  = require("../../utils/ObservableMixin");
-const {uid} = require("../utils")
+const ObservableMixin  = require("../utils/ObservableMixin");
+const {uid} = require("./utils")
 
 
 function BasicDB(storageStrategy){
