@@ -98,6 +98,65 @@ const loadDSU = (keySSI, options, callback) => {
 
 const getHandler = (dsuKeySSI, bootEvalScript) => {
     throw Error("Not available yet");
+
+    function DSUHandler(){
+        switch ($$.environmentType){
+            case constants.ENVIRONMENT_TYPES.SERVICE_WORKER_ENVIRONMENT_TYPE:
+            case constants.ENVIRONMENT_TYPES.BROWSER_ENVIRONMENT_TYPE:
+                if (window.Worker) {
+                    let myWorker = new Worker("opendsu");
+
+                }
+                break;
+            case constants.ENVIRONMENT_TYPES.NODEJS_ENVIRONMENT_TYPE:
+                let wt = 'worker_threads';
+                const worker = require(wt); //prevent browserify intervention
+                break;
+            default:
+                throw new Error("Unknown environment");
+        }
+
+        this.callDSUAPI = function(fn,...args){
+
+        }
+
+    }
+
+    let res  = new DSUHandler();
+    let availableFunctions = [
+        "addFile",
+        "addFiles",
+        "addFolder",
+        "appendToFile",
+        "createFolder",
+        "delete",
+        //"extractFile",
+        //"extractFolder",
+        "listFiles",
+        "listFolders",
+        "mount",
+        "readDir",
+        "readFile",
+        "rename",
+        "unmount",
+        "writeFile",
+        "listMountedDSUs",
+        "beginBatch",
+        "commitBatch",
+        "cancelBatch",
+    ];
+
+    function getWrapper(functionName){
+        return function(...args){
+              res.callDSUAPI(functionName, ...args)
+        }.bind(res);
+    }
+
+    for(let f of availableFunctions){
+        res[f] = getWrapper(f);
+    }
+
+    return res;
 };
 
 

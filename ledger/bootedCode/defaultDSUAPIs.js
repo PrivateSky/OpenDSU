@@ -1,0 +1,22 @@
+/*
+    "addFile",
+    "addFiles",
+    "addFolder",
+    "appendToFile",
+    "createFolder",
+    "delete",
+    "extractFile",  ?
+    "extractFolder",?
+    "listFiles",
+    "listFolders",
+    "mount",
+    "readDir",
+    "readFile",
+    "rename",
+    "unmount",
+    "writeFile",
+    "listMountedDSUs",
+    "beginBatch",
+    "commitBatch",
+    "cancelBatch",
+ */
