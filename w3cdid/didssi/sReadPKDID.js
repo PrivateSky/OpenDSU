@@ -1,7 +1,7 @@
 
 
-function PKDIDDocument(isInitialisation, seedSSI){
-    let mixin =  require("./W3CDID_Mixin");
+function sReadPKDocument(isInitialisation, seedSSI){
+    let mixin =  require("../W3CDID_Mixin");
     let tokens;
     if(isInitialisation){
         tokens = seedSSI;
@@ -13,9 +13,9 @@ function PKDIDDocument(isInitialisation, seedSSI){
 
 module.exports = {
     initiateDIDDocument:function(seedSSI){
-        new PKDIDDocument(true, seedSSI)
+        new sReadPKDocument(true, seedSSI)
     },
     createDIDDocument:function(tokens){
-        new PKDIDDocument(false, tokens)
+        new sReadPKDocument(false, tokens)
     }
 };

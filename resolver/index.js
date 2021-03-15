@@ -95,8 +95,10 @@ const loadDSU = (keySSI, options, callback) => {
     });
 };
 
-
-const getHandler = (dsuKeySSI, bootEvalScript) => {
+/*
+    boot the DSU in a thread
+ */
+const getDSUHandler = (dsuKeySSI, bootEvalScript) => {
     throw Error("Not available yet");
 
     function DSUHandler(){

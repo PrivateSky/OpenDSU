@@ -1,25 +1,27 @@
 
 /*
-    OpenDSU W3C compatible DID method
-        - compatible with SeedSSIs
+    OpenDSU W3C compatible  ID pluginisable resolver  that can resolve arbitrary DID methods.
 
-        //urgent
-        did:ssi:pk:domain::publickey::
-        did:ssi:alias:domain:string:pubkey::
-        //next if we need
-        did:ssi:sread:domain::hash_pubkey::
-        did:ssi:const:domain:value:::
+        1. SeedSSI compatible DID method that does not need anchoring or external DSUs
+            did:ssi:sReadPK:blockchain_domain::publicKey::
 
-        + a pluginisable resolver  that can embed arbitrary resolvers ( did::specificString).
-        did:method:string
+        2.  DID method storing the public key in an anchored DSU. It is a SeedSSI compatible DID method.
+            did:ssi:sRead:blockchain_domain::hash_publicKey::
 
-        TODO: analise the implementation of resolvers  masquerading as ledger domains
+        3.  DID method storing the public key in an imputable DSU that is mounting another mutable DSU to store the keys
+            did:ssi:const:blockchain_domain:const_string:::
+
+        4. Other possibilities could be  DID Web Method, or a did:alias, etc
+            did:web:internet_domain
+
+        TODO: analise the implementation of resolvers  masquerading as DSUs anchored in the BDNS central root:  did:ethereum:whatever
 
  */
 
 const OPENDSU_METHOD_NAME = "ssi";
-const PK_SUBTYPE = "pk";
-const ALIAS_SUBTYPE = "alias";
+const S_READ_PK_SUBTYPE = "sReadPK";
+const S_READ_SUBTYPE = "sRead";
+const CONST_SUBTYPE = "const";
 
 let methodRegistry = {};
 
@@ -51,8 +53,10 @@ function registerDIDMethod(method, implementation){
 }
 
 
-registerDIDMethod(PK_SUBTYPE, require("./ssiMethod").createPK_DIDMethod());
-registerDIDMethod(ALIAS_SUBTYPE, require("./ssiMethod").createAlias_DIDMethod());
+registerDIDMethod(S_READ_SUBTYPE, require("./didssi/ssiMethods").create_sRead_DIDMethod());
+registerDIDMethod(S_READ_PK_SUBTYPE, require("./didssi/ssiMethods").create_sReadPK_DIDMethod());
+registerDIDMethod(CONST_SUBTYPE, require("./didssi/ssiMethods").create_constssi_DIDMethod());
+
 
 module.exports = {
     createIdentity,
