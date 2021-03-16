@@ -10,13 +10,7 @@
  */
 
 function W3CDID_Mixin(){
-    this.getControllerKey = function(callback){
 
-    };
-
-    this.getPublicKeys = function(callback){
-
-    };
 
     this.findPrivateKeysInSecurityContext = function(callback){
 
@@ -37,6 +31,12 @@ function W3CDID_Mixin(){
     * https://github.com/ecies/js
     * https://github.com/sigp/ecies-parity
     * https://github.com/pedrouid/eccrypto-js
+    *
+    * annoncrypt  - symertric enc (IES)
+    * authcrypt   -  asymetric enc + sign
+    * plaintext   + asym sign
+    *
+    * A -> B   sign(enc( ASYM_PK_B, M), PK_A)
     * */
 
     this.encrypt = function(message, forDID, callback){
@@ -63,6 +63,14 @@ function W3CDID_Mixin(){
     };
 
     this.revokeKey = function(key, callback){
+
+    };
+
+    this.getControllerKey = function(callback){
+
+    };
+
+    this.getPublicKeys = function(callback){
 
     };
 

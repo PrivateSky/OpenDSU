@@ -3,7 +3,7 @@
     OpenDSU W3C compatible  ID pluginisable resolver  that can resolve arbitrary DID methods.
 
         1. SeedSSI compatible DID method that does not need anchoring or external DSUs
-            did:ssi:sReadPK:blockchain_domain::publicKey::
+            did:ssi:sReadPK:blockchain_domain::publicKey:v2:
 
         2.  DID method storing the public key in an anchored DSU. It is a SeedSSI compatible DID method.
             did:ssi:sRead:blockchain_domain::hash_publicKey::
