@@ -178,7 +178,7 @@ module.exports = {
     createDSU,
     createDSUForExistingSSI,
     loadDSU,
-    getHandler,
+    getDSUHandler,
     registerDSUFactory,
     invalidateDSUCache
 }
