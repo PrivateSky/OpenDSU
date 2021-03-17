@@ -1,21 +1,31 @@
 
 function getSelfSovereignDB(mountingPoint, sharedSSI, mySeedSSI){
-    return new (require("./SSDB"))(mountingPoint, sharedSSI, mySeedSSI);
+    return new (require("./impl/SSDB"))(mountingPoint, sharedSSI, mySeedSSI);
 }
 
 function getBasicDB(storageStrategy){
-    return new (require("./BasicDB"))(storageStrategy);
+    return new (require("./impl/BasicDB"))(storageStrategy);
 }
 
-function getBigFileStorageStrategy(readFunction, writeFunction, onInitialisationDone){
-    return new (require("./BigFileStorageStrategy"))(readFunction, writeFunction, onInitialisationDone);
+let createSharableDB = require("./impl/SharableDB").createSharableDB;
+
+function getBasicDB(storageStrategy, conflictSolvingStrategy){
+    return new (require("./impl/BasicDB"))(storageStrategy, conflictSolvingStrategy);
 }
 
-let getSharedDB = require("./SharedDB").getSharedDB;
+function getWalletDB(keySSI, dbName){
+    let storageStrategy = require("./storageStrategies/BigFileStorageStrategy");
+    return createSharableDB(keySSI, dbName, storageStrategy, undefined);
+}
+
+function getMultiUserDB(keySSI, dbName){
+    let storageStrategy = require("./storageStrategies/MultiUserStorageStrategy");
+    let conflictStrategy = require("./storageStrategies/timestampMergingStrategy");
+    return createSharableDB(keySSI, dbName, storageStrategy, conflictStrategy);
+}
 
 module.exports = {
-    getSelfSovereignDB,
     getBasicDB,
-    getSharedDB,
-    getBigFileStorageStrategy
+    getWalletDB,
+    getMultiUserDB
 }

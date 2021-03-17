@@ -1,7 +1,9 @@
 
-function BigFileStorageStrategy(loadFunction, storeFunction, afterInitialisation){
+function BigFileStorageStrategy(){
     let volatileMemory = {}
     let self = this
+    let storageDSU, afterInitialisation;
+    let dbName;
 
     if (loadFunction) {
         loadFunction( (err, data) => {
@@ -15,6 +17,28 @@ function BigFileStorageStrategy(loadFunction, storeFunction, afterInitialisation
         });
     } else {
         if(afterInitialisation) afterInitialisation();
+    }
+
+    this.initialise = function(_storageDSU, _dbName, _onInitialisationDone){
+        storageDSU              = _storageDSU;
+        afterInitialisation     = _afterInitialisation;
+        dbName                  = _dbName;
+    }
+
+    function loadFunction(callback){
+        if(storageDSU){
+            if(skipFirstRead) {
+                callback(undefined, "{}");
+            } else {
+                storageDSU.readFile(`/data/${dbName}`, callback);
+            }
+        } else {
+            pendingReadFunctionCallback = callback;
+        }
+    }
+
+    function storeFunction(dbState,callback){
+        storageDSU.writeFile(`/data/${dbName}`,dbState, callback);
     }
 
     function autoStore(){

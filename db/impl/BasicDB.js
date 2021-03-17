@@ -10,7 +10,7 @@
     As you can see, nothing is ever really updated, even the deletion is done by marking the record with the field "deleted"
  */
 
-const ObservableMixin  = require("../utils/ObservableMixin");
+const ObservableMixin  = require("../../utils/ObservableMixin");
 const crypto = require("crypto");
 
 function uid(bytes = 32) {
