@@ -74,8 +74,11 @@ function getSharedDsuDB(originalKeySSI, dbName = 'shared'){
     }
   }
 
-  function writeFunction(dbState, userSReadSSI, callback){
-    storageDSU.writeFile(`/.data/${userSReadSSI}`, dbState, callback);
+  function writeFunction(userState, userSReadSSI, versionsMap, callback) {
+    storageDSU.writeFile(`/.data/${userSReadSSI}`, userState, callback);
+    if (versionsMap) {
+      storageDSU.writeFile(`/.data/versionMap`, versionsMap, callback);
+    }
   }
 
   db = dbModule.getBasicSharedDB(readFunction, writeFunction, onInitialisationDone);

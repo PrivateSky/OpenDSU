@@ -29,6 +29,7 @@ function Record(uid) {
 
 function BasicSharedDB(readFunction, writeFunction, onInitialisationDone) {
   ObservableMixin(this);
+  const self = this;
   let localMemory = {
     usersState: {},
     versionsMap: {}
@@ -41,7 +42,7 @@ function BasicSharedDB(readFunction, writeFunction, onInitialisationDone) {
         console.log(err.message);
       } else {
         localMemory = JSON.parse(data);
-        console.log("BigFileStorageStrategy loading state:", volatileMemory);
+        console.log("BigFileStorageStrategy loading state:", localMemory);
       }
       if (onInitialisationDone) onInitialisationDone();
     });
@@ -51,8 +52,9 @@ function BasicSharedDB(readFunction, writeFunction, onInitialisationDone) {
 
   function autoStore(userSReadSSI){
     if(writeFunction){
-      let storedState = JSON.stringify(usersState[userSReadSSI]);
-      writeFunction(storedState, userSReadSSI, function(err, res){
+      let storedUserState = JSON.stringify(usersState[userSReadSSI]);
+      let storedVersionsMap = JSON.stringify(versionsMap);
+      writeFunction(storedUserState, userSReadSSI, storedVersionsMap, function(err, res) {
         if(err){
           reportUserRelevantError(createOpenDSUErrorWrapper("Failed to autostore db file", err));
         }
@@ -63,7 +65,7 @@ function BasicSharedDB(readFunction, writeFunction, onInitialisationDone) {
   }
 
   this.insertRecord = (recordPath, userKeySSI, callback) => {
-    if (usersState[userKeySSI][recordPath]) {
+    if (self.getRecord(recordPath, userKeySSI)) {
       return callback(new Error(`Record under ${recordPath} already exists.`))
     }
     const versionUid = uid()
@@ -76,10 +78,17 @@ function BasicSharedDB(readFunction, writeFunction, onInitialisationDone) {
   };
 
   this.updateRecord = (recordPath, userKeySSI, baseVersion, callback) => {
+    const currentRecord = self.getRecord(recordPath, userKeySSI)
+    if (!currentRecord) {
+      return callback(new Error(`Trying to update non existing record: ${userKeySSI} - ${recordPath}`))
+    }
+
     const versionUid = uid()
-    usersState[userKeySSI][recordPath] = newRecord
+    currentRecord.addVersion(versionUid)
+    usersState[userKeySSI][recordPath] = currentRecord
     versionsMap[versionUid] = userKeySSI
-    setTimeout(() => autoStore(userKeySSI), 0)
+    setTimeout(() => autoStore(userKeySSI), 0);
+
     return callback ? callback(null, versionUid) : versionUid;
   }
 

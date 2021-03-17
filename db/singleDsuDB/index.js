@@ -4,7 +4,7 @@ function getSelfSovereignDB(mountingPoint, sharedSSI, mySeedSSI){
 }
 
 function getBasicDB(storageStrategy){
-    return new (require("../BasicDB"))(storageStrategy);
+    return new (require("./BasicDB"))(storageStrategy);
 }
 
 function getBigFileStorageStrategy(readFunction, writeFunction, onInitialisationDone){
