@@ -1,6 +1,6 @@
 
 let ValidationStrategy = {
-    acceptSerialisation: function(presentationSerialisation){ return "ValidationStrategySpecificRepresentationForPresentation"; },
+    acceptSerialisedPresentation: function(presentationSerialisation){ return "ValidationStrategySpecificRepresentationForPresentation"; },
     sign: function(stringOrHash){ return "signature serialisation, could be a credential";},
     issueCredential: function(...args){ return "CredentialSerialisation";},
     createPresentation: function(...args){  callback(undefined, "Presentation Serialisation");},

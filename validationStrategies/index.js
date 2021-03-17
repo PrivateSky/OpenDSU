@@ -2,7 +2,7 @@
 let implementationsRegistry = {};
 
 function getStrategy(validationStrategyName){
-    returnimplementationsRegistry [validationStrategyName];
+    return implementationsRegistry [validationStrategyName];
 }
 
 function issueCredential(validationStrategyName,...args){
@@ -20,7 +20,7 @@ function sign(validationStrategyName, ...args){
 }
 
 function verifySignature(validationStrategyName, ...args){
-    return implementationsRegistry[validationStrategyName].verify(...args);
+    return implementationsRegistry[validationStrategyName].verifySignature(...args);
 }
 
 function verifyCredential(validationStrategyName, credentialSerialisation){
@@ -33,12 +33,12 @@ function verifyCredential(validationStrategyName, credentialSerialisation){
     environmentData: object with arbitrary data required for validation
     presentationSerialisation:  a serialised presentation
  */
-function verifyPresentation(allowedImplementationNamesArray, useCase, environmentData, presentationSerialisation, callback){
+function validatePresentation(allowedImplementationNamesArray, useCase, environmentData, presentationSerialisation, callback){
     if(typeof allowedImplementationNamesArray == "string"){
-        return implementationsRegistry[allowedImplementationNamesArray].acceptSerialisation(presentationSerialisation).validate(useCase, environmentData, callback);
+        return implementationsRegistry[allowedImplementationNamesArray].acceptSerialisedPresentation(presentationSerialisation).validate(useCase, environmentData, callback);
     }
     allowedImplementationNamesArray.forEach( i => {
-        let vs = implementationsRegistry[i].acceptSerialisation(presentationSerialisation);
+        let vs = implementationsRegistry[i].acceptSerialisedPresentation(presentationSerialisation);
         if(vs != undefined){
             return vs.validate(useCase, environmentData, presentationSerialisation, callback);
         }
@@ -47,15 +47,15 @@ function verifyPresentation(allowedImplementationNamesArray, useCase, environmen
 }
 
 
-function registerVerifiableCredentialsService(validationStrategyName, implementation){
+function registerValidationStrategy(validationStrategyName, implementation){
     implementationsRegistry[validationStrategyName] = implementation;
 }
 
 module.exports = {
     issueCredential,
     createPresentation,
-    verifyPresentation,
-    registerVerifiableCredentialsService,
+    validatePresentation,
+    registerValidationStrategy,
     sign,
     verifySignature,
     getStrategy
