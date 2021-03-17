@@ -1,7 +1,7 @@
 
 /*
     A shared DB is a baseDB stored in a writable DSU mounted in a /data folder in another wrapper DSU.
-    This scheme is useful to share the database without sharing the SeedSSI of the wrapper DSU as this is usually used for signing, etc
+    This scheme is useful to share the database without sharing the SeedSSI of the wrapper DSU
  */
 function createSharableDB(keySSI, dbName, storageStrategy, conflictResolutionStrategy){
     let db;
