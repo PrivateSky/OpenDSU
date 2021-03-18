@@ -19,7 +19,7 @@ function BigFileStorageStrategy(){
         if(afterInitialisation) afterInitialisation();
     }
 
-    this.initialise = function(_storageDSU, _dbName, _onInitialisationDone){
+    this.initialise = function(_storageDSU, _dbName, _afterInitialisation){
         storageDSU              = _storageDSU;
         afterInitialisation     = _afterInitialisation;
         dbName                  = _dbName;
