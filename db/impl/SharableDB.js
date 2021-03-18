@@ -68,7 +68,7 @@ function createSharableDB(keySSI, dbName, storageStrategy, conflictResolutionStr
     }
 
 
-    storageStrategy.initialise(storageDSU, onInitialisationDone);
+    storageStrategy.initialise(storageDSU, dbName, onInitialisationDone);
 
     db = bindAutoPendingFunctions(dbModule.getBasicDB(storageStrategy), {});
 
