@@ -1,9 +1,3 @@
-
-
-function getBasicDB(storageStrategy){
-    return new (require("./impl/BasicDB"))(storageStrategy);
-}
-
 let createSharableDB = require("./impl/SharableDB").createSharableDB;
 
 function getBasicDB(storageStrategy, conflictSolvingStrategy){
@@ -11,7 +5,8 @@ function getBasicDB(storageStrategy, conflictSolvingStrategy){
 }
 
 function getWalletDB(keySSI, dbName){
-    let storageStrategy = require("./storageStrategies/BigFileStorageStrategy");
+    let BigFileStorageStrategy = require("./storageStrategies/BigFileStorageStrategy");
+    let storageStrategy = new BigFileStorageStrategy();
     return createSharableDB(keySSI, dbName, storageStrategy, undefined);
 }
 
