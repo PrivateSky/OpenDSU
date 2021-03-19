@@ -10,7 +10,7 @@ assert.callback("DB Indexing test", (testFinishCallback) => {
         const no_retries = 10;
 
         function testPersistence(sreadSSI){
-            console.log("Persistence DSU is:",sreadSSI.getAnchorId());
+            console.log("Persistence DSU is:", sreadSSI.getAnchorId());
             let mydb = db.getSharedDB(sreadSSI, "testDb");
             mydb.getRecord("test", "key1", function(err,res){
                 console.log("Result is", res);
@@ -27,7 +27,7 @@ assert.callback("DB Indexing test", (testFinishCallback) => {
             let keySSIApis = require("../../keyssi");
             let storageSSI = keySSIApis.createSeedSSI("default");
 
-            let mydb = db.getSharedDB(storageSSI, "testDb");
+            let mydb = db.getWalletDB(storageSSI, "testDb");
             mydb.insertRecord("test", "key1", {value:"v0"});
             mydb.updateRecord("test", "key1", {value:"v1"});
             mydb.updateRecord("test", "key1", {value:"v2"});

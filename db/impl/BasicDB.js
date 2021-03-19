@@ -11,7 +11,9 @@
  */
 
 const ObservableMixin  = require("../../utils/ObservableMixin");
-const crypto = require("crypto");
+
+/*
+const crypto = require("crypto"); TODO: if required use from pskcrypto to have a single and portable point in all code
 
 function uid(bytes = 32) {
     // node
@@ -23,10 +25,9 @@ function uid(bytes = 32) {
         if (!crypto || !crypto.getRandomValues) {
             throw new Error('crypto.getRandomValues not supported by the browser.')
         }
-
         return btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(bytes))))
     }
-}
+}  */
 
 
 function BasicDB(storageStrategy){
@@ -44,38 +45,44 @@ function BasicDB(storageStrategy){
     function getDefaultCallback(message, tableName, key){
         return function (err,res){
             if(err){
-                console.log(message,err);
+                reportUserRelevantError(message,`in table ${tableName} for key ${key}`, err);
             }else {
                 console.log(message,`in table ${tableName} for key ${key} at version ${res.__version}`);
             }
-
         }
     }
 
     /*
-      Insert a record, return error if already exists
+      Insert a record, return an error if an record with thew same key already exists
     */
     this.insertRecord = function(tableName, key, record, callback){
-        callback = callback?callback:getDefaultCallback("Inserting a record", tableName, key);
-        const sharedDSUMetadata = {}
-        sharedDSUMetadata.__version = 0;
-        sharedDSUMetadata.__changeId = uid();
-        sharedDSUMetadata.__timestamp = Date.now();
-        storageStrategy.insertRecord(tableName, key, Object.assign(sharedDSUMetadata, record), callback);
+        callback = callback ? callback : getDefaultCallback("Inserting a record", tableName, key);
+
+        self.getRecord(tableName, key, function(err,res){
+            if(!err || res){
+                //newRecord = Object.assign(newRecord, {__version:-1});
+                return callback(createOpenDSUErrorWrapper("Failed to insert over an existing record", err));
+            }
+            const sharedDSUMetadata = {}
+            sharedDSUMetadata.__version = 0;
+            //sharedDSUMetadata.__changeId = uid();
+            sharedDSUMetadata.__timestamp = Date.now();
+            storageStrategy.insertRecord(tableName, key, Object.assign(sharedDSUMetadata, record), callback);
+        });
     };
 
 
     /*
-        Update a record, does not return an error if does not exists
+        Update a record, return an error if does not exists (does not do an insert)
      */
     this.updateRecord = function(tableName, key, newRecord, callback){
-        callback = callback?callback:getDefaultCallback("Updating a record", tableName, key);
+        callback = callback?callback : getDefaultCallback("Updating a record", tableName, key);
         let currentRecord
 
-        function doVersionIncAndUpsert(currentRecord){
+        function doVersionIncAndUpdate(currentRecord){
             newRecord.__version++;
             newRecord.__timestamp = Date.now();
-            newRecord.__changeId = uid();
+            //newRecord.__changeId = uid();
 
             if (newRecord.__version == 0) {
                 storageStrategy.insertRecord(tableName, key, newRecord, callback);
@@ -87,16 +94,17 @@ function BasicDB(storageStrategy){
         if (newRecord.__version === undefined) {
             self.getRecord(tableName, key, function(err,res){
                 if(err || !res){
-                    newRecord = Object.assign(newRecord, {__version:-1});
+                    //newRecord = Object.assign(newRecord, {__version:-1});
+                    return callback(createOpenDSUErrorWrapper("Failed to update a record that does not exist", err));
                 }
                 if (res) {
                     currentRecord = res;
                     newRecord.__version = currentRecord.__version;
                 }
-                doVersionIncAndUpsert(currentRecord);
+                doVersionIncAndUpdate(currentRecord);
             });
         } else {
-            doVersionIncAndUpsert()
+            doVersionIncAndUpdate()
         }
     };
 

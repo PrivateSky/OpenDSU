@@ -1,12 +1,13 @@
-require("../../../../psknode/bundles/testsRuntime");
+require("../../../../../psknode/bundles/testsRuntime");
 const assert = require("double-check").assert;
 
-const db = require("../../db");
+const db = require("../../../db");
 
 
 assert.callback("insert, update, get for key: string", (callback) => {
-    let strategy = db.getBigFileStorageStrategy();
-    let mydb = db.getBasicDB(strategy);
+    let MemoryStorageStrategy = require("../../../db/storageStrategies/MemoryStorageStrategy");
+    let storageStrategy = new MemoryStorageStrategy();
+    let mydb = db.getBasicDB(storageStrategy);
     mydb.insertRecord("test", "key1", {value:"1"});
     mydb.updateRecord("test", "key1", {value:2});
     mydb.getRecord("test", "key1", function(err,res){
@@ -18,9 +19,11 @@ assert.callback("insert, update, get for key: string", (callback) => {
     })
 });
 
+/*
 assert.callback("insert, update, get for key: string[]", (callback) => {
-    let strategy = db.getBigFileStorageStrategy();
-    let mydb = db.getBasicDB(strategy);
+    let MemoryStorageStrategy = require("../../../db/storageStrategies/MemoryStorageStrategy");
+    let storageStrategy = new MemoryStorageStrategy();
+    let mydb = db.getBasicDB(storageStrategy);
     mydb.insertRecord("test", ["key1", "key2", "key3"], {value: "1"});
     mydb.updateRecord("test", ["key1", "key2", "key3"], {value: 2});
     mydb.updateRecord("test", ["key1", "key2", "key3"], {value: 42});
@@ -32,3 +35,4 @@ assert.callback("insert, update, get for key: string[]", (callback) => {
         callback();
     })
 });
+*/

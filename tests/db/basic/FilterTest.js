@@ -1,12 +1,14 @@
-require("../../../../psknode/bundles/testsRuntime");
+require("../../../../../psknode/bundles/testsRuntime");
 const assert = require("double-check").assert;
 
-const db = require("../../db");
+const db = require("../../../db");
 
 
 assert.callback("Filter test", (callback) => {
-    let strategy = db.getBigFileStorageStrategy();
-    let mydb = db.getBasicDB(strategy);
+    let MemoryStorageStrategy = require("../../../db/storageStrategies/MemoryStorageStrategy");
+    let storageStrategy = new MemoryStorageStrategy();
+
+    let mydb = db.getBasicDB(storageStrategy);
     mydb.insertRecord("test", "key1", {value:"v1"});
     mydb.insertRecord("test", "key2", {value:"v1",selected:true});
     mydb.updateRecord("test", "key1", {value:"v2", selected:true});

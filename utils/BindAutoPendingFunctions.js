@@ -6,9 +6,10 @@ const PendingCallMixin = require("./PendingCallMixin");
 
 module.exports.bindAutoPendingFunctions = function(obj, exceptionList){
     let originalFunctions = {};
+
     for(let m in obj){
         if(typeof obj[m] == "function"){
-            if(!exceptionList[m]){
+            if(!exceptionList || !exceptionList[m]){
                 originalFunctions[m] = obj[m];
             }
         }

@@ -1,23 +1,40 @@
-let createSharableDB = require("./impl/SharableDB").createSharableDB;
+let util = require("./impl/DSUDBUtil")
+
 
 function getBasicDB(storageStrategy, conflictSolvingStrategy){
-    return new (require("./impl/BasicDB"))(storageStrategy, conflictSolvingStrategy);
-}
-
-function getWalletDB(keySSI, dbName){
-    let BigFileStorageStrategy = require("./storageStrategies/BigFileStorageStrategy");
-    let storageStrategy = new BigFileStorageStrategy();
-    return createSharableDB(keySSI, dbName, storageStrategy, undefined);
+    let BasicDB = require("./impl/BasicDB");
+    return new BasicDB(storageStrategy, conflictSolvingStrategy);
 }
 
 function getMultiUserDB(keySSI, dbName){
+    throw "Not implemented yet";
     let storageStrategy = require("./storageStrategies/MultiUserStorageStrategy");
     let conflictStrategy = require("./conflictSolvingStrategies/timestampMergingStrategy");
-    return createSharableDB(keySSI, dbName, storageStrategy, conflictStrategy);
 }
+
+let getSharedDB = function(keySSI, dbName){
+    let bindAutoPendingFunctions = require("../utils/BindAutoPendingFunctions").bindAutoPendingFunctions;
+    let  SingleDSUStorageStrategy = require("./storageStrategies/SingleDSUStorageStrategy").SingleDSUStorageStrategy;
+    let storageStrategy = new SingleDSUStorageStrategy();
+    let ConflictStrategy = require("./conflictSolvingStrategies/timestampMergingStrategy").TimestampMergingStrategy;
+    let db = bindAutoPendingFunctions(getBasicDB(storageStrategy, new ConflictStrategy()));
+
+    util.ensure_WalletDB_DSU_Initialisation(keySSI, dbName, function(err, _storageDSU, sharableSSI){
+        storageStrategy.initialise(_storageDSU, dbName);
+        db.finishInitialisation();
+        console.log("Finising initialisation");
+
+        db.getShareableSSI = function(){
+                return sharableSSI;
+        };
+    })
+
+    return db;
+};
 
 module.exports = {
     getBasicDB,
-    getWalletDB,
-    getMultiUserDB
+    getWalletDB: getSharedDB,
+    getMultiUserDB,
+    getSharedDB
 }

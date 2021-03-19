@@ -1,58 +1,11 @@
 
-function BigFileStorageStrategy(){
+
+
+function SingleDSUStorageStrategy(){
     let volatileMemory = {}
     let self = this
     let storageDSU, afterInitialisation;
     let dbName;
-
-    if (loadFunction) {
-        loadFunction( (err, data) => {
-            if(err){
-                console.log(err.message);
-            } else {
-                volatileMemory = JSON.parse(data);
-                console.log("BigFileStorageStrategy loading state:",volatileMemory);
-            }
-            if(afterInitialisation) afterInitialisation();
-        });
-    } else {
-        if(afterInitialisation) afterInitialisation();
-    }
-
-    this.initialise = function(_storageDSU, _dbName, _afterInitialisation){
-        storageDSU              = _storageDSU;
-        afterInitialisation     = _afterInitialisation;
-        dbName                  = _dbName;
-    }
-
-    function loadFunction(callback){
-        if(storageDSU){
-            if(skipFirstRead) {
-                callback(undefined, "{}");
-            } else {
-                storageDSU.readFile(`/data/${dbName}`, callback);
-            }
-        } else {
-            pendingReadFunctionCallback = callback;
-        }
-    }
-
-    function storeFunction(dbState,callback){
-        storageDSU.writeFile(`/data/${dbName}`,dbState, callback);
-    }
-
-    function autoStore(){
-        if(storeFunction){
-            let storedState = JSON.stringify(volatileMemory);
-            storeFunction(storedState, function(err, res){
-                if(err){
-                    reportUserRelevantError(createOpenDSUErrorWrapper("Failed to autostore db file", err));
-                }
-                console.log("BigFileStorageStrategy storing state:");
-                console.dir(volatileMemory, {depth: null})
-            });
-        }
-    }
 
     function getTable(tableName){
         let table = volatileMemory[tableName];
@@ -90,7 +43,6 @@ function BigFileStorageStrategy(){
             }
 
             currentParent[currentKey] = record;
-            setTimeout(() => autoStore(), 0)
             callback(undefined, record);
         }
 
@@ -177,4 +129,5 @@ function BigFileStorageStrategy(){
         }
     };
 }
-module.exports = BigFileStorageStrategy;
+
+module.exports = SingleDSUStorageStrategy;
