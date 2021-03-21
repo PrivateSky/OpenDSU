@@ -7,6 +7,7 @@ switch ($$.environmentType) {
 	case or.constants.BROWSER_ENVIRONMENT_TYPE:
 		module.exports = require("./browser");
 		break;
+	case or.constants.WEB_WORKER_ENVIRONMENT_TYPE:
 	case or.constants.SERVICE_WORKER_ENVIRONMENT_TYPE:
 		module.exports = require("./serviceWorker");
 		break;

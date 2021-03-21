@@ -7,6 +7,7 @@ const errorModule = require("../error");
 system.setEnvironmentVariable(constants.BDNS_ROOT_HOSTS, `${getBaseURL()}/bdns#x-blockchain-domain-request`);
 switch ($$.environmentType) {
     case constants.ENVIRONMENT_TYPES.SERVICE_WORKER_ENVIRONMENT_TYPE:
+    case constants.ENVIRONMENT_TYPES.WEB_WORKER_ENVIRONMENT_TYPE:
         config.set(constants.CACHE.VAULT_TYPE, constants.CACHE.INDEXED_DB);
         break;
     case constants.ENVIRONMENT_TYPES.BROWSER_ENVIRONMENT_TYPE:

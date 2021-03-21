@@ -9,6 +9,7 @@ let constants = require("./moduleConstants.js");
 
 
 switch ($$.environmentType) {
+    case constants.ENVIRONMENT_TYPES.WEB_WORKER_ENVIRONMENT_TYPE:
     case constants.ENVIRONMENT_TYPES.SERVICE_WORKER_ENVIRONMENT_TYPE:
         if (typeof self !== "undefined") {
             if(!self.PREVENT_DOUBLE_LOADING_OF_OPENDSU) {
@@ -41,6 +42,7 @@ if(!PREVENT_DOUBLE_LOADING_OF_OPENDSU.INITIALISED){
             case "anchoring":return require("./anchoring"); break;
             case "bricking":return require("./bricking"); break;
             case "bdns":return require("./bdns"); break;
+            case "boot":return require("./boot"); break;
             case "dc":return require("./dc"); break;
             case "dt":return require("./dt"); break;
             case "keyssi":return require("./keyssi"); break;
@@ -59,6 +61,7 @@ if(!PREVENT_DOUBLE_LOADING_OF_OPENDSU.INITIALISED){
 
      function setGlobalVariable(name, value){
         switch ($$.environmentType) {
+            case constants.ENVIRONMENT_TYPES.WEB_WORKER_ENVIRONMENT_TYPE:
             case constants.ENVIRONMENT_TYPES.SERVICE_WORKER_ENVIRONMENT_TYPE:
                 if (typeof self !== "undefined") {
                     self[name] = value;
@@ -69,7 +72,7 @@ if(!PREVENT_DOUBLE_LOADING_OF_OPENDSU.INITIALISED){
             case constants.ENVIRONMENT_TYPES.BROWSER_ENVIRONMENT_TYPE:
                 if (typeof window !== "undefined") {
                     window[name] = value;
-                }else {
+                } else {
                     reportUserRelevantError("window not defined in browser environment");
                 }
                 break;
@@ -85,6 +88,7 @@ if(!PREVENT_DOUBLE_LOADING_OF_OPENDSU.INITIALISED){
 
     function getGlobalVariable(name){
         switch ($$.environmentType) {
+            case constants.ENVIRONMENT_TYPES.WEB_WORKER_ENVIRONMENT_TYPE:
             case constants.ENVIRONMENT_TYPES.SERVICE_WORKER_ENVIRONMENT_TYPE:
                 return self[name];
             case constants.ENVIRONMENT_TYPES.BROWSER_ENVIRONMENT_TYPE:
@@ -97,6 +101,7 @@ if(!PREVENT_DOUBLE_LOADING_OF_OPENDSU.INITIALISED){
 
     function globalVariableExists(name){
         switch ($$.environmentType) {
+            case constants.ENVIRONMENT_TYPES.WEB_WORKER_ENVIRONMENT_TYPE:
             case constants.ENVIRONMENT_TYPES.SERVICE_WORKER_ENVIRONMENT_TYPE:
                 return typeof self[name] != "undefined";
             case constants.ENVIRONMENT_TYPES.BROWSER_ENVIRONMENT_TYPE:
