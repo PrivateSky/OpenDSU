@@ -10,13 +10,7 @@
  */
 
 function W3CDID_Mixin(){
-    this.getControllerKey = function(callback){
 
-    };
-
-    this.getPublicKeys = function(callback){
-
-    };
 
     this.findPrivateKeysInSecurityContext = function(callback){
 
@@ -32,11 +26,17 @@ function W3CDID_Mixin(){
 
 
     /*Elliptic Curve Integrated Encryption Scheme
-    * https://github.com/bin-y/standard-ecies/blob/master/main.js 
- https://www.npmjs.com/package/ecies-lite  //try to use functions from SSI and from crypto
+    * https://github.com/bin-y/standard-ecies/blob/master/main.js
+    * https://www.npmjs.com/package/ecies-lite  //try to use functions from SSI and from crypto
     * https://github.com/ecies/js
     * https://github.com/sigp/ecies-parity
     * https://github.com/pedrouid/eccrypto-js
+    *
+    * annoncrypt  - symertric enc (IES)
+    * authcrypt   -  asymetric enc + sign
+    * plaintext   + asym sign
+    *
+    * A -> B   sign(enc( ASYM_PK_B, M), PK_A)
     * */
 
     this.encrypt = function(message, forDID, callback){
@@ -57,6 +57,23 @@ function W3CDID_Mixin(){
     this.getMQHandler = function(callback){
 
     };
+
+    this.revokeDID = function(callback){
+
+    };
+
+    this.revokeKey = function(key, callback){
+
+    };
+
+    this.getControllerKey = function(callback){
+
+    };
+
+    this.getPublicKeys = function(callback){
+
+    };
+
 }
 
 module.exports = W3CDID_Mixin;

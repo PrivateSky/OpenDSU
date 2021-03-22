@@ -1,21 +1,40 @@
+let util = require("./impl/DSUDBUtil")
 
-function getSelfSovereignDB(mountingPoint, sharedSSI, mySeedSSI){
-    return new (require("./SSDB"))(mountingPoint, sharedSSI, mySeedSSI);
+
+function getBasicDB(storageStrategy, conflictSolvingStrategy){
+    let BasicDB = require("./impl/BasicDB");
+    return new BasicDB(storageStrategy, conflictSolvingStrategy);
 }
 
-function getBasicDB(storageStrategy){
-    return new (require("./BasicDB"))(storageStrategy);
+function getMultiUserDB(keySSI, dbName){
+    throw "Not implemented yet";
+    let storageStrategy = require("./storageStrategies/MultiUserStorageStrategy");
+    let conflictStrategy = require("./conflictSolvingStrategies/timestampMergingStrategy");
 }
 
-function getBigFileStorageStrategy(readFunction, writeFunction, onInitialisationDone){
-    return new (require("./BigFileStorageStrategy"))(readFunction, writeFunction, onInitialisationDone);
-}
+let getSharedDB = function(keySSI, dbName){
+    let bindAutoPendingFunctions = require("../utils/BindAutoPendingFunctions").bindAutoPendingFunctions;
+    let  SingleDSUStorageStrategy = require("./storageStrategies/SingleDSUStorageStrategy").SingleDSUStorageStrategy;
+    let storageStrategy = new SingleDSUStorageStrategy();
+    let ConflictStrategy = require("./conflictSolvingStrategies/timestampMergingStrategy").TimestampMergingStrategy;
+    let db = bindAutoPendingFunctions(getBasicDB(storageStrategy, new ConflictStrategy()));
 
-let getSharedDB = require("./SharedDB").getSharedDB;
+    util.ensure_WalletDB_DSU_Initialisation(keySSI, dbName, function(err, _storageDSU, sharableSSI){
+        storageStrategy.initialise(_storageDSU, dbName);
+        db.finishInitialisation();
+        console.log("Finising initialisation");
+
+        db.getShareableSSI = function(){
+                return sharableSSI;
+        };
+    })
+
+    return db;
+};
 
 module.exports = {
-    getSelfSovereignDB,
     getBasicDB,
-    getSharedDB,
-    getBigFileStorageStrategy
+    getWalletDB: getSharedDB,
+    getMultiUserDB,
+    getSharedDB
 }

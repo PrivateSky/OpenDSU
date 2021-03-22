@@ -111,10 +111,7 @@ function loadDSUHandlerWithDSUMethod(
                 throw err;
             }
 
-            console.log("$$$ Loaded dsu");
-
             loadedDSUCallback = (error, loadedDSUResponse) => {
-                console.log("$$$ loadedDSUCallback");
                 if (error) {
                     throw error;
                 }
@@ -125,7 +122,7 @@ function loadDSUHandlerWithDSUMethod(
         });
     };
 
-    resolver.getHandler(keySSI)[handlerMethod].apply(null, [...dsuMethodArgs, callback]);
+    resolver.getDSUHandler(keySSI)[handlerMethod].apply(null, [...dsuMethodArgs, callback]);
 }
 
 module.exports = {

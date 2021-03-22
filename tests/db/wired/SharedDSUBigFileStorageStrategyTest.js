@@ -1,9 +1,9 @@
-require("../../../../psknode/bundles/testsRuntime");
+require("../../../../../psknode/bundles/testsRuntime");
 const assert = require("double-check").assert;
 const dc = require("double-check");
-const db = require("../../db");
-const tir = require("../../../../psknode/tests/util/tir");
-const keySSIAPI = require("../../keyssi");
+const db = require("../../../db");
+const tir = require("../../../../../psknode/tests/util/tir");
+const keySSIAPI = require("../../../keyssi");
 
 keySSIAPI.createSeedSSI("pharma", (err, seedSSI) => {
   const sharedDSUKeySSI = seedSSI.derive().getIdentifier()

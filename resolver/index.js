@@ -95,7 +95,10 @@ const loadDSU = (keySSI, options, callback) => {
     });
 };
 
-const getHandler = (dsuKeySSI) => {
+/*
+    boot the DSU in a thread
+ */
+const getDSUHandler = (dsuKeySSI) => {
     if (typeof dsuKeySSI === "string") {
         // validate the dsuKeySSI to ensure it's valid
         try {
@@ -233,7 +236,7 @@ module.exports = {
     createDSU,
     createDSUForExistingSSI,
     loadDSU,
-    getHandler,
+    getDSUHandler,
     registerDSUFactory,
     invalidateDSUCache,
 };

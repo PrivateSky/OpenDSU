@@ -1,7 +1,7 @@
 
 
 function AliasDIDDocument(isInitialisation, alias, seedSSI){
-    let mixin =  require("./W3CDID_Mixin");
+    let mixin =  require("../W3CDID_Mixin");
     let tokens;
     if(isInitialisation){
         tokens = alias;
