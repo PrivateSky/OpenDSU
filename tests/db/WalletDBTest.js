@@ -4,6 +4,7 @@ const dc = require("double-check");
 const db = require("../../db");
 const tir = require("../../../../psknode/tests/util/tir");
 
+//ow.register("opendsu", "../index.js")
 
 assert.callback("DB Indexing test", (testFinishCallback) => {
     dc.createTestFolder("wallet", function (err, folder) {
@@ -28,9 +29,11 @@ assert.callback("DB Indexing test", (testFinishCallback) => {
             let storageSSI = keySSIApis.createSeedSSI("default");
 
             let mydb = db.getWalletDB(storageSSI, "testDb");
-            mydb.insertRecord("test", "key1", {value:"v0"});
-            mydb.updateRecord("test", "key1", {value:"v1"});
-            //mydb.updateRecord("test", "key1", {value:"v2"});
+            mydb.insertRecord("test", "key1", {value:"v0"}, function(err,res){
+                mydb.updateRecord("test", "key1", {value:"v1"}, function(err,res){
+                    mydb.updateRecord("test", "key1", {value:"v2"});
+                });
+            });
 
            setTimeout(function(){
                testPersistence(mydb.getShareableSSI());
