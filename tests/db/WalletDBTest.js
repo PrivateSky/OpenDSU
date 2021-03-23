@@ -14,7 +14,7 @@ assert.callback("DB Indexing test", (testFinishCallback) => {
             let mydb = db.getSharedDB(sreadSSI, "testDb");
             mydb.getRecord("test", "key1", function(err,res){
                 console.log("Result is", res);
-                assert.equal(res.__version,2);
+                assert.equal(res.__version, 2);
                 assert.equal(res.value,"v2");
                 testFinishCallback();
             })
@@ -30,11 +30,11 @@ assert.callback("DB Indexing test", (testFinishCallback) => {
             let mydb = db.getWalletDB(storageSSI, "testDb");
             mydb.insertRecord("test", "key1", {value:"v0"});
             mydb.updateRecord("test", "key1", {value:"v1"});
-            mydb.updateRecord("test", "key1", {value:"v2"});
+            //mydb.updateRecord("test", "key1", {value:"v2"});
 
            setTimeout(function(){
                testPersistence(mydb.getShareableSSI());
-           },1000);
+           },2000);
         });
     });
 }, 5000);

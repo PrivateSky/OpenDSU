@@ -68,11 +68,14 @@ let errorObservers = [];
 let infoObservers = [];
 let warnObservers = [];
 let devObservers = [];
-function reportUserRelevantError(message, err){
+function reportUserRelevantError(message, err, showIntermediateErrors){
     errorObservers.forEach( c=> {
         c(message, err);
     })
-    console.error(message, err);
+    console.log(message);
+    if(err && typeof err.debug_message != "undefined"){
+        printErrorWrapper(err, showIntermediateErrors)
+    }
 }
 
 function reportUserRelevantWarning(message){
@@ -107,13 +110,20 @@ function observeUserRelevantMessages(type, callback){
     }
 }
 
-function printErrorWrapper(ew){
+function printErrorWrapper(ew, showIntermediateErrors){
     let level = 0;
+    console.log("Top level error:",  ew.debug_message, ew.debug_stack);
+    let firstError;
+    ew = ew.previousError;
      while(ew){
-         console.log("Error at layer ",level," :", ew);
+         if(showIntermediateErrors && ew.previousError){
+             console.log("Error at layer ",level," :", ew.debug_message, ew.debug_stack);
+         }
          level++;
+         firstError = ew;
          ew = ew.previousError;
      }
+    console.log("\tFirst error in the ErrorWrapper at level ",level," :", firstError);
 }
 
 function printOpenDSUError(...args){

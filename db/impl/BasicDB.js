@@ -45,7 +45,7 @@ function BasicDB(storageStrategy){
     function getDefaultCallback(message, tableName, key){
         return function (err,res){
             if(err){
-                reportUserRelevantError(message,`in table ${tableName} for key ${key}`, err);
+                reportUserRelevantError(message + ` with errors in table ${tableName} for key ${key}`, err);
             }else {
                 console.log(message,`in table ${tableName} for key ${key} at version ${res.__version}`);
             }
@@ -89,9 +89,8 @@ function BasicDB(storageStrategy){
             } else {
                 storageStrategy.updateRecord(tableName, key, newRecord, currentRecord, callback);
             }
+            console.log(">>>>>>>>>>>>Done with storageStrategy");
         }
-
-        if (newRecord.__version === undefined) {
             self.getRecord(tableName, key, function(err,res){
                 if(err || !res){
                     //newRecord = Object.assign(newRecord, {__version:-1});
@@ -103,10 +102,7 @@ function BasicDB(storageStrategy){
                 }
                 doVersionIncAndUpdate(currentRecord);
             });
-        } else {
-            doVersionIncAndUpdate()
         }
-    };
 
     /*
         Get a single row from a table
