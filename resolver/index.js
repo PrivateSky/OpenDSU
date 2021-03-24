@@ -155,11 +155,8 @@ const getDSUHandler = (dsuKeySSI) => {
                 throw new Error(`Unknown environment ${$$.environmentType}!`);
         }
 
-        this.callDSUAPI = function (fn, ...args) {
-            const fnArgs = [...args];
-            const callback = fnArgs.pop();
-
-            workerPool.addTask({ fn, args: fnArgs }, (err, message) => {
+        const sendTaskToWorker = (task, callback) => {
+            workerPool.addTask(task, (err, message) => {
                 if (err) {
                     return callback(err);
                 }
@@ -180,6 +177,18 @@ const getDSUHandler = (dsuKeySSI) => {
 
                 callback(error, result);
             });
+        };
+
+        this.callDSUAPI = function (fn, ...args) {
+            const fnArgs = [...args];
+            const callback = fnArgs.pop();
+            sendTaskToWorker({ fn, args: fnArgs }, callback);
+        };
+
+        this.callApi = function (fn, ...args) {
+            const apiArgs = [...args];
+            const callback = apiArgs.pop();
+            sendTaskToWorker({ api: fn, args: apiArgs }, callback);
         };
     }
 

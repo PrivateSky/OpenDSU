@@ -25,7 +25,7 @@ function boot(keySSI) {
     console.log(`[worker] booting DSU for keySSI ${keySSI}...`);
 
     const initializeSwarmEngine = getInitializeSwarmEngineForKeySSI(keySSI);
-    const booter = new BootEngine(getKeySSI, initializeSwarmEngine, ["pskruntime.js", "blockchain.js"], ["domain.js"]);
+    const booter = new BootEngine(getKeySSI, initializeSwarmEngine);
 
     booter.boot((error) => {
         if (error) {

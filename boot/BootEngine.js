@@ -1,4 +1,4 @@
-function BootEngine(getKeySSI, initializeSwarmEngine, runtimeBundles, constitutionBundles) {
+function BootEngine(getKeySSI, initializeSwarmEngine) {
     if (typeof getKeySSI !== "function") {
         throw new Error("getSeed missing or not a function");
     }
@@ -9,15 +9,8 @@ function BootEngine(getKeySSI, initializeSwarmEngine, runtimeBundles, constituti
     }
     initializeSwarmEngine = promisify(initializeSwarmEngine);
 
-    if (typeof runtimeBundles !== "undefined" && !Array.isArray(runtimeBundles)) {
-        throw new Error("runtimeBundles is not array");
-    }
-
-    if (typeof constitutionBundles !== "undefined" && !Array.isArray(constitutionBundles)) {
-        throw new Error("constitutionBundles is not array");
-    }
-
     const openDSU = require("opendsu");
+    const { constants } = openDSU;
     const resolver = openDSU.loadApi("resolver");
     const pskPath = require("swarmutils").path;
 
@@ -25,19 +18,21 @@ function BootEngine(getKeySSI, initializeSwarmEngine, runtimeBundles, constituti
         const listFiles = promisify(this.rawDossier.listFiles);
         const readFile = promisify(this.rawDossier.readFile);
 
-        let fileList = await listFiles(openDSU.constants.CONSTITUTION_FOLDER);
+        let fileList = await listFiles(constants.CONSTITUTION_FOLDER);
         fileList = bundles
             .filter((bundle) => fileList.includes(bundle) || fileList.includes(`/${bundle}`))
-            .map((bundle) => pskPath.join(openDSU.constants.CONSTITUTION_FOLDER, bundle));
+            .map((bundle) => pskPath.join(constants.CONSTITUTION_FOLDER, bundle));
 
-        // if (fileList.length !== bundles.length) {
-        // 	const message = `Some bundles missing. Expected to have ${JSON.stringify(bundles)} but got only ${JSON.stringify(fileList)}`;
-        // 	if (!ignore) {
-        // 		throw new Error(message);
-        // 	} else {
-        // 		console.log(message);
-        // 	}
-        // }
+        if (fileList.length !== bundles.length) {
+            const message = `Some bundles missing. Expected to have ${JSON.stringify(
+                bundles
+            )} but got only ${JSON.stringify(fileList)}`;
+            if (!ignore) {
+                throw new Error(message);
+            } else {
+                console.log(message);
+            }
+        }
 
         for (let i = 0; i < fileList.length; i++) {
             var fileContent = await readFile(fileList[i]);
@@ -58,6 +53,41 @@ function BootEngine(getKeySSI, initializeSwarmEngine, runtimeBundles, constituti
                 global.rawDossier = this.rawDossier;
             } catch (err) {
                 console.log(err);
+                return callback(err);
+            }
+
+            const listFiles = promisify(this.rawDossier.listFiles);
+            const readFile = promisify(this.rawDossier.readFile);
+
+            let isBootFilePresent;
+            let bootConfig;
+            try {
+                let allFiles = await listFiles(constants.CODE_FOLDER);
+                console.log("allFiles", allFiles);
+                isBootFilePresent = allFiles.some((file) => file === constants.BOOT_CONFIG_FILE);
+                if (isBootFilePresent) {
+                    const bootConfigFile = `${constants.CODE_FOLDER}/${constants.BOOT_CONFIG_FILE}`;
+                    let bootConfigfileContent = await readFile(bootConfigFile);
+                    bootConfig = JSON.parse(bootConfigfileContent.toString());
+                }
+            } catch (error) {
+                console.error("Cannot check boot config file", error);
+                return callback(error);
+            }
+
+            if (!isBootFilePresent || !bootConfig) {
+                await initializeSwarmEngine();
+                return;
+            }
+
+            const { runtimeBundles, constitutionBundles } = bootConfig;
+
+            if (typeof runtimeBundles !== "undefined" && !Array.isArray(runtimeBundles)) {
+                return callback(new Error("runtimeBundles is not array"));
+            }
+
+            if (typeof constitutionBundles !== "undefined" && !Array.isArray(constitutionBundles)) {
+                return callback(new Error("constitutionBundles is not array"));
             }
 
             try {
@@ -65,14 +95,18 @@ function BootEngine(getKeySSI, initializeSwarmEngine, runtimeBundles, constituti
             } catch (err) {
                 if (err.type !== "PSKIgnorableError") {
                     console.log(err);
+                    return callback(err);
                 }
             }
+
             await initializeSwarmEngine();
+
             if (typeof constitutionBundles !== "undefined") {
                 try {
                     await evalBundles(constitutionBundles, true);
                 } catch (err) {
                     console.log(err);
+                    return callback(err);
                 }
             }
         };
