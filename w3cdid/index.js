@@ -40,8 +40,11 @@ function createIdentity(didMethod, ...args){
  */
 function resolveDID(identifier, callback){
     let tokens = identifier.split(":");
+    if(tokens[0] !== "did"){
+        return callback(Error("Wrong identifier format. Missing did keyword."));
+    }
     let method = tokens[1];
-    if( tokens[1] == OPENDSU_METHOD_NAME){
+    if( tokens[1] === OPENDSU_METHOD_NAME){
         method = tokens[2];
     }
     methodRegistry[method].resolve(tokens, callback);
@@ -58,7 +61,7 @@ registerDIDMethod(S_READ_SUBTYPE, require("./didssi/ssiMethods").create_sRead_DI
 registerDIDMethod(S_READ_PK_SUBTYPE, require("./didssi/ssiMethods").create_sReadPK_DIDMethod());
 registerDIDMethod(CONST_SUBTYPE, require("./didssi/ssiMethods").create_constssi_DIDMethod());
 
-registerDIDMethod(DEMO_METHOD_NAME, require("./demo/didDemo").create_demo_DIDMethod());
+registerDIDMethod(DEMO_METHOD_NAME, require("./demo/diddemo").create_demo_DIDMethod());
 
 
 module.exports = {

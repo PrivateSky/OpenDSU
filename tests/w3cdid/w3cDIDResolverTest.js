@@ -9,12 +9,13 @@ const keySSI = require("../../keyssi")
 
 assert.callback('w3cDID resolver test', (testFinished) => {
     const domain = 'default';
-    w3cDID.createIdentity("pk", keySSI.createTemplateSeedSSI(domain), (err, identity) => {
+
+    w3cDID.createIdentity("sReadPK", keySSI.createTemplateSeedSSI(domain), (err, didDocument) => {
         if (err) {
             throw err;
         }
 
-        w3cDID.resolveDID(identity, (err, didDocument) => {
+        w3cDID.resolveDID(didDocument.getIdentifier(), (err, didDocument) => {
             if (err) {
                 throw err;
             }
@@ -25,3 +26,4 @@ assert.callback('w3cDID resolver test', (testFinished) => {
         });
     });
 }, 5000);
+

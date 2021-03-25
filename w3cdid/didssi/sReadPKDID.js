@@ -13,9 +13,9 @@ function sReadPKDocument(isInitialisation, seedSSI){
 
 module.exports = {
     initiateDIDDocument:function(seedSSI){
-        new sReadPKDocument(true, seedSSI)
+        return new sReadPKDocument(true, seedSSI)
     },
     createDIDDocument:function(tokens){
-        new sReadPKDocument(false, tokens)
+        return new sReadPKDocument(false, tokens)
     }
 };
