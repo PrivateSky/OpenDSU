@@ -5,7 +5,7 @@ function DemoPKDocument(identifier){
     mixin(this);
 
     this.sign = function(hash, callback){
-        return "hash";
+        return hash;
     };
 
     this.verify = function(hash, signature, callback){
