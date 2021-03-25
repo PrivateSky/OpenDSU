@@ -1,7 +1,7 @@
 function handleMessage(message, onHandleMessage) {
     // console.log("[worker] Received message", message);
 
-    const { fn, args } = message;
+    const { fn, api, args } = message;
     const callback = (error, result) => {
         console.log(`[worker] finished work ${message}`, error, result);
 
@@ -17,28 +17,32 @@ function handleMessage(message, onHandleMessage) {
         onHandleMessage(error, result);
     };
     try {
-        this.rawDossier[fn].apply(this.rawDossier, [...args, callback]);
+        const dsuArgs = [...args, callback];
+
+        if (api) {
+            // need to call the DSU's api.js method
+            this.rawDossier.call(api, ...dsuArgs);
+            return;
+        }
+
+        if (fn) {
+            this.rawDossier[fn].apply(this.rawDossier, dsuArgs);
+            return;
+        }
+
+        callback(new Error(`Received unknown task: ${JSON.stringify(message)}`));
     } catch (error) {
         onHandleMessage(error);
     }
 }
 
-function getInitializeSwarmEngineForKeySSI(keySSI) {
-    const openDSU = require("opendsu");
-    const resolver = openDSU.loadApi("resolver");
-
+function getInitializeSwarmEngineForKeySSI() {
     return (callback) => {
-        resolver.loadDSU(keySSI, (err, rawDossier) => {
+        global.rawDossier.start((err) => {
             if (err) {
                 return callback(err);
             }
-
-            rawDossier.start((err) => {
-                if (err) {
-                    return callback(err);
-                }
-                callback(undefined);
-            });
+            callback(undefined);
         });
     };
 }

@@ -41,6 +41,7 @@ module.exports = {
 		VAULT: "vault",
 		MOBILE: "mobile",
 	},
+    BOOT_CONFIG_FILE: 'boot-cfg.json',
 	 get KEY_SSIS(){
 		if(cachedKeySSIResolver === undefined){
 			cachedKeySSIResolver = require("key-ssi-resolver");
