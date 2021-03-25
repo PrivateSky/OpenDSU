@@ -17,7 +17,7 @@ function DemoPKDocument(identifier){
 
     };
 
-    this.on = function(callback){
+    this.readMessage = function(callback){
 
     };
 
