@@ -22,6 +22,7 @@ const OPENDSU_METHOD_NAME = "ssi";
 const S_READ_PK_SUBTYPE = "sReadPK";
 const S_READ_SUBTYPE = "sRead";
 const CONST_SUBTYPE = "const";
+const DEMO_METHOD_NAME = "demo";
 
 let methodRegistry = {};
 
@@ -56,6 +57,8 @@ function registerDIDMethod(method, implementation){
 registerDIDMethod(S_READ_SUBTYPE, require("./didssi/ssiMethods").create_sRead_DIDMethod());
 registerDIDMethod(S_READ_PK_SUBTYPE, require("./didssi/ssiMethods").create_sReadPK_DIDMethod());
 registerDIDMethod(CONST_SUBTYPE, require("./didssi/ssiMethods").create_constssi_DIDMethod());
+
+registerDIDMethod(DEMO_METHOD_NAME, require("./demo/didDemo").create_demo_DIDMethod());
 
 
 module.exports = {

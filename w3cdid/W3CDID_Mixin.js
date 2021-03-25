@@ -54,7 +54,7 @@ function W3CDID_Mixin(){
 
     };
 
-    this.getMQHandler = function(callback){
+    this.on = function(callback){
 
     };
 
