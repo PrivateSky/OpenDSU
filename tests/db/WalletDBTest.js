@@ -31,13 +31,11 @@ assert.callback("DB Indexing test", (testFinishCallback) => {
             let mydb = db.getWalletDB(storageSSI, "testDb");
             mydb.insertRecord("test", "key1", {value:"v0"}, function(err,res){
                 mydb.updateRecord("test", "key1", {value:"v1"}, function(err,res){
-                    mydb.updateRecord("test", "key1", {value:"v2"});
+                    mydb.updateRecord("test", "key1", {value:"v2"}, function (err, res){
+                        testPersistence(mydb.getShareableSSI());
+                    });
                 });
             });
-
-           setTimeout(function(){
-               testPersistence(mydb.getShareableSSI());
-           },2000);
         });
     });
 }, 5000);

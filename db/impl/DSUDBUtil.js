@@ -14,15 +14,21 @@ module.exports = {
             function createWritableDSU(){
                 let writableSSI = keySSIApis.createTemplateKeySSI(constants.KEY_SSIS.SEED_SSI, keySSI.getDLDomain());
                 resolver.createDSU(writableSSI, function(err,res){
+                    if (err) {
+                        return callback(createOpenDSUErrorWrapper("Failed to create writable DSU while initialising shared database " + dbName, err));
+                    }
                     writableDSU = res;
                     createWrapperDSU();
                 });
             }
             function createWrapperDSU(){
                 resolver.createDSUForExistingSSI(keySSI, function(err,res){
+                    if (err) {
+                        return callback(createOpenDSUErrorWrapper("Failed to create wrapper DSU while initialising shared database " + dbName, err));
+                    }
                     res.mount("/data", writableDSU.getCreationSSI(), function(err, resSSI){
                         if(err){
-                            return callback(createOpenDSUErrorWrapper("Failed to create writable DSU while initialising shared database " + dbName, err));
+                            return callback(createOpenDSUErrorWrapper("Failed to mount writable DSU in wrapper DSU while initialising shared database " + dbName, err));
                         }
                         doStorageDSUInitialisation(res, keySSI.derive());
                     });

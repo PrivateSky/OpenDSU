@@ -20,6 +20,9 @@ let getSharedDB = function(keySSI, dbName){
     let db = bindAutoPendingFunctions(getBasicDB(storageStrategy, new ConflictStrategy()));
 
     util.ensure_WalletDB_DSU_Initialisation(keySSI, dbName, function(err, _storageDSU, sharableSSI){
+        if (err) {
+            return OpenDSUSafeCallback("Failed to initialise WalletDB_DSU " + dbName, err);
+        }
         storageStrategy.initialise(_storageDSU, dbName);
         db.finishInitialisation();
         console.log("Finising initialisation");
