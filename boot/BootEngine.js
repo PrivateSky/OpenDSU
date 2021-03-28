@@ -44,13 +44,18 @@ function BootEngine(getKeySSI, initializeSwarmEngine) {
         }
     };
 
+    const setGlobalProperty = (propertyName, propertyValue) => {
+        this[propertyName] = propertyValue;
+        global[propertyName] = propertyValue;
+    }
+
     this.boot = function (callback) {
         const __boot = async () => {
             const keySSI = await getKeySSI();
             const loadRawDossier = promisify(resolver.loadDSU);
             try {
-                this.rawDossier = await loadRawDossier(keySSI);
-                global.rawDossier = this.rawDossier;
+                setGlobalProperty("rawDossierKeySSIAsString", keySSI);
+                setGlobalProperty("rawDossier", await loadRawDossier(keySSI));
             } catch (err) {
                 console.log(err);
                 return callback(err);

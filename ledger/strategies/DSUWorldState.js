@@ -1,7 +1,7 @@
 
 
 
-module.exports.createDSUHistoryStorage = function(ssi){
+module.exports.createDSUWorldState = function(ssi){
     /*
     This strategy will handle the world state of the ledger as mounted DSUs
         - each year & each & each hour day will have a separate DSU mounted in the /worldState folder of the main DSU of the ledger

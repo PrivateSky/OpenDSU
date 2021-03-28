@@ -14,7 +14,7 @@ module.exports.createDSULedger = function(keySSI, constitutionKeySSI){
 
 
     let  worldStateCache     =  bm.createWorldStateCache("memory");
-    let  historyStorage      =  require("./strategies/DSUHistoryStorage").createDSUHistoryStorage(keySSI);
+    let  historyStorage      =  require("../strategies/DSUHistoryStorage").createDSUHistoryStorage(keySSI);
     let  consensusAlgorithm  =  bm.createConsensusAlgorithm("direct");
     let  signatureProvider   =  bm.createSignatureProvider("permissive");
 

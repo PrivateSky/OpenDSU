@@ -1,6 +1,9 @@
 //expose the blockchain from PrivateSky to use DSU as storage for worldstate and history
 
-const { promisify } = require("../utils/promise");
+const DSULedgerBase = require('./DSULedgerBase');
+
+const { createDSUHistoryStorage,
+    createDSUWorldState } = require('./strategies');
 
 /*
     initialise a ledger that is intended to be resolved from a keySSI, the DSU state get anchored in the domain of the keySSI
@@ -12,19 +15,25 @@ async function initialiseDSULedger(keySSI, constitutionKeySSI, callback) {
             create folders /worldState &  /history
 
          */
-  
+
     const opendsu = require("opendsu");
     const resolver = opendsu.loadApi("resolver");
 
     try {
-        const dsu = await promisify(resolver.createDSU)(keySSI);
+        // const dsu = await $$.promisify(resolver.createDSUForExistingSSI)(keySSI);
+        const dsu = await $$.promisify(resolver.createDSU)(keySSI);
 
-        const createFolder = promisify(dsu.createFolder.bind(dsu));
+        const dsuHandler = resolver.getDSUHandler(keySSI);
 
-        await promisify(dsu.mount.bind(dsu))("/code", constitutionKeySSI);
+        const mount = $$.promisify(dsuHandler.mount);
+        const createFolder = $$.promisify(dsuHandler.createFolder);
+        const writeFile = $$.promisify(dsuHandler.writeFile);
+
+        await mount("/code", constitutionKeySSI);
 
         await createFolder("/worldState");
         await createFolder("/history");
+        await writeFile("/history/index", "-1");
 
         callback();
     } catch (error) {
@@ -36,24 +45,24 @@ async function initialiseDSULedger(keySSI, constitutionKeySSI, callback) {
 /*
     initialise a ledger that is intended to be resolved from a BDNS name
  */
-function initialisePublicDSULedger(blockchainDomain, constitutionKeySSI) {}
+function initialisePublicDSULedger(blockchainDomain, constitutionKeySSI) { }
 
 /*
     get a handler to a secret ledger
  */
 function getDSULedger(keySSI) {
-    // return DSULEdgerBase
+    return new DSULedgerBase(keySSI);
 }
 
 /*
     get a handler to a shared ledger
  */
-function getPublicLedger(blockchainDomain) {}
+function getPublicLedger(blockchainDomain) { }
 
 /*
     put an openDSU interface in front of the ledger
  */
-function getDSULedgerAsDB(blockchainDomain) {}
+function getDSULedgerAsDB(blockchainDomain) { }
 
 module.exports = {
     initialiseDSULedger,
@@ -61,4 +70,6 @@ module.exports = {
     getDSULedger,
     getPublicLedger,
     getDSULedgerAsDB,
+    createDSUHistoryStorage,
+    createDSUWorldState
 };

@@ -95,6 +95,8 @@ const loadDSU = (keySSI, options, callback) => {
     });
 };
 
+
+const dsuHandlers = {};
 /*
     boot the DSU in a thread
  */
@@ -109,6 +111,10 @@ const getDSUHandler = (dsuKeySSI) => {
             throw new Error(errorMessage);
         }
     }
+
+    // if (dsuHandlers[dsuKeySSI]) {
+    //     return dsuHandlers[dsuKeySSI];
+    // }
 
     const syndicate = require("syndicate");
 
@@ -168,11 +174,13 @@ const getDSUHandler = (dsuKeySSI) => {
                     return callback(error);
                 }
 
-                if (result instanceof Uint8Array) {
-                    // the buffers sent from the worker will be converted to Uint8Array when sending to parent
-                    result = Buffer.from(result);
-                } else if (result.type === "HashLinkSSI") {
-                    result = keySSISpace.parse(result.identifier);
+                if (result) {
+                    if (result instanceof Uint8Array) {
+                        // the buffers sent from the worker will be converted to Uint8Array when sending to parent
+                        result = Buffer.from(result);
+                    } else if (result.type === "HashLinkSSI") {
+                        result = keySSISpace.parse(result.identifier);
+                    }
                 }
 
                 callback(error, result);
@@ -190,9 +198,22 @@ const getDSUHandler = (dsuKeySSI) => {
             const callback = apiArgs.pop();
             sendTaskToWorker({ api: fn, args: apiArgs }, callback);
         };
+
+        this.addAPI = function (fn) {
+            if (this[fn]) {
+                throw new Error(`Method 'fn' already exists`)
+            }
+            this[fn] = function (...args) {
+                const fnArgs = [...args];
+                const callback = fnArgs.pop();
+                sendTaskToWorker({ fn, args: fnArgs }, callback);
+            };
+        }
     }
 
     let res = new DSUHandler();
+    dsuHandlers[dsuKeySSI] = res;
+
     let availableFunctions = [
         "addFile",
         "addFiles",

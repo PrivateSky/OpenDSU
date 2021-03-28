@@ -39,13 +39,13 @@ assert.callback(
             };
 
             const fs = require("fs");
-            fs.writeFileSync("domain.js", "domain.js");
-            fs.writeFileSync("boot-cfg.json", `{"runtimeBundles":[],"constitutionBundles":["domain.js"]}`);
+            // fs.writeFileSync("domain.js", "console.log('Loaded domain')");
+            fs.writeFileSync("boot-cfg.json", `{"runtimeBundles":["pskruntime.js", "domain.js"],"constitutionBundles":[]}`);
 
-            let cmds = ["addFile domain.js /constitution/domain.js",
-             "addFile boot-cfg.json /boot-cfg.json"
-            ]
-             ;
+            let cmds = [`addFile ${path.join(__dirname, 'domain.js')} /constitution/domain.js`,
+            `addFile ${path.join(__dirname, DEFAULT_PSK_BUNDLES_PATH, 'pskruntime.js')} /constitution/pskruntime.js`,
+                "addFile boot-cfg.json /boot-cfg.json"
+            ];
 
             let dossier_builder = opendsu.loadApi("dt").getDossierBuilder();
             const constitutionKeySSI = await promisify(dossier_builder.buildDossier)(config, cmds);
@@ -54,12 +54,45 @@ assert.callback(
 
             await promisify(ledger.initialiseDSULedger)(mainDsuKeySSI, constitutionKeySSI);
 
+            // check presence of mount in /code of constitutionKeySSI and /worldState, /history folders
+            const dsuHandler = resolver.getDSUHandler(mainDsuKeySSI);
+            const mainDsuFolders = await promisify(dsuHandler.listFolders)("/");
+
+            assert.true(mainDsuFolders.includes("worldState"));
+            assert.true(mainDsuFolders.includes("history"));
+
+            const mountedDSUs = await promisify(dsuHandler.listMountedDSUs)("/");
+            const isConstitutionMounted = mountedDSUs.some(mountedDsu => mountedDsu.path === "code" && mountedDsu.identifier === constitutionKeySSI);
+
+
+            const constitutionDsuHandler = resolver.getDSUHandler(constitutionKeySSI);
+            const constitutionDsuFolders = await promisify(constitutionDsuHandler.listFiles)("/constitution");
+            console.log('constitutionDsuFolders', constitutionDsuFolders)
+
+            const domainJsContent = await promisify(constitutionDsuHandler.readFile)("/constitution/domain.js");
+            // console.log('domainJsContent', domainJsContent.toString())
+
+            const dsuLedger = ledger.getDSULedger(mainDsuKeySSI);
+
+            //     $$.blockchain.startTransactionAs("agent", "Constitution", "addAgent", agentAlias, "PublicKey");
+            //     let agent = $$.blockchain.lookup("Agent", agentAlias);   
+            const agentAlias = "Smoky";         
+            dsuLedger.startTransaction("Constitution", "addAgent", agentAlias, "PublicKey", (error, result) => {
+                if (error) {
+                    throw error;
+                }
+                let agent = $$.promisify(dsuLedger.lookup)("Agent", agentAlias);
+                console.log('###RESULT', agent.publicKey, "PublicKey");
+
+            })
+
+            assert.true(isConstitutionMounted);
             testFinished();
         } catch (error) {
             console.error(error);
         }
     },
-    10000
+    15000
 );
 
 async function createDSU(domain) {
