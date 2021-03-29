@@ -28,13 +28,21 @@ assert.callback("DB filtering test", (testFinishCallback) => {
             mydb.insertRecord("test", "key1", {value:0}, function(err,res){
                 mydb.insertRecord("test", "key2", {value:1}, function(err,res){
                     mydb.insertRecord("test", "key3", {value: 2}, (err, res) => {
-                        mydb.filter("test", (record => record.value < 2), (err, res) => {
+                        mydb.addIndex("test", "value", (err) => {
+                            console.log("Added index for value");
                             if (err) {
-                                throw err;
+                                console.log(err);
                             }
-                            assert.true(res.length === 2);
-                            testFinishCallback();
+                            mydb.filter("test", ["<", "value", 2], (err, res) => {
+                                if (err) {
+                                    throw err;
+                                }
+
+                                assert.true(res.length === 2);
+                                testFinishCallback();
+                            });
                         });
+
                     });
                 });
             });

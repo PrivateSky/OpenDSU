@@ -5,9 +5,9 @@ function SingleDSUStorageStrategy() {
     let shareableSSI;
     let dbName;
 
-    this.initialise = function(_storageDSU, _dbName){
-        storageDSU              = _storageDSU;
-        dbName                  = _dbName;
+    this.initialise = function (_storageDSU, _dbName) {
+        storageDSU = _storageDSU;
+        dbName = _dbName;
     }
 
     function readTheWholeTable(tableName, callback) {
@@ -58,12 +58,89 @@ function SingleDSUStorageStrategy() {
         where field1 >=3 and field2 <=7 and field2 like /regex/ == !=
         [operator, field, value]
      */
+    const operators = {
+        "<": function (x, y) {
+            return x < y
+        },
+        "<=": function (x, y) {
+            return x <= y
+        },
+        ">": function (x, y) {
+            return x > y
+        },
+        ">=": function (x, y) {
+            return x >= y
+        },
+        "=": function (x, y) {
+            return x === y
+        },
+        "like": function (str, regex) {
+            return regex.test(str)
+        },
+    }
     this.filter = function (tableName, query, sort, limit, callback) {
-        // loadIndex(tableName, query[1],  (err, index)=>{
-        //     if (err) {
-        //         return callback(createOpenDSUErrorWrapper(`Failed to load index for field ${query[1]}`, err));
-        //     }
-        // });
+        if (typeof sort === "function") {
+            callback = sort;
+            sort = undefined;
+            limit = undefined;
+        }
+
+        if (typeof limit === "function") {
+            callback = limit;
+            limit = undefined;
+        }
+
+        if (typeof limit === "undefined") {
+            limit = Infinity;
+        }
+
+        if (typeof sort === "undefined") {
+            sort = "asc";
+        }
+
+        let compareFn;
+        if (sort === "asc" || sort === "ascending") {
+            compareFn = function (a, b) {
+                return a.pk <= b.pk;
+            };
+        } else if (sort === "dsc" || sort === "descending") {
+            compareFn = function (a, b) {
+                a.pk >= b.pk;
+            };
+        }
+
+        loadIndex(tableName, query[1], (err, index) => {
+            if (err) {
+                return callback(createOpenDSUErrorWrapper(`Failed to load index for field ${query[1]}`, err));
+            }
+
+            index.sort(compareFn);
+            const filteredPKs = [];
+            index.forEach(el => {
+                if (operators[query[0]](el.value, query[2]) && filteredPKs.length <= limit) {
+                    filteredPKs.push(el.pk);
+                }
+            });
+
+            const filteredRecords = [];
+
+            const TaskCounter = require("swarmutils").TaskCounter;
+            const tc = new TaskCounter(() => {
+                return callback(undefined, filteredRecords);
+            });
+
+            tc.increment(filteredPKs.length);
+            filteredPKs.forEach(pk => {
+                self.getRecord(tableName, pk, (err, record) => {
+                    if (err) {
+                        return callback(createOpenDSUErrorWrapper(`Failed to get record with key ${pk} from table ${tableName}`, err));
+                    }
+
+                    filteredRecords.push(record);
+                    tc.decrement();
+                });
+            })
+        });
     }
 
     this.addIndex = function (tableName, fieldName, callback) {
@@ -71,20 +148,29 @@ function SingleDSUStorageStrategy() {
             if (err) {
                 return callback(createOpenDSUErrorWrapper(`Failed to create index for field ${fieldName} in table ${tableName}`, err));
             }
-
-            updateIndexesList(tableName, fieldName, (err) => {
-                let retErr = undefined;
-                if (err) {
-                    retErr = createOpenDSUErrorWrapper(`Failed to add ${fieldName} to indexes list for table ${tableName}`, err);
-                }
-
-                callback(retErr);
-            });
+            callback(undefined);
         });
     }
 
-    function getIndex(tableName, fieldName, callback) {
-        fieldIsIndexed()
+    function loadIndex(tableName, fieldName, callback) {
+        const indexFolderPath = `/data/${dbName}/${tableName}/index_${fieldName}`;
+        storageDSU.listFiles(indexFolderPath, (err, indexFiles) => {
+            if (err) {
+                return callback(createOpenDSUErrorWrapper(`Failed to list files in folder ${indexFolderPath}`, err));
+            }
+
+            const index = [];
+            indexFiles.forEach(indexFileName => {
+                const splitIndexFileName = indexFileName.split(":=");
+                index.push({
+                    pk: splitIndexFileName[0],
+                    value: splitIndexFileName[1]
+                })
+                // index[splitIndexFileName[0]] = splitIndexFileName[1];
+            });
+
+            callback(undefined, index);
+        })
     }
 
     function createIndex(tableName, fieldName, callback) {
@@ -95,29 +181,33 @@ function SingleDSUStorageStrategy() {
             }
 
             const path = require("swarmutils").path;
-            const TaskCounter = require("swarmutils").TaskCounter;
-            const tc = new TaskCounter(() => {
-                return callback(undefined);
-            });
+            const tableKeys = Object.keys(table);
 
-            tc.increment(Object.keys(table).length);
-            for (let pk in table) {
+            function createIndexFilesRecursively(index){
+                const pk = tableKeys[index];
                 const item = table[pk];
                 const indexFilePath = path.join(indexPath, `${pk}:=${item[fieldName]}`);
-                storageDSU.createFile(indexFilePath, (err) => {
+                storageDSU.writeFile(indexFilePath, (err) => {
                     if (err) {
                         return callback(createOpenDSUErrorWrapper(`Failed to create index for field ${fieldName} in table ${tableName}`, err));
                     }
 
-                    tc.decrement();
+                    if (index + 1 === tableKeys.length) {
+                        const indexesPath = `/data/${dbName}/${tableName}/indexes`;
+                        return storageDSU.writeFile(indexesPath, JSON.stringify([fieldName]), callback)
+                    }
+
+                    createIndexFilesRecursively(index + 1);
                 });
             }
+
+            createIndexFilesRecursively(0);
         });
     }
 
     function updateIndex(tableName, fieldName, pk, value, callback) {
         const indexFilePath = `/data/${dbName}/${tableName}/index_${fieldName}/${pk}:=${value}`;
-        storageDSU.createFile(indexFilePath, (err) => {
+        storageDSU.writeFile(indexFilePath, (err) => {
             let retErr = undefined;
             if (err) {
                 retErr = createOpenDSUErrorWrapper(`Failed to create file ${indexFilePath}`, err);
@@ -127,7 +217,7 @@ function SingleDSUStorageStrategy() {
         });
     }
 
-    function updateIndexes(tableName, pk, record, callback){
+    function updateIndexesForRecord(tableName, pk, record, callback) {
         const TaskCounter = require("swarmutils").TaskCounter;
         const tc = new TaskCounter(() => {
             return callback(undefined);
@@ -145,7 +235,7 @@ function SingleDSUStorageStrategy() {
 
             tc.increment(fields.length);
             fields.forEach(field => {
-                if(indexedFields.findIndex(field) !== -1){
+                if (indexedFields.findIndex(field) !== -1) {
                     updateIndex(tableName, field, pk, record[field], (err) => {
                         if (err) {
                             return callback(createOpenDSUErrorWrapper(`Failed to update index for field ${field} in table ${tableName}`, err));
@@ -153,7 +243,7 @@ function SingleDSUStorageStrategy() {
 
                         tc.decrement();
                     });
-                }else{
+                } else {
                     tc.decrement();
                 }
             });
@@ -172,7 +262,7 @@ function SingleDSUStorageStrategy() {
         });
     }
 
-    function deleteIndexes(tableName, pk, record, callback){
+    function deleteIndexesForRecord(tableName, pk, record, callback) {
         const TaskCounter = require("swarmutils").TaskCounter;
         const tc = new TaskCounter(() => {
             return callback(undefined);
@@ -190,7 +280,7 @@ function SingleDSUStorageStrategy() {
 
             tc.increment(fields.length);
             fields.forEach(field => {
-                if(indexedFields.findIndex(field) !== -1){
+                if (indexedFields.findIndex(field) !== -1) {
                     deleteIndex(tableName, field, pk, record[field], (err) => {
                         if (err) {
                             return callback(createOpenDSUErrorWrapper(`Failed to update index for field ${field} in table ${tableName}`, err));
@@ -198,7 +288,7 @@ function SingleDSUStorageStrategy() {
 
                         tc.decrement();
                     });
-                }else{
+                } else {
                     tc.decrement();
                 }
             });
@@ -211,7 +301,7 @@ function SingleDSUStorageStrategy() {
             if (err) {
                 return callback(createOpenDSUErrorWrapper(`Failed to get indexes list for table ${tableName}`, err));
             }
-            if (indexes.findIndex(fieldName) === -1) {
+            if (indexes.findIndex(el => el === fieldName) === -1) {
                 return callback();
             }
 
@@ -289,17 +379,17 @@ function SingleDSUStorageStrategy() {
             }
 
             if (typeof currentRecord !== "undefined") {
-                deleteIndexes(tableName, key, currentRecord, (err) => {
+                deleteIndexesForRecord(tableName, key, currentRecord, (err) => {
                     if (err) {
                         return callback(createOpenDSUErrorWrapper(`Failed to delete index files for record ${JSON.stringify(currentRecord)}`, err));
                     }
 
-                    updateIndexes(tableName, key, record, callback);
+                    updateIndexesForRecord(tableName, key, record, callback);
                 });
                 return;
             }
 
-            updateIndexes(tableName, key, record, callback);
+            updateIndexesForRecord(tableName, key, record, callback);
         });
     };
 
