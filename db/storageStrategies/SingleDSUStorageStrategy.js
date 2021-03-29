@@ -105,7 +105,7 @@ function SingleDSUStorageStrategy() {
             };
         } else if (sort === "dsc" || sort === "descending") {
             compareFn = function (a, b) {
-                a.pk >= b.pk;
+               return a.pk >= b.pk;
             };
         }
 
