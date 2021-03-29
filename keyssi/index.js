@@ -116,5 +116,6 @@ module.exports = {
     createTemplateKeySSI,
     createHashLinkSSI,
     createArraySSI,
-    buildSymmetricalEncryptionSSI
+    buildSymmetricalEncryptionSSI,
+    keySSIFactory
 };

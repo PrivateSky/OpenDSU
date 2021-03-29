@@ -56,7 +56,7 @@ const convertASN1SignatureToDer = (ans1Signature) => {
 const sign = (keySSI, data, callback) => {
     const sign = cryptoRegistry.getSignFunction(keySSI);
     if (typeof sign !== "function") {
-        throw Error("Signing not available for " + keySSI.getIdentifier(true));
+        throw Error("Signing not available for " + keySSI.getIdentifier ? keySSI.getIdentifier(true) : keySSI);
     } else {
         callback(undefined, sign(data, keySSI.getPrivateKey()));
     }
