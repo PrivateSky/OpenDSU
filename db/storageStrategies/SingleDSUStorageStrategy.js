@@ -71,8 +71,8 @@ function SingleDSUStorageStrategy() {
         ">=": function (x, y) {
             return x >= y
         },
-        "=": function (x, y) {
-            return x === y
+        "==": function (x, y) {
+            return x == y
         },
         "like": function (str, regex) {
             return regex.test(str)
@@ -166,7 +166,6 @@ function SingleDSUStorageStrategy() {
                     pk: splitIndexFileName[0],
                     value: splitIndexFileName[1]
                 })
-                // index[splitIndexFileName[0]] = splitIndexFileName[1];
             });
 
             callback(undefined, index);
@@ -295,28 +294,6 @@ function SingleDSUStorageStrategy() {
         });
     }
 
-    function updateIndexesList(tableName, fieldName, callback) {
-        const indexesFilePath = `/data/${dbName}/${tableName}/indexes`;
-        getIndexesList(tableName, (err, indexes) => {
-            if (err) {
-                return callback(createOpenDSUErrorWrapper(`Failed to get indexes list for table ${tableName}`, err));
-            }
-            if (indexes.findIndex(el => el === fieldName) === -1) {
-                return callback();
-            }
-
-            indexes.push(fieldName);
-            storageDSU.writeFile(indexesFilePath, JSON.stringify(indexes), (err) => {
-                let retErr = undefined;
-                if (err) {
-                    retErr = createOpenDSUErrorWrapper(`Failed to write file ${indexesFilePath}`, err);
-                }
-
-                callback(retErr);
-            });
-        });
-    }
-
     function getIndexesList(tableName, callback) {
         const indexesFilePath = `/data/${dbName}/${tableName}/indexes`;
         storageDSU.readFile(indexesFilePath, (err, indexes) => {
@@ -331,20 +308,6 @@ function SingleDSUStorageStrategy() {
             }
 
             callback(undefined, indexes);
-        });
-    }
-
-    function fieldIsIndexed(tableName, fieldName, callback) {
-        getIndexesList(tableName, (err, indexes) => {
-            if (err) {
-                return callback(createOpenDSUErrorWrapper(`Failed to read indexes list for table ${tableName}`, err));
-            }
-
-            if (indexes.findIndex(fieldName) === -1) {
-                return callback(undefined, false);
-            }
-
-            callback(undefined, true);
         });
     }
 
