@@ -7,7 +7,6 @@
 
 require("../../../../psknode/bundles/testsRuntime");
 const assert = require("double-check").assert;
-const dc = require("double-check");
 const db = require("../../db");
 const tir = require("../../../../psknode/tests/util/tir");
 
@@ -86,9 +85,11 @@ $$.flows.describe("FilterDB", {
         });
     },
 
-    updateRecords: function (){
+    updateRecords: function () {
         this.db.updateRecord("test", "key1", {value: 7, text: "fdsf"}, () => {
-            this.showValuesGreaterThan();
+            this.db.insertRecord("test", "key4", {value: 8, text: "bvccvb"}, () => {
+                this.showValuesGreaterThan();
+            });
         });
     },
 
@@ -98,8 +99,8 @@ $$.flows.describe("FilterDB", {
                 throw err;
             }
 
-            assert.true(res.length === 3);
-            assert.arraysMatch(res.map(el => el.pk), ["key1", "key2", "key3"]);
+            assert.true(res.length === 4);
+            assert.arraysMatch(res.map(el => el.pk), ["key1", "key2", "key3", "key4"]);
 
             this.db.filter("test", "value >= 0", "asc", 2, (err, res) => {
                 if (err) {
@@ -124,8 +125,8 @@ $$.flows.describe("FilterDB", {
                     throw err;
                 }
 
-                assert.true(res.length === 2);
-                assert.arraysMatch(res.map(el => el.pk), ["key1", "key2"]);
+                assert.true(res.length === 3);
+                assert.arraysMatch(res.map(el => el.pk), ["key1", "key2", "key4"]);
                 this.callback()
             });
         });
