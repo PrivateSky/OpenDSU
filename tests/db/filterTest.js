@@ -68,53 +68,64 @@ $$.flows.describe("FilterDB", {
     },
 
     showValuesLessThan: function () {
-        this.db.filter("test", ["<", "value", 2], (err, res) => {
+        this.db.filter("test", "value <= 2", "asc", 1, (err, res) => {
             if (err) {
                 throw err;
             }
-            assert.true(res.length === 2);
-            this.db.filter("test", ["<=", "value", 2], (err, res) => {
+            assert.true(res.length === 1);
+            assert.arraysMatch(res.map(el => el.pk), ["key1"]);
+            this.db.filter("test", "value <= 2", "dsc", (err, res) => {
                 if (err) {
                     throw err;
                 }
 
                 assert.true(res.length === 3);
-
-                this.showValuesGreaterThan();
+                assert.arraysMatch(res.map(el => el.pk), ["key3", "key2", "key1"]);
+                this.updateRecords();
             });
         });
     },
 
+    updateRecords: function (){
+        this.db.updateRecord("test", "key1", {value: 7, text: "fdsf"}, () => {
+            this.showValuesGreaterThan();
+        });
+    },
+
     showValuesGreaterThan: function () {
-        this.db.filter("test", [">", "value", 0], (err, res) => {
+        this.db.filter("test", "value > 0", "asc", (err, res) => {
             if (err) {
                 throw err;
             }
 
-            assert.true(res.length === 2);
-            this.db.filter("test", [">=", "value", 1], (err, res) => {
+            assert.true(res.length === 3);
+            assert.arraysMatch(res.map(el => el.pk), ["key1", "key2", "key3"]);
+
+            this.db.filter("test", "value >= 0", "asc", 2, (err, res) => {
                 if (err) {
                     throw err;
                 }
                 assert.true(res.length === 2);
+                assert.arraysMatch(res.map(el => el.pk), ["key1", "key2"]);
                 this.showValuesEqualWith();
             });
         });
     },
 
     showValuesEqualWith: function () {
-        this.db.filter("test", ["==", "value", 1], (err, res) => {
+        this.db.filter("test", "value == 1", (err, res) => {
             if (err) {
                 throw err;
             }
 
             assert.true(res.length === 1);
-            this.db.filter("test", ["like", "text", /^[A-Z]+$/i], (err, res) => {
+            this.db.filter("test", "text like /^[A-Z]+$/i", (err, res) => {
                 if (err) {
                     throw err;
                 }
 
                 assert.true(res.length === 2);
+                assert.arraysMatch(res.map(el => el.pk), ["key1", "key2"]);
                 this.callback()
             });
         });
