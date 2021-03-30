@@ -1,34 +1,41 @@
 require("../../../../psknode/bundles/testsRuntime");
+const testIntegration = require("../../../../psknode/tests/util/tir");
 const keySSIResolver = require("key-ssi-resolver");
 const dc = require("double-check");
-const { assert } = dc;
+const { assert, createTestFolder } = dc;
 
 const resolver = require("../../resolver");
 const keySSISpace = require("../../keyssi");
 
 assert.callback("Resolver DSU Creation with different domains", (callback) => {
 
-  let keySSI;
+  createTestFolder('createDSU',(err,folder) => {
+    testIntegration.launchApiHubTestNode(10, folder, (err) => {
+      if (err) {
+        throw err;
+      }
+      let keySSI;
 
+      resolver.createDSU(keySSISpace.buildTemplateSeedSSI("default"), {}, (err, dsu) => {
+        assert.true(typeof err === 'undefined', 'No error while creating the DSU');
+        dsu.getKeySSIAsString((err, _keySSI) => {
+          keySSI = _keySSI;
 
-  resolver.createDSU(keySSISpace.buildTemplateSeedSSI("default"), {}, (err, dsu) => {
-    assert.true(typeof err === 'undefined', 'No error while creating the DSU');
-    dsu.getKeySSIAsString((err, _keySSI) => {
-      keySSI = _keySSI;
-
-      dsu.getKeySSIAsObject((err, keySSIObject) => {
-        assertFileWasWritten(dsu, '/file1.txt', 'Lorem 1', () => {
-          assertFileWasWritten(dsu, '/file2.txt', 'Lorem 2', () => {
-            assertFileWasAnchored(dsu, '/file1.txt', 'Lorem 1', () => {
-              assertFileWasAnchored(dsu, '/file2.txt', 'Lorem 2', () => {
-                callback();
+          dsu.getKeySSIAsObject((err, keySSIObject) => {
+            assertFileWasWritten(dsu, '/file1.txt', 'Lorem 1', () => {
+              assertFileWasWritten(dsu, '/file2.txt', 'Lorem 2', () => {
+                assertFileWasAnchored(dsu, '/file1.txt', 'Lorem 1', () => {
+                  assertFileWasAnchored(dsu, '/file2.txt', 'Lorem 2', () => {
+                    callback();
+                  })
+                })
               })
-            })
+            });
           })
-        });
-      })
+        })
+      });
     })
-  });
+  })
 })
 
 function assertFileWasWritten(dsu, filename, data, callback) {

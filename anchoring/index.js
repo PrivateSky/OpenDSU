@@ -150,7 +150,7 @@ function createDigitalProof(powerfulKeySSI, newHashLinkIdentifier, lastHashLinkI
                 cryptoLib = sc.createSecurityContext();
                 keySSI = cryptoLib.getKeySSI(powerfulKeySSI);
             }
-            cryptoLib.sign(powerfulKeySSI, dataToSign, (err, signature) => {
+            return cryptoLib.sign(powerfulKeySSI, dataToSign, (err, signature) => {
                 if (err) {
                     return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to sign data`, err));
                 }
@@ -158,11 +158,6 @@ function createDigitalProof(powerfulKeySSI, newHashLinkIdentifier, lastHashLinkI
                     signature: res.encoding ? crypto.encodeBase58(signature) : signature,
                     publicKey: res.encoding ? crypto.encodeBase58(keySSI.getPublicKey()) : keySSI.getPublicKey()
                 };
-                console.log('>>>>>>>>>>>>>>>>>>>>>>>>>>')
-                console.log('data:', dataToSign)
-                console.log('sig:', signature)
-                console.log('pk:', keySSI.getPublicKey())
-                console.log('<<<<<<<<<<<<<<<<<<<<<<<')
 
                 return callback(undefined, digitalProof);
             });
@@ -189,7 +184,7 @@ const getKeySSITypeDigitalProofConfig = (ssiType, callback) => {
         case constants.KEY_SSIS.WALLET_SSI:
             return callback(undefined, null)
         default:
-            output.dsa = true
+            output.dsa = true;
             output.crypto = 'securityContext'
             output.encoding = null
             return callback(undefined, output);
