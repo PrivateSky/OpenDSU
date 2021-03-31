@@ -67,19 +67,21 @@ $$.flows.describe("FilterDB", {
     },
 
     showValuesLessThan: function () {
-        this.db.filter("test", "value <= 2", "asc", 1, (err, res) => {
+        this.db.filter("test", ["value <= 2", "value > 0"], "asc", 1, (err, res) => {
             if (err) {
                 throw err;
             }
+            
+            
             assert.true(res.length === 1);
-            assert.arraysMatch(res.map(el => el.pk), ["key1"]);
+            assert.arraysMatch(res.map(el => el.__key), ["key2"]);
             this.db.filter("test", "value <= 2", "dsc", (err, res) => {
                 if (err) {
                     throw err;
                 }
 
                 assert.true(res.length === 3);
-                assert.arraysMatch(res.map(el => el.pk), ["key3", "key2", "key1"]);
+                assert.arraysMatch(res.map(el => el.__key), ["key3", "key2", "key1"]);
                 this.updateRecords();
             });
         });
@@ -100,14 +102,14 @@ $$.flows.describe("FilterDB", {
             }
 
             assert.true(res.length === 4);
-            assert.arraysMatch(res.map(el => el.pk), ["key1", "key2", "key3", "key4"]);
+            assert.arraysMatch(res.map(el => el.__key), ["key1", "key2", "key3", "key4"]);
 
             this.db.filter("test", "value >= 0", "asc", 2, (err, res) => {
                 if (err) {
                     throw err;
                 }
                 assert.true(res.length === 2);
-                assert.arraysMatch(res.map(el => el.pk), ["key1", "key2"]);
+                assert.arraysMatch(res.map(el => el.__key), ["key1", "key2"]);
                 this.showValuesEqualWith();
             });
         });
@@ -126,7 +128,7 @@ $$.flows.describe("FilterDB", {
                 }
 
                 assert.true(res.length === 3);
-                assert.arraysMatch(res.map(el => el.pk), ["key1", "key2", "key4"]);
+                assert.arraysMatch(res.map(el => el.__key), ["key1", "key2", "key4"]);
                 this.callback()
             });
         });

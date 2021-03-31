@@ -88,27 +88,138 @@ function SingleDSUStorageStrategy() {
     }
 
     function queryParser(query) {
-        const splitQuery = query.split(" ");
-        if (splitQuery.length < 3) {
-            throw Error(`Invalid query format. A query's format is <field> <operator> <value>`);
-        }
-        const operatorKeys = Object.keys(operators);
-        const operatorIndex = splitQuery.findIndex(operator => {
-            return operatorKeys.findIndex(el => el === operator) !== -1;
+        let parsedQuery = [];
+        query.forEach(fieldQuery => {
+            const splitQuery = fieldQuery.split(" ");
+            if (splitQuery.length < 3) {
+                throw Error(`Invalid query format. A query's format is <field> <operator> <value>`);
+            }
+            const operatorKeys = Object.keys(operators);
+            const operatorIndex = splitQuery.findIndex(operator => {
+                return operatorKeys.findIndex(el => el === operator) !== -1;
+            });
+
+            if (operatorIndex === -1) {
+                throw Error(`The provided query does not contain a valid operator.`);
+            }
+
+            const field = splitQuery.slice(0, operatorIndex).join(" ");
+            const operator = splitQuery[operatorIndex];
+            const value = splitQuery.slice(operatorIndex + 1).join(" ");
+
+            parsedQuery.push([field, operator, value]);
         });
 
-        if (operatorIndex === -1) {
-            throw Error(`The provided query does not contain a valid operator.`);
+        return parsedQuery;
+    }
+
+    const defaultCompareFn = function (a, b) {
+        if (a.__key < b.__key) {
+            return -1;
         }
 
-        const field = splitQuery.slice(0, operatorIndex).join(" ");
-        const operator = splitQuery[operatorIndex];
-        const value = splitQuery.slice(operatorIndex + 1).join(" ");
+        if (a.__key === b.__key) {
+            return 0
+        }
 
-        return [field, operator, value];
+        if (a.__key > b.__key) {
+            return 1;
+        }
+    };
+
+    function getNotIndexedFieldsInQuery(tableName, query, callback) {
+        getIndexedFieldsList(tableName, (err, indexedFieldsList) => {
+            const queryFields = query.map(fieldQuery => fieldQuery[0]);
+            if (err) {
+                return callback(undefined, queryFields);
+            }
+
+            const indexedFieldsSet = new Set(indexedFieldsList);
+            let res = queryFields.filter(field => !indexedFieldsSet.has(field));
+
+            callback(undefined, res);
+        });
+    }
+
+    function filterWholeTable(tableName, query, callback) {
+        readTheWholeTable(tableName, (err, tbl) => {
+            if (err) {
+                return callback(createOpenDSUErrorWrapper(`Failed to read table ${tableName}`, err));
+            }
+
+            let fieldQueryResults = [];
+            query.forEach(fieldQuery => {
+                let filteredPKs = [];
+                for (let key in tbl) {
+                    const record = tbl[key];
+                    record.__key = key;
+
+                    if (operators[fieldQuery[1]](record[fieldQuery[0]], fieldQuery[2])) {
+                        filteredPKs.push(record.__key);
+                    }
+                }
+                fieldQueryResults.push(filteredPKs);
+            })
+
+            const queryResults = findIntersection(fieldQueryResults);
+            const filteredRecords = queryResults.map(queryResult => tbl[queryResult]);
+            callback(undefined, filteredRecords);
+        });
+    }
+
+    function filterIndexedTable(tableName, query, callback) {
+        let queryResults = [];
+        const filteredRecords = [];
+
+        function getRecordsRecursively(index) {
+            const pk = queryResults[index];
+            if (typeof pk === "undefined") {
+                return callback(undefined, filteredRecords);
+            }
+
+            self.getRecord(tableName, pk, (err, record) => {
+                if (err) {
+                    return callback(createOpenDSUErrorWrapper(`Failed to get record with key ${pk} from table ${tableName}`, err));
+                }
+
+                record.__key = pk;
+                filteredRecords.push(record);
+
+                getRecordsRecursively(index + 1);
+            });
+        }
+
+        function filterIndexedTableRecursively(fieldQueryIndex) {
+            const fieldQuery = query[fieldQueryIndex];
+            if (typeof fieldQuery === "undefined") {
+                queryResults = findIntersection(queryResults);
+                return getRecordsRecursively(0);
+            }
+
+            loadIndex(tableName, fieldQuery[0], (err, index) => {
+                if (err) {
+                    return callback(createOpenDSUErrorWrapper(`Failed to load index for field ${fieldQuery[0]} from table ${tableName}`, err));
+                }
+
+                const filteredPKs = [];
+                index.forEach(el => {
+                    if (operators[fieldQuery[1]](el.value, fieldQuery[2])) {
+                        filteredPKs.push(el.__key);
+                    }
+                });
+
+                queryResults.push(filteredPKs);
+                filterIndexedTableRecursively(fieldQueryIndex + 1);
+            });
+        }
+
+        filterIndexedTableRecursively(0);
     }
 
     this.filter = function (tableName, query, sort, limit, callback) {
+        if (!Array.isArray(query)) {
+            query = [query];
+        }
         query = queryParser(query);
         if (typeof sort === "function") {
             callback = sort;
@@ -129,19 +240,6 @@ function SingleDSUStorageStrategy() {
             sort = "asc";
         }
 
-        const defaultCompareFn = function (a, b) {
-            if (a.pk < b.pk) {
-                return -1;
-            }
-
-            if (a.pk === b.pk) {
-                return 0
-            }
-
-            if (a.pk > b.pk) {
-                return 1;
-            }
-        };
         let compareFn;
         if (sort === "asc" || sort === "ascending") {
             compareFn = defaultCompareFn;
@@ -151,44 +249,45 @@ function SingleDSUStorageStrategy() {
             };
         }
 
-        loadIndex(tableName, query[0], (err, index) => {
+        getNotIndexedFieldsInQuery(tableName, query, (err, notIndexedFields) => {
             if (err) {
-                return callback(createOpenDSUErrorWrapper(`Failed to load index for field ${query[0]}`, err));
+                return callback(createOpenDSUErrorWrapper(`Failed to check if all fields are indexed in table ${tableName}`, err));
             }
 
-            index.sort(compareFn);
-            const filteredPKs = [];
-            index.forEach(el => {
-                if (operators[query[1]](el.value, query[2]) && filteredPKs.length < limit) {
-                    filteredPKs.push(el.pk);
-                }
-            });
+            console.log("Not indexed fields .......", notIndexedFields);
 
-            const filteredRecords = [];
-
-            function getRecordsRecursively(index) {
-                if (filteredPKs.length === 0) {
-                    return callback(undefined, []);
+            addIndexes(tableName, notIndexedFields, (err) => {
+                if (err) {
+                    return callback(createOpenDSUErrorWrapper(`Failed to add indexes for fields ${notIndexedFields} in table ${tableName}`, err));
                 }
-                const pk = filteredPKs[index];
-                self.getRecord(tableName, pk, (err, record) => {
+
+                filterIndexedTable(tableName, query, (err, filteredRecords) => {
                     if (err) {
-                        return callback(createOpenDSUErrorWrapper(`Failed to get record with key ${pk} from table ${tableName}`, err));
+                        return callback(createOpenDSUErrorWrapper(`Failed to filter indexed table ${tableName}`, err));
                     }
 
-                    record.pk = pk;
-                    filteredRecords.push(record);
-
-                    if (index + 1 === filteredPKs.length) {
-                        return callback(undefined, filteredRecords)
-                    }
-
-                    getRecordsRecursively(index + 1);
+                    filteredRecords.sort(compareFn);
+                    callback(undefined, filteredRecords.slice(0, limit));
                 });
-            }
-
-            getRecordsRecursively(0);
+            });
         });
+    }
+
+    function findIntersection(results) {
+        if (results.length === 0) {
+            return [];
+        }
+        let sets = [];
+        results.forEach(result => {
+            sets.push(new Set(result));
+        })
+
+        let intersection = sets[0];
+        for (let i = 1; i < sets.length; i++) {
+            intersection = new Set([...intersection].filter(el => sets[i].has(el)));
+        }
+
+        return [...intersection];
     }
 
     this.addIndex = function (tableName, fieldName, callback) {
@@ -198,6 +297,26 @@ function SingleDSUStorageStrategy() {
             }
             callback(undefined);
         });
+    }
+
+    function addIndexes(tableName, fields, callback){
+
+        function addIndexesRecursively(fieldIndex){
+            const field = fields[fieldIndex];
+            if (typeof field === "undefined") {
+                return callback();
+            }
+
+            self.addIndex(tableName, field, (err) => {
+                if (err) {
+                    return callback(createOpenDSUErrorWrapper(`Failed to create index for field ${field} in table ${tableName}`, err));
+                }
+
+                addIndexesRecursively(fieldIndex + 1);
+            });
+        }
+
+        addIndexesRecursively(0);
     }
 
     function loadIndex(tableName, fieldName, callback) {
@@ -211,7 +330,7 @@ function SingleDSUStorageStrategy() {
             indexFiles.forEach(indexFileName => {
                 const splitIndexFileName = indexFileName.split(":=");
                 index.push({
-                    pk: splitIndexFileName[0],
+                    __key: splitIndexFileName[0],
                     value: splitIndexFileName[1]
                 })
             });
@@ -229,17 +348,18 @@ function SingleDSUStorageStrategy() {
 
             const path = require("swarmutils").path;
             const tableKeys = Object.keys(table);
+
             function createIndexFilesRecursively(index) {
                 const pk = tableKeys[index];
                 if (typeof pk === "undefined") {
-                   return getIndexesList(tableName, (err, indexesList) => {
+                    return getIndexedFieldsList(tableName, (err, indexedFieldsList) => {
                         if (err) {
                             return callback(createOpenDSUErrorWrapper(`Failed to get indexes list for table ${tableName}`));
                         }
 
-                        indexesList.push(fieldName);
+                        indexedFieldsList.push(fieldName);
                         const indexesPath = `/data/${dbName}/${tableName}/indexes`;
-                        return storageDSU.writeFile(indexesPath, JSON.stringify(indexesList), callback)
+                        return storageDSU.writeFile(indexesPath, JSON.stringify(indexedFieldsList), callback)
 
                     });
                 }
@@ -272,7 +392,7 @@ function SingleDSUStorageStrategy() {
 
     function updateIndexesForRecord(tableName, pk, record, callback) {
         const fields = Object.keys(record);
-        getIndexesList(tableName, (err, indexedFields) => {
+        getIndexedFieldsList(tableName, (err, indexedFields) => {
             if (err) {
                 return callback(createOpenDSUErrorWrapper(`Failed to get indexed fields list for table ${tableName}`, err));
             }
@@ -281,7 +401,7 @@ function SingleDSUStorageStrategy() {
                 return callback();
             }
 
-            function updateIndexesRecursively(index){
+            function updateIndexesRecursively(index) {
                 const field = fields[index];
                 if (typeof field === "undefined") {
                     return callback();
@@ -317,7 +437,7 @@ function SingleDSUStorageStrategy() {
 
     function deleteIndexesForRecord(tableName, pk, record, callback) {
         const fields = Object.keys(record);
-        getIndexesList(tableName, (err, indexedFields) => {
+        getIndexedFieldsList(tableName, (err, indexedFields) => {
             if (err) {
                 return callback(createOpenDSUErrorWrapper(`Failed to get indexed fields list for table ${tableName}`, err));
             }
@@ -326,7 +446,7 @@ function SingleDSUStorageStrategy() {
                 return callback();
             }
 
-            function deleteIndexesRecursively(index){
+            function deleteIndexesRecursively(index) {
                 const field = fields[index];
                 if (typeof field === "undefined") {
                     return callback();
@@ -348,7 +468,7 @@ function SingleDSUStorageStrategy() {
         });
     }
 
-    function getIndexesList(tableName, callback) {
+    function getIndexedFieldsList(tableName, callback) {
         const indexesFilePath = `/data/${dbName}/${tableName}/indexes`;
         storageDSU.readFile(indexesFilePath, (err, indexes) => {
             if (err) {
