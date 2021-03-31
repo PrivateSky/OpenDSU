@@ -254,8 +254,6 @@ function SingleDSUStorageStrategy() {
                 return callback(createOpenDSUErrorWrapper(`Failed to check if all fields are indexed in table ${tableName}`, err));
             }
 
-            console.log("Not indexed fields .......", notIndexedFields);
-
             addIndexes(tableName, notIndexedFields, (err) => {
                 if (err) {
                     return callback(createOpenDSUErrorWrapper(`Failed to add indexes for fields ${notIndexedFields} in table ${tableName}`, err));
@@ -489,7 +487,6 @@ function SingleDSUStorageStrategy() {
       Insert a record
     */
     this.insertRecord = function (tableName, key, record, callback) {
-        console.log("Inserting:", tableName, key, record);
         this.updateRecord(tableName, key, record, undefined, callback);
     };
 
@@ -509,7 +506,6 @@ function SingleDSUStorageStrategy() {
      */
     this.updateRecord = function (tableName, key, record, currentRecord, callback) {
         const recordPath = `/data/${dbName}/${tableName}/records/${key}`;
-        console.log("Updating", recordPath);
         storageDSU.writeFile(recordPath, JSON.stringify(record), function (err, res) {
             if (err) {
                 return callback(createOpenDSUErrorWrapper(`Failed to update record in ${recordPath}`, err));
@@ -535,7 +531,6 @@ function SingleDSUStorageStrategy() {
      */
     this.getRecord = function (tableName, key, callback) {
         const recordPath = `/data/${dbName}/${tableName}/records/${key}`;
-        console.log("Reading", recordPath);
         storageDSU.readFile(recordPath, function (err, res) {
             let record;
             let retErr = undefined;
