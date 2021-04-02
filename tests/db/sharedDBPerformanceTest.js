@@ -20,20 +20,14 @@ $$.flows.describe("PopulateDB", {
 
     insertRecords: function () {
         const crypto = require("../../crypto");
-        let noRecords = 10000;
+        let noRecords = 100000;
         const self = this;
         this.keys = [];
         console.time("insert records");
 
-        for (let i = 0; i < noRecords; i++) {
-            const key = crypto.generateRandom(32).toString("hex");
-            self.keys.push(key);
-        }
-
         function insertRecordsRecursively(index) {
             if (index === noRecords) {
                 console.timeEnd("insert records");
-                self.callback();
                 return self.getRecords();
             }
             const key = crypto.generateRandom(32).toString("hex");

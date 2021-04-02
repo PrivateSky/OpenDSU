@@ -102,14 +102,14 @@ $$.flows.describe("FilterDB", {
             }
 
             assert.true(res.length === 4);
-            assert.arraysMatch(res.map(el => el.__key), ["key1", "key2", "key3", "key4"]);
+            assert.arraysMatch(res.map(el => el.__key), ["key2", "key3", "key1", "key4"]);
 
             this.db.filter("test", "value >= 0", "asc", 2, (err, res) => {
                 if (err) {
                     throw err;
                 }
                 assert.true(res.length === 2);
-                assert.arraysMatch(res.map(el => el.__key), ["key1", "key2"]);
+                assert.arraysMatch(res.map(el => el.__key), ["key2", "key3"]);
                 this.showValuesEqualWith();
             });
         });
