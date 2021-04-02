@@ -542,16 +542,16 @@ function SingleDSUStorageStrategy() {
                 return callback(createOpenDSUErrorWrapper(`Failed to update record in ${recordPath}`, err));
             }
 
-            // if (typeof currentRecord !== "undefined") {
-            //     deleteIndexesForRecord(tableName, key, currentRecord, (err) => {
-            //         if (err) {
-            //             return callback(createOpenDSUErrorWrapper(`Failed to delete index files for record ${JSON.stringify(currentRecord)}`, err));
-            //         }
-            //
-            //         updateIndexesForRecord(tableName, key, record, callback);
-            //     });
-            //     return;
-            // }
+            if (typeof currentRecord !== "undefined") {
+                deleteIndexesForRecord(tableName, key, currentRecord, (err) => {
+                    if (err) {
+                        return callback(createOpenDSUErrorWrapper(`Failed to delete index files for record ${JSON.stringify(currentRecord)}`, err));
+                    }
+
+                    updateIndexesForRecord(tableName, key, record, callback);
+                });
+                return;
+            }
 
             updateIndexesForRecord(tableName, key, record, callback);
         });
