@@ -77,11 +77,14 @@ function SingleDSUStorageStrategy() {
         "like": function (str, regex) {
             if (typeof regex === "string") {
                 const splitRegex = regex.split("/");
-                let flag = splitRegex.pop();
+                let flag = undefined;
+                if(splitRegex.length > 1){
+                    flag = splitRegex.pop();
+                }
                 if (flag === '') {
                     flag = undefined;
                 }
-                regex = new RegExp(splitRegex.join(''), flag);
+                regex = new RegExp(splitRegex.join('/'), flag);
             }
             return regex.test(str);
         },
