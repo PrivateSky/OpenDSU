@@ -30,7 +30,7 @@ module.exports = {
                         if(err){
                             return callback(createOpenDSUErrorWrapper("Failed to mount writable DSU in wrapper DSU while initialising shared database " + dbName, err));
                         }
-                        doStorageDSUInitialisation(res, keySSI.derive());
+                        callback(undefined, res, keySSI.derive());
                     });
                 });
             }
@@ -41,7 +41,7 @@ module.exports = {
                 if(err){
                     callback(createOpenDSUErrorWrapper("Failed to load the DSU of a shared database " + dbName, err));
                 }
-                doStorageDSUInitialisation(res, keySSI);
+                callback(undefined, res, keySSI);
                 reportUserRelevantWarning("Loading a shared database");
             });
         }
