@@ -22,6 +22,9 @@ function getBaseURL(){
             let baseUrl = system.getEnvironmentVariable(constants.BDNS_ROOT_HOSTS);
             if (typeof baseUrl === "undefined") {
                 baseUrl = "http://localhost:8080";
+            } else {
+                const myURL = new URL(baseUrl);
+                baseUrl = myURL.origin;
             }
             if (baseUrl.endsWith("/")) {
                 baseUrl = baseUrl.slice(0, -1);

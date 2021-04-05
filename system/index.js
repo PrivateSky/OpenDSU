@@ -1,6 +1,6 @@
 const envVariables = {};
 function getEnvironmentVariable(name){
-    if (typeof envVariables[name] === "undefined") {
+    if (typeof envVariables[name] !== "undefined") {
         return envVariables[name];
     }
     return process.env[name];
