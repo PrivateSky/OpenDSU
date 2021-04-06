@@ -33,11 +33,15 @@ function uid(bytes = 32) {
 function BasicDB(storageStrategy){
     let self = this;
     ObservableMixin(this);
+
+    this.addIndex = function (tableName, fieldName, callback) {
+        storageStrategy.addIndex(tableName, fieldName, callback);
+    }
     /*
         Get the whole content of the table and asynchronously return an array with all the  records satisfying the condition tested by the filterFunction
      */
-    this.filter = function(tableName, filterFunction, callback){
-        storageStrategy.filterTable(tableName, filterFunction, callback);
+    this.filter = function(tableName, query, sort, limit, callback){
+        storageStrategy.filter(tableName, query, sort, limit, callback);
     };
 
     this.query = this.filter;

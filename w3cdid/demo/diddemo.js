@@ -14,9 +14,11 @@ function DemoPKDocument(identifier){
 
     function getApiHubEndpoint(){
         const opendsu = require("opendsu");
+        const getBaseURL = require("../../utils/getBaseURL");
         const consts = opendsu.constants;
         const system = opendsu.loadApi("system");
-        return system.getEnvironmentVariable(consts.BDNS_ROOT_HOSTS);
+        // return system.getEnvironmentVariable(consts.BDNS_ROOT_HOSTS);
+        return getBaseURL();
     }
 
     this.sendMessage = function(message, toOtherDID, callback){
