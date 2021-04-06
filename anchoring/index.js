@@ -140,55 +140,28 @@ function createDigitalProof(powerfulKeySSI, newHashLinkIdentifier, lastHashLinkI
         dataToSign += lastHashLinkIdentifier;
     }
 
-    let ssiType = powerfulKeySSI.getTypeName();
-
-    getKeySSITypeDigitalProofConfig(ssiType, (err, res) => {
-        if (res.dsa === true) {
-            let cryptoLib = crypto;
-            let keySSI = powerfulKeySSI;
-            if (res.crypto === 'securityContext') {
-                cryptoLib = sc.createSecurityContext();
-                keySSI = cryptoLib.getKeySSI(powerfulKeySSI);
-            }
-            return cryptoLib.sign(powerfulKeySSI, dataToSign, (err, signature) => {
-                if (err) {
-                    return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to sign data`, err));
-                }
-                const digitalProof = {
-                    signature: res.encoding ? crypto.encodeBase58(signature) : signature,
-                    publicKey: res.encoding ? crypto.encodeBase58(keySSI.getPublicKey()) : keySSI.getPublicKey()
-                };
-
-                return callback(undefined, digitalProof);
-            });
+    if (powerfulKeySSI.canSign() === true) {
+        let cryptoLib = crypto;
+        let keySSI = powerfulKeySSI;
+        if (powerfulKeySSI.getSecurityContext() === 'powerfulKeySSI') {
+            cryptoLib = sc.createSecurityContext();
+            keySSI = cryptoLib.getKeySSI(powerfulKeySSI);
         }
 
-        return callback(undefined, {signature:"",publicKey:""})
+        return cryptoLib.sign(powerfulKeySSI, dataToSign, (err, signature) => {
+            if (err) {
+                return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to sign data`, err));
+            }
+            const digitalProof = {
+                signature: crypto.encodeBase58(signature),
+                publicKey: crypto.encodeBase58(keySSI.getPublicKey())
+            };
 
-    })
-}
+            return callback(undefined, digitalProof);
+        });
+    }
 
-const getKeySSITypeDigitalProofConfig = (ssiType, callback) => {
-    const output = {
-        dsa: false,
-        crypto: 'default',
-        encoding: true
-    }
-    switch(ssiType) {
-        case constants.KEY_SSIS.SEED_SSI:
-            output.dsa = true
-            return callback(undefined, output);
-            break;
-        case constants.KEY_SSIS.CONST_SSI:
-        case constants.KEY_SSIS.ARRAY_SSI:
-        case constants.KEY_SSIS.WALLET_SSI:
-            return callback(undefined, null)
-        default:
-            output.dsa = true;
-            output.crypto = 'securityContext'
-            output.encoding = null
-            return callback(undefined, output);
-    }
+    return callback(undefined, {signature:"",publicKey:""})
 }
 
 const getObservable = (keySSI, fromVersion, authToken, timeout) => {
@@ -197,6 +170,5 @@ const getObservable = (keySSI, fromVersion, authToken, timeout) => {
 
 module.exports = {
     addVersion,
-    versions,
-    getKeySSITypeDigitalProofConfig
+    versions
 }
