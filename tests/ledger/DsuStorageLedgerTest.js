@@ -20,7 +20,7 @@ const resolver = opendsu.loadApi("resolver");
 const { createDSU } = require("./utils");
 
 assert.callback(
-    "initialiseDSULedgerTest",
+    "DsuStorageLedgerTest",
     async (testFinished) => {
         try {
             const folder = await promisify(dc.createTestFolder)("dsu");
@@ -47,7 +47,7 @@ assert.callback(
 
             const pskruntimeBundlePath = path.join(__dirname, DEFAULT_PSK_BUNDLES_PATH, "pskruntime.js");
             let cmds = [
-                `addFile ${path.join(__dirname, "memory-domain.js")} /constitution/domain.js`,
+                `addFile ${path.join(__dirname, "dsu-domain.js")} /constitution/domain.js`,
                 `addFile ${pskruntimeBundlePath} /constitution/pskruntime.js`,
                 "addFile boot-cfg.json /boot-cfg.json",
             ];
@@ -59,21 +59,36 @@ assert.callback(
 
             await promisify(ledger.initialiseDSULedger)(mainDsuKeySSI, constitutionKeySSI);
 
-            const dsuHandler = resolver.getDSUHandler(mainDsuKeySSI);
-            const mainDsuFolders = await promisify(dsuHandler.listFolders)("/");
-            console.log('mainDsuFolders', mainDsuKeySSI, mainDsuFolders)
-            // check presence of mount in /code of constitutionKeySSI and /worldState, /history folders
-            assert.true(mainDsuFolders.includes("worldState"));
-            assert.true(mainDsuFolders.includes("history"));
+            const dsuLedger = ledger.getDSULedger(mainDsuKeySSI);
 
-            // check if constitution is properly mounted at /code
-            const mountedDSUs = await promisify(dsuHandler.listMountedDSUs)("/");
-            const isConstitutionMounted = mountedDSUs.some(
-                (mountedDsu) => mountedDsu.path === "code" && mountedDsu.identifier === constitutionKeySSI
-            );
+            const agentAlias = "Smoky";
+            dsuLedger.startTransaction("Constitution", "addAgent", agentAlias, "PublicKey", async (error, result) => {
+                if (error) {
+                    throw error;
+                }
 
-            assert.true(isConstitutionMounted);
-            testFinished();
+                console.log("##### finished transaction");
+
+                const dsuHandler = resolver.getDSUHandler(mainDsuKeySSI);
+                const listFiles = $$.promisify(dsuHandler.listFiles);
+                const readFile = $$.promisify(dsuHandler.readFile);
+
+                setTimeout(async () => {
+                    const historyFiles = await listFiles("/history");
+                    console.log("historyFiles", historyFiles);
+
+                    const mountedDSUs = await $$.promisify(dsuHandler.listMountedDSUs)("/history");
+                    console.log("mountedDSUs at /history", mountedDSUs);
+
+                    // ensure the first block was created (since direct consensus algorithm creates a block for every transaction)
+                    // assert.true(historyFiles.some((filename) => filename === "0"));
+
+                    const historyIndexContent = (await readFile("/history/index")).toString();
+                    assert.true(historyIndexContent, "0");
+
+                    testFinished();
+                }, 5000);
+            });
         } catch (error) {
             console.error(error);
         }

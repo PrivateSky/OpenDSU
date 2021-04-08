@@ -68,7 +68,6 @@ function BootEngine(getKeySSI, initializeSwarmEngine) {
             let bootConfig;
             try {
                 let allFiles = await listFiles(constants.CODE_FOLDER);
-                console.log("allFiles", allFiles);
                 isBootFilePresent = allFiles.some((file) => file === constants.BOOT_CONFIG_FILE);
                 if (isBootFilePresent) {
                     const bootConfigFile = `${constants.CODE_FOLDER}/${constants.BOOT_CONFIG_FILE}`;
@@ -105,6 +104,8 @@ function BootEngine(getKeySSI, initializeSwarmEngine) {
             }
 
             await initializeSwarmEngine();
+
+            console.log('[worker] finished starting blockchain');
 
             if (typeof constitutionBundles !== "undefined") {
                 try {

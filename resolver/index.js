@@ -95,8 +95,6 @@ const loadDSU = (keySSI, options, callback) => {
     });
 };
 
-
-const dsuHandlers = {};
 /*
     boot the DSU in a thread
  */
@@ -111,10 +109,6 @@ const getDSUHandler = (dsuKeySSI) => {
             throw new Error(errorMessage);
         }
     }
-
-    // if (dsuHandlers[dsuKeySSI]) {
-    //     return dsuHandlers[dsuKeySSI];
-    // }
 
     const syndicate = require("syndicate");
 
@@ -178,8 +172,12 @@ const getDSUHandler = (dsuKeySSI) => {
                     if (result instanceof Uint8Array) {
                         // the buffers sent from the worker will be converted to Uint8Array when sending to parent
                         result = Buffer.from(result);
-                    } else if (result.type === "HashLinkSSI") {
-                        result = keySSISpace.parse(result.identifier);
+                    } else {
+                        try {
+                            result = JSON.parse(result);
+                        } catch (error) {
+                            // if parsing fails then the string must be an ordinary one so we leave it as it is
+                        }
                     }
                 }
 
@@ -190,7 +188,20 @@ const getDSUHandler = (dsuKeySSI) => {
         this.callDSUAPI = function (fn, ...args) {
             const fnArgs = [...args];
             const callback = fnArgs.pop();
-            sendTaskToWorker({ fn, args: fnArgs }, callback);
+            const parseResult = (error, result) => {
+                if (error) {
+                    return callback(error);
+                }
+
+                try {
+                    result = keySSISpace.parse(result);
+                } catch (error) {
+                    // if it fails, then the result is not a valid KeySSI
+                }
+                callback(undefined, result);
+            };
+            // try to recreate keyssi
+            sendTaskToWorker({ fn, args: fnArgs }, parseResult);
         };
 
         this.callApi = function (fn, ...args) {
@@ -201,18 +212,17 @@ const getDSUHandler = (dsuKeySSI) => {
 
         this.addAPI = function (fn) {
             if (this[fn]) {
-                throw new Error(`Method 'fn' already exists`)
+                throw new Error(`Method '${fn}' already exists`);
             }
             this[fn] = function (...args) {
                 const fnArgs = [...args];
                 const callback = fnArgs.pop();
                 sendTaskToWorker({ fn, args: fnArgs }, callback);
             };
-        }
+        };
     }
 
     let res = new DSUHandler();
-    dsuHandlers[dsuKeySSI] = res;
 
     let availableFunctions = [
         "addFile",
