@@ -81,7 +81,7 @@ function SecurityContext(storage) {
         return registerDerivedKeySSIs(derivedKeySSI);
     };
 
-    this.getKeySSI = (keySSI, ) => {
+    this.getKeySSI = (keySSI) => {
         if (!isInitialized) {
             return this.addPendingCall(() => {
                 this.getKeySSI(keySSI);
