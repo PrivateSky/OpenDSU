@@ -10,7 +10,7 @@
     As you can see, nothing is ever really updated, even the deletion is done by marking the record with the field "deleted"
  */
 
-const ObservableMixin  = require("../../utils/ObservableMixin");
+const ObservableMixin = require("../../utils/ObservableMixin");
 
 /*
 const crypto = require("crypto"); TODO: if required use from pskcrypto to have a single and portable point in all code
@@ -30,7 +30,7 @@ function uid(bytes = 32) {
 }  */
 
 
-function BasicDB(storageStrategy){
+function BasicDB(storageStrategy) {
     let self = this;
     ObservableMixin(this);
 
@@ -40,18 +40,18 @@ function BasicDB(storageStrategy){
     /*
         Get the whole content of the table and asynchronously return an array with all the  records satisfying the condition tested by the filterFunction
      */
-    this.filter = function(tableName, query, sort, limit, callback){
+    this.filter = function (tableName, query, sort, limit, callback) {
         storageStrategy.filter(tableName, query, sort, limit, callback);
     };
 
     this.query = this.filter;
 
-    function getDefaultCallback(message, tableName, key){
-        return function (err,res){
-            if(err){
+    function getDefaultCallback(message, tableName, key) {
+        return function (err, res) {
+            if (err) {
                 reportUserRelevantError(message + ` with errors in table ${tableName} for key ${key}`, err);
-            }else {
-                console.log(message,`in table ${tableName} for key ${key} at version ${res.__version}`);
+            } else {
+                console.log(message, `in table ${tableName} for key ${key}`);
             }
         }
     }
@@ -59,11 +59,11 @@ function BasicDB(storageStrategy){
     /*
       Insert a record, return an error if an record with thew same key already exists
     */
-    this.insertRecord = function(tableName, key, record, callback){
+    this.insertRecord = function (tableName, key, record, callback) {
         callback = callback ? callback : getDefaultCallback("Inserting a record", tableName, key);
 
-        self.getRecord(tableName, key, function(err,res){
-            if(!err || res){
+        self.getRecord(tableName, key, function (err, res) {
+            if (!err || res) {
                 //newRecord = Object.assign(newRecord, {__version:-1});
                 return callback(createOpenDSUErrorWrapper("Failed to insert over an existing record", err));
             }
@@ -79,11 +79,11 @@ function BasicDB(storageStrategy){
     /*
         Update a record, return an error if does not exists (does not do an insert)
      */
-    this.updateRecord = function(tableName, key, newRecord, callback){
-        callback = callback?callback : getDefaultCallback("Updating a record", tableName, key);
+    this.updateRecord = function (tableName, key, newRecord, callback) {
+        callback = callback ? callback : getDefaultCallback("Updating a record", tableName, key);
         let currentRecord
 
-        function doVersionIncAndUpdate(currentRecord){
+        function doVersionIncAndUpdate(currentRecord) {
             newRecord.__version++;
             newRecord.__timestamp = Date.now();
             //newRecord.__changeId = uid();
@@ -95,38 +95,39 @@ function BasicDB(storageStrategy){
             }
             console.log(">>>>>>>>>>>>Done with storageStrategy");
         }
-            self.getRecord(tableName, key, function(err,res){
-                if(err || !res){
-                    //newRecord = Object.assign(newRecord, {__version:-1});
-                    return callback(createOpenDSUErrorWrapper("Failed to update a record that does not exist", err));
-                }
-                if (res) {
-                    currentRecord = res;
-                    newRecord.__version = currentRecord.__version;
-                }
-                doVersionIncAndUpdate(currentRecord);
-            });
-        }
+
+        self.getRecord(tableName, key, function (err, res) {
+            if (err || !res) {
+                //newRecord = Object.assign(newRecord, {__version:-1});
+                return callback(createOpenDSUErrorWrapper("Failed to update a record that does not exist", err));
+            }
+            if (res) {
+                currentRecord = res;
+                newRecord.__version = currentRecord.__version;
+            }
+            doVersionIncAndUpdate(currentRecord);
+        });
+    }
 
     /*
         Get a single row from a table
      */
-    this.getRecord = function(tableName, key, callback) {
-        storageStrategy.getRecord(tableName, key, function(err,res){
-            if(err || res.__deleted){
+    this.getRecord = function (tableName, key, callback) {
+        storageStrategy.getRecord(tableName, key, function (err, res) {
+            if (err || res.__deleted) {
                 return callback(createOpenDSUErrorWrapper(`Missing record in table ${tableName} and key ${key}`, err));
             }
-            callback(undefined,res);
+            callback(undefined, res);
         });
     };
 
     /*
       Get the history of a record, including the deleted versions
    */
-    this.getHistory = function(tableName, key, callback){
-        storageStrategy.getRecord(tableName, key, function(err,res){
-            if(err){
-                return callback( createOpenDSUErrorWrapper(`No history for table ${tableName} and key ${key}`, err));
+    this.getHistory = function (tableName, key, callback) {
+        storageStrategy.getRecord(tableName, key, function (err, res) {
+            if (err) {
+                return callback(createOpenDSUErrorWrapper(`No history for table ${tableName} and key ${key}`, err));
             }
             callback(undefined, self.getRecordVersions(res));
         });
@@ -135,8 +136,8 @@ function BasicDB(storageStrategy){
     /*
       Delete a record
      */
-    this.deleteRecord = function(tableName, key, callback){
-        self.getRecord(tableName, key, function(err, record){
+    this.deleteRecord = function (tableName, key, callback) {
+        self.getRecord(tableName, key, function (err, record) {
             record.__version++;
             record.__timestamp = Date.now();
             record.__deleted = true;
@@ -144,13 +145,25 @@ function BasicDB(storageStrategy){
         })
     };
 
-    this.getRecordVersions = function(record){
+    this.getRecordVersions = function (record) {
         let arrRes = []
-        while(record){
+        while (record) {
             arrRes.unshift(record);
             record = record.__previousRecord;
         }
         return arrRes;
+    }
+
+    this.beginBatch = () => {
+        storageStrategy.beginBatch()
+    }
+
+    this.cancelBatch = (callback) => {
+        storageStrategy.cancelBatch(callback)
+    }
+
+    this.commitBatch = (callback) => {
+        storageStrategy.commitBatch(callback)
     }
 }
 

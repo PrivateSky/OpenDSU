@@ -25,7 +25,7 @@ let getSharedDB = function(keySSI, dbName){
         }
         storageStrategy.initialise(_storageDSU, dbName);
         db.finishInitialisation();
-        console.log("Finising initialisation");
+        console.log("Finishing initialisation");
 
         db.getShareableSSI = function(){
                 return sharableSSI;
