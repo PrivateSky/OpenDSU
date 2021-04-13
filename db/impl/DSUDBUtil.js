@@ -63,7 +63,6 @@ module.exports = {
                             return setTimeout(res.load(waitForWritableSSI), 1000);
                         }
 
-                        console.log("SSI .......", result.archive.getCreationSSI(true), result.relativePath);
                         doStorageDSUInitialisation(result.archive, keySSI);
                         reportUserRelevantWarning("Loading a shared database");
                     });

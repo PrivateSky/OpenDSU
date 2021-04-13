@@ -9,7 +9,7 @@ module.exports.bindAutoPendingFunctions = function(obj, exceptionList){
 
     for(let m in obj){
         if(typeof obj[m] == "function"){
-            if(!exceptionList || !exceptionList[m]){
+            if(!exceptionList || exceptionList.indexOf(m) === -1){
                 originalFunctions[m] = obj[m];
             }
         }

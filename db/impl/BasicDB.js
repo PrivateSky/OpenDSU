@@ -11,6 +11,7 @@
  */
 
 const ObservableMixin = require("../../utils/ObservableMixin");
+let bindAutoPendingFunctions = require("../../utils/BindAutoPendingFunctions").bindAutoPendingFunctions;
 
 /*
 const crypto = require("crypto"); TODO: if required use from pskcrypto to have a single and portable point in all code
@@ -34,6 +35,10 @@ function BasicDB(storageStrategy) {
     let self = this;
     ObservableMixin(this);
 
+    storageStrategy.on("initialised", () => {
+        this.finishInitialisation();
+        this.dispatchEvent("initialised");
+    });
     this.addIndex = function (tableName, fieldName, callback) {
         storageStrategy.addIndex(tableName, fieldName, callback);
     }
@@ -165,6 +170,12 @@ function BasicDB(storageStrategy) {
     this.commitBatch = (callback) => {
         storageStrategy.commitBatch(callback)
     }
+
+
+    bindAutoPendingFunctions(this, ["on", "off"]);
+    //============================================================
+    // To not add others property on this object below this call =
+    //============================================================
 }
 
 module.exports = BasicDB;

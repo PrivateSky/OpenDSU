@@ -1,3 +1,5 @@
+const ObservableMixin = require("../../utils/ObservableMixin");
+
 function SingleDSUStorageStrategy() {
     let volatileMemory = {}
     let self = this
@@ -5,10 +7,12 @@ function SingleDSUStorageStrategy() {
     let shareableSSI;
     let dbName;
 
+    ObservableMixin(this);
+
     this.initialise = function (_storageDSU, _dbName) {
-        console.log("Initializing strategy .............", _storageDSU, _dbName);
         storageDSU = _storageDSU;
         dbName = _dbName;
+        this.dispatchEvent("initialised");
     }
     this.beginBatch = () => {
         storageDSU.beginBatch();
