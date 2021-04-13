@@ -60,7 +60,10 @@ module.exports = {
                         const keyssiAPI = require("opendsu").loadAPI("keyssi");
                         const writableSSI = keyssiAPI.parse(result.archive.getCreationSSI());
                         if (writableSSI.getTypeName() === "sread") {
-                            return setTimeout(res.load(waitForWritableSSI), 1000);
+                            console.log("Delaying the loading of DSU based on the fact that current stare not reflecting a DB dsu type structure");
+                            return setTimeout(()=>{
+                                res.load(waitForWritableSSI);
+                            }, 1000);
                         }
 
                         doStorageDSUInitialisation(result.archive, keySSI);
