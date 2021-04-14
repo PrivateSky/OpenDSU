@@ -98,7 +98,6 @@ function BasicDB(storageStrategy) {
             } else {
                 storageStrategy.updateRecord(tableName, key, newRecord, currentRecord, callback);
             }
-            console.log(">>>>>>>>>>>>Done with storageStrategy");
         }
 
         self.getRecord(tableName, key, function (err, res) {
