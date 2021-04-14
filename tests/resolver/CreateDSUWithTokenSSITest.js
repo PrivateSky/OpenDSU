@@ -23,7 +23,7 @@ assert.callback(
 
                 const domain = "default";
 
-                let { ownershipSSI} = keySSI.createToken(domain, "SN");
+                let { ownershipSSI } = keySSI.createToken(domain, "SN");
 
                 const dsu = await promisify(resolver.createDSU)(ownershipSSI);
                 const createdDsuHashLink = await promisify(dsu.getLastHashLinkSSI)();

@@ -124,18 +124,21 @@ const createToken = (domain, amountOrSerialNumber, vn, hint, callback) => {
 
     // create a TRANSFER_SSI, since the token's ownership is first transfered to the owner itself
     const transferSSI = keySSIFactory.createType(SSITypes.TRANSFER_SSI);
-    const transferTimestamp = Date().getTime();
+    const transferTimestamp = new Date().getTime();
 
     // get signature by sign(lastEntryInAnchor, transferTimestamp, ownershipPublicKeyHash)
-    const signatureCurrentOwner = crypto.sha256(`${transferTimestamp}/${ownershipPublicKeyHash}`);
-    const timestampAndSignature = `${transferTimestamp}/${signatureCurrentOwner}`
-    transferSSI.initialize(domain, ownershipPublicKeyHash, timestampAndSignature, vn, hint);
-
+    const transferDataToSign = `${transferTimestamp}/${ownershipPublicKeyHash}`;
+    crypto.sign(ownershipSSI, transferDataToSign, (_err, signedTransferData) => {
+        const signatureCurrentOwner = crypto.encodeBase58(signedTransferData);
+        const timestampAndSignature = `${transferTimestamp}/${signatureCurrentOwner}`;
+        transferSSI.initialize(domain, ownershipPublicKeyHash, timestampAndSignature, vn, hint);
+    });
+    
     // anchor the transferSSI and return anchor to callback call
     // addVersion(ownershipSSI, transferSSI, (err) => {
 
     // });
-
+    
     result = {
         tokenSSI,
         ownershipSSI,

@@ -3,8 +3,9 @@ html API space
 */
 
 let constants = require("./moduleConstants.js");
+const { promisify } = require('./utils/promise');
 
-
+$$.promisify = promisify;
 
 
 

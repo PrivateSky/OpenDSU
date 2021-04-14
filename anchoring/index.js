@@ -7,6 +7,7 @@ const constants = require("../moduleConstants");
 const promiseRunner = require("../utils/promise-runner");
 const cachedAnchoring = require("./cachedAnchoring");
 const config = require("../config");
+const { validateHashLinks } = require("./anchoring-utils");
 
 const isValidVaultCache = () => {
     return typeof config.get(constants.CACHE.VAULT_TYPE) !== "undefined" && config.get(constants.CACHE.VAULT_TYPE) !== constants.CACHE.NO_CACHE;
@@ -49,8 +50,10 @@ const versions = (powerfulKeySSI, authToken, callback) => {
                             return keyssi.parse(hlString);
                         });
 
+                        const validatedHashLinks = $$.promisify(validateHashLinks)(hashLinks);
+
                         // cache.put(anchorId, hlStrings);
-                        return hashLinks;
+                        return validatedHashLinks;
                     });
                 });
         };
