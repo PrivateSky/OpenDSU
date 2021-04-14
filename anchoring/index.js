@@ -158,6 +158,8 @@ function createDigitalProof(powerfulKeySSI, newHashLinkIdentifier, lastHashLinkI
         case constants.KEY_SSIS.CONST_SSI:
         case constants.KEY_SSIS.ARRAY_SSI:
         case constants.KEY_SSIS.WALLET_SSI:
+        case constants.KEY_SSIS.OWNERSHIP_SSI:
+        case constants.KEY_SSIS.OWNERSHIP_READ_SSI:
             return callback(undefined, {signature:"",publicKey:""})
         default:
             const securityContext = sc.createSecurityContext();

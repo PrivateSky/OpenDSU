@@ -1,4 +1,5 @@
 const keySSIResolver = require("key-ssi-resolver");
+const crypto = require("../crypto");
 const keySSIFactory = keySSIResolver.KeySSIFactory;
 const SSITypes = keySSIResolver.SSITypes;
 
@@ -104,6 +105,58 @@ const createTemplateSymmetricalEncryptionSSI = (domain, encryptionKey, control, 
     return createTemplateKeySSI(SSITypes.SYMMETRICAL_ENCRYPTION_SSI, domain, encryptionKey, control, vn, hint, callback);
 };
 
+const createToken = (domain, amountOrSerialNumber, vn, hint, callback) => {
+    // the tokenSSI is closely linked with an ownershipSSI
+    // the tokenSSI must have the ownershipSSI's public key hash
+    // the ownershipSSI must have the tokenSSI's base58 ssi
+    const ownershipSSI = keySSIFactory.createType(SSITypes.OWNERSHIP_SSI);
+    ownershipSSI.initialize(domain, undefined, undefined, vn, hint);
+
+    const ownershipPublicKeyHash = ownershipSSI.getPublicKeyHash();
+    const ownershipPrivateKey = ownershipSSI.getPrivateKeyHash();
+    
+    const tokenSSI = keySSIFactory.createType(SSITypes.TOKEN_SSI);
+    tokenSSI.initialize(domain, amountOrSerialNumber, ownershipPublicKeyHash, vn, hint);
+
+    // update ownershipSSI to set level and token
+    const ownershipLevelAndToken = `0/${tokenSSI.getIdentifier()}`;
+    ownershipSSI.load(SSITypes.OWNERSHIP_SSI, domain, ownershipPrivateKey, ownershipLevelAndToken, vn, hint);
+
+    // create a TRANSFER_SSI, since the token's ownership is first transfered to the owner itself
+    const transferSSI = keySSIFactory.createType(SSITypes.TRANSFER_SSI);
+    const transferTimestamp = Date().getTime();
+
+    // get signature by sign(lastEntryInAnchor, transferTimestamp, ownershipPublicKeyHash)
+    const signatureCurrentOwner = crypto.sha256(`${transferTimestamp}/${ownershipPublicKeyHash}`);
+    const timestampAndSignature = `${transferTimestamp}/${signatureCurrentOwner}`
+    transferSSI.initialize(domain, ownershipPublicKeyHash, timestampAndSignature, vn, hint);
+
+    // anchor the transferSSI and return anchor to callback call
+    // addVersion(ownershipSSI, transferSSI, (err) => {
+
+    // });
+
+    result = {
+        tokenSSI,
+        ownershipSSI,
+        transferSSI
+    }
+
+    return result;
+};
+
+const createOwnershipSSI = (domain, levelAndToken, vn, hint, callback) => {
+    let ownershipSSI = keySSIFactory.createType(SSITypes.OWNERSHIP_SSI);
+    ownershipSSI.initialize(domain, undefined, levelAndToken, vn, hint, callback);
+    return ownershipSSI;
+};
+
+const createTransferSSI = (domain, hashNewPublicKey, signatureCurrentOwner, vn, hint, callback) => {
+    let transferSSI = keySSIFactory.createType(SSITypes.TRANSFER_SSI);
+    transferSSI.initialize(domain, hashNewPublicKey, signatureCurrentOwner, vn, hint, callback);
+    return transferSSI;
+};
+
 module.exports = {
     parse,
     createSeedSSI,
@@ -116,5 +169,8 @@ module.exports = {
     createTemplateKeySSI,
     createHashLinkSSI,
     createArraySSI,
-    buildSymmetricalEncryptionSSI
+    buildSymmetricalEncryptionSSI,
+    createToken,
+    createOwnershipSSI,
+    createTransferSSI
 };
