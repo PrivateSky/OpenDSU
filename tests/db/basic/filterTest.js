@@ -5,10 +5,10 @@
 ...
  */
 
-require("../../../../psknode/bundles/testsRuntime");
+require("../../../../../psknode/bundles/testsRuntime");
 const assert = require("double-check").assert;
-const db = require("../../db");
-const tir = require("../../../../psknode/tests/util/tir");
+const db = require("../../../db");
+const tir = require("../../../../../psknode/tests/util/tir");
 
 require("callflow").initialise();
 //ow.register("opendsu", "../index.js")
@@ -20,7 +20,7 @@ $$.flows.describe("FilterDB", {
         tir.launchVirtualMQNode((err, port) => {
             assert.true(err === null || typeof err === "undefined", "Failed to create server.");
 
-            let keySSIApis = require("../../keyssi");
+            let keySSIApis = require("../../../keyssi");
             let storageSSI = keySSIApis.createSeedSSI("default");
             this.db = db.getWalletDB(storageSSI, "testDb");
             this.insertRecords();

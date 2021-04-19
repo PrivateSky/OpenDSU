@@ -14,6 +14,7 @@ function validateHashLinks(hashLinks, callback) {
 
         return hashLink;
     });
+    console.log("Validated hash links......", validatedHashLinks.map(vhl=>vhl.getIdentifier()));
     callback(undefined, validatedHashLinks);
 }
 

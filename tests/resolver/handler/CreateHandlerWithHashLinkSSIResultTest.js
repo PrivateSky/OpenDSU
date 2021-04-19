@@ -1,9 +1,9 @@
-require("../../../../psknode/bundles/testsRuntime");
+require("../../../../../psknode/bundles/testsRuntime");
 
 const dc = require("double-check");
 const assert = dc.assert;
 
-const resolver = require("../../resolver");
+const resolver = require("../../../resolver");
 const { createTestFolderWithDSU } = require("./dsu-handler-utils");
 
 assert.callback(

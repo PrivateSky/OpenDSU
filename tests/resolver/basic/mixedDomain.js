@@ -1,14 +1,14 @@
-require("../../../../psknode/bundles/testsRuntime");
+require("../../../../../psknode/bundles/testsRuntime");
 const keySSIResolver = require("key-ssi-resolver");
-const { BRICKS_DOMAIN_KEY } = require("../../moduleConstants");
+const { BRICKS_DOMAIN_KEY } = require("../../../moduleConstants");
 const dc = require("double-check");
 const { assert } = dc;
 
-const resolver = require("../../resolver");
-const keySSI = require("../../keyssi");
+const resolver = require("../../../resolver");
+const keySSI = require("../../../keyssi");
 
 
-const testIntegration = require("../../../../psknode/tests/util/tir");
+const testIntegration = require("../../../../../psknode/tests/util/tir");
 
 const DOMAIN_1 = 'default'
 const DOMAIN_2 = 'predefined'

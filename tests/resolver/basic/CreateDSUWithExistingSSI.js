@@ -1,11 +1,11 @@
-require("../../../../psknode/bundles/testsRuntime");
-const testIntegration = require("../../../../psknode/tests/util/tir");
+require("../../../../../psknode/bundles/testsRuntime");
+const testIntegration = require("../../../../../psknode/tests/util/tir");
 
 const dc = require("double-check");
 const assert = dc.assert;
 
-const resolver = require('../../resolver');
-const keyssispace = require("../../index").loadApi("keyssi");
+const resolver = require('../../../resolver');
+const keyssispace = require("../../../index").loadApi("keyssi");
 
 
 assert.callback('Create DSU with existing SSI on configured domain', (testfinished) => {

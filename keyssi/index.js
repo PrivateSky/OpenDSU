@@ -160,6 +160,18 @@ const createTransferSSI = (domain, hashNewPublicKey, signatureCurrentOwner, vn, 
     return transferSSI;
 };
 
+const createTemplateTransferSSI = (domain, hashNewPublicKey, vn, hint) => {
+    let transferSSI = keySSIFactory.createType(SSITypes.TRANSFER_SSI);
+    transferSSI.load(domain, hashNewPublicKey, undefined, vn, hint);
+    return transferSSI;
+};
+
+const createSignedHashLinkSSI = (domain, hashLink, timestamp, signature, vn, hint) => {
+    let signedHashLink = keySSIFactory.createType(SSITypes.SIGNED_HASH_LINK_SSI);
+    signedHashLink.initialize(domain, hashLink, timestamp, signature, vn, hint);
+    return signedHashLink;
+};
+
 module.exports = {
     parse,
     createSeedSSI,
@@ -175,5 +187,7 @@ module.exports = {
     buildSymmetricalEncryptionSSI,
     createToken,
     createOwnershipSSI,
-    createTransferSSI
+    createTransferSSI,
+    createTemplateTransferSSI,
+    createSignedHashLinkSSI
 };

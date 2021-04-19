@@ -1,9 +1,9 @@
-const testIntegration = require("../../../../psknode/tests/util/tir");
+const testIntegration = require("../../../../../psknode/tests/util/tir");
 
 const dc = require("double-check");
 
-const resolver = require("../../resolver");
-const keySSI = require("../../keyssi");
+const resolver = require("../../../resolver");
+const keySSI = require("../../../keyssi");
 
 function createTestFolderWithDSU(folderName, callback) {
     dc.createTestFolder(folderName, (err, folder) => {
