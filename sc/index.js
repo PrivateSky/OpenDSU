@@ -100,6 +100,8 @@ function SecurityContext(storage) {
     };
 
     this.sign = (keySSI, data, callback) => {
+        // temporary solution until proper implementation
+        return callback(undefined, {signature: "", publicKey: ""});
         if (!isInitialized) {
             return this.addPendingCall(() => {
                 this.sign(keySSI, data, callback);
@@ -124,7 +126,7 @@ function SecurityContext(storage) {
 }
 
 let sc;
-const createSecurityContext = (storage) => {
+const getSecurityContext = (storage) => {
     if (sc) {
         return sc;
     }
@@ -135,5 +137,5 @@ const createSecurityContext = (storage) => {
 module.exports = {
     getMainDSU,
     setMainDSU,
-    createSecurityContext
+    getSecurityContext
 };

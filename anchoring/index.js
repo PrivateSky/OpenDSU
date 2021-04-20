@@ -13,18 +13,18 @@ const isValidVaultCache = () => {
 }
 /**
  * Get versions
- * @param {keySSI} SSICapableOfSigning
+ * @param {keySSI} keySSI
  * @param {string} authToken
  * @param {function} callback
  */
-const versions = (SSICapableOfSigning, authToken, callback) => {
+const versions = (keySSI, authToken, callback) => {
     if (typeof authToken === 'function') {
         callback = authToken;
         authToken = undefined;
     }
 
-    const dlDomain = SSICapableOfSigning.getDLDomain();
-    const anchorId = SSICapableOfSigning.getAnchorId();
+    const dlDomain = keySSI.getDLDomain();
+    const anchorId = keySSI.getAnchorId();
 
     if (dlDomain === constants.DOMAINS.VAULT && isValidVaultCache()) {
         return cachedAnchoring.versions(anchorId, callback);
@@ -49,7 +49,7 @@ const versions = (SSICapableOfSigning, authToken, callback) => {
                             return keyssi.parse(hlString);
                         });
 
-                        const validatedHashLinks = $$.promisify(validateHashLinks)(hashLinks);
+                        const validatedHashLinks = $$.promisify(validateHashLinks)(keySSI, hashLinks);
 
                         // cache.put(anchorId, hlStrings);
                         return validatedHashLinks;
@@ -74,6 +74,7 @@ const addVersion = (SSICapableOfSigning, newSSI, lastSSI, zkpValue, callback) =>
     if (typeof lastSSI === "function") {
         callback = lastSSI;
         lastSSI = undefined;
+        zkpValue = '';
     }
 
     if (typeof zkpValue === "function") {
@@ -102,42 +103,38 @@ const addVersion = (SSICapableOfSigning, newSSI, lastSSI, zkpValue, callback) =>
             new: newSSI.getIdentifier()
         };
 
-        if (SSICapableOfSigning.getTypeName() === constants.KEY_SSIS.OWNERSHIP_SSI) {
-            hashLinkIds.new = getVersionForOwnershipSSI(SSICapableOfSigning, newSSI, lastSSI);
-        }
+        createDigitalProof(SSICapableOfSigning, hashLinkIds.new, hashLinkIds.last, zkpValue, (err, digitalProof) => {
+            const body = {
+                hashLinkIds,
+                digitalProof,
+                zkp: zkpValue
+            };
 
-        const digitalProof = createDigitalProof(SSICapableOfSigning, hashLinkIds.new, hashLinkIds.last, zkpValue);
-        const body = {
-            hashLinkIds,
-            digitalProof,
-            zkp: zkpValue
-        };
+            const addAnchor = (service) => {
+                return new Promise((resolve, reject) => {
+                    const putResult = doPut(`${service}/anchor/${dlDomain}/add/${anchorId}`, JSON.stringify(body), (err, data) => {
+                        if (err) {
+                            return reject({
+                                statusCode: err.statusCode,
+                                message: err.statusCode === 428 ? 'Unable to add alias: versions out of sync' : err.message || 'Error'
+                            });
+                        }
 
-        console.log("hashlinkids", body);
-        const addAnchor = (service) => {
-            return new Promise((resolve, reject) => {
-                const putResult = doPut(`${service}/anchor/${dlDomain}/add/${anchorId}`, JSON.stringify(body), (err, data) => {
-                    if (err) {
-                        return reject({
-                            statusCode: err.statusCode,
-                            message: err.statusCode === 428 ? 'Unable to add alias: versions out of sync' : err.message || 'Error'
-                        });
+                        require("opendsu").loadApi("resolver").invalidateDSUCache(SSICapableOfSigning);
+                        return resolve(data);
+                    });
+                    if (putResult) {
+                        putResult.then(resolve).catch(reject);
                     }
+                })
+            };
 
-                    require("opendsu").loadApi("resolver").invalidateDSUCache(SSICapableOfSigning);
-                    return resolve(data);
-                });
-                if (putResult) {
-                    putResult.then(resolve).catch(reject);
-                }
-            })
-        };
-
-        promiseRunner.runOneSuccessful(anchoringServicesArray, addAnchor, callback, new Error("Storing a brick"));
+            promiseRunner.runOneSuccessful(anchoringServicesArray, addAnchor, callback, new Error("Storing a brick"));
+        });
     });
 };
 
-function getVersionForOwnershipSSI(ownershipSSI, newSSI, lastSSI) {
+function getVersionForOwnershipSSI(ownershipSSI, newSSI, lastSSI, callback) {
     let retSSIIdentifier;
     const timestamp = Date.now();
     let dataToSign;
@@ -148,22 +145,31 @@ function getVersionForOwnershipSSI(ownershipSSI, newSSI, lastSSI) {
     }
     if (newSSI.getTypeName() === constants.KEY_SSIS.TRANSFER_SSI) {
         //sign(lastEntryInAnchor, timestamp, hash New Public Key)
-        dataToSign += newSSI.getPublicKeyHash();
-        const signature = ownershipSSI.sign(dataToSign);
-        const transferSSI = keyssi.createTransferSSI(newSSI.getDLDomain(), newSSI.getPublicKeyHash(), timestamp, signature);
-        retSSIIdentifier = transferSSI.getIdentifier();
+        dataToSign += newSSI.getControlString();
+        ownershipSSI.sign(dataToSign, (err, signature) => {
+            if (err) {
+                return callback(createOpenDSUErrorWrapper("Filed to sign data", err));
+            }
+            const transferSSI = keyssi.createTransferSSI(newSSI.getDLDomain(), newSSI.getControlString(), timestamp, signature);
+            retSSIIdentifier = transferSSI.getIdentifier();
+            callback(undefined, retSSIIdentifier);
+        });
     } else if (newSSI.getTypeName() === constants.KEY_SSIS.HASH_LINK_SSI) {
         //sign(lastEntryInAnchor, timestamp, hashLink)
         dataToSign += newSSI.getIdentifier();
-        const signature = ownershipSSI.sign(dataToSign);
-        const signedHashLinkSSI = keyssi.createSignedHashLinkSSI(newSSI.getDLDomain(), newSSI.getIdentifier(), timestamp, signature);
-        retSSIIdentifier = signedHashLinkSSI.getIdentifier();
+        ownershipSSI.sign(dataToSign, (err, signature) => {
+            if (err) {
+                return callback(createOpenDSUErrorWrapper("Filed to sign data", err));
+            }
+            const signedHashLinkSSI = keyssi.createSignedHashLinkSSI(newSSI.getDLDomain(), newSSI.getIdentifier(), timestamp, signature);
+            retSSIIdentifier = signedHashLinkSSI.getIdentifier();
+        });
     }
 
-    return retSSIIdentifier;
+    callback(createOpenDSUErrorWrapper("Invalid ssi type"));
 }
 
-function createDigitalProof(SSICapableOfSigning, newSSIIdentifier, lastSSIIdentifier, zkp) {
+function createDigitalProof(SSICapableOfSigning, newSSIIdentifier, lastSSIIdentifier, zkp, callback) {
     let anchorId = SSICapableOfSigning.getAnchorId();
     let dataToSign = anchorId + newSSIIdentifier + zkp;
     if (lastSSIIdentifier) {
@@ -171,11 +177,10 @@ function createDigitalProof(SSICapableOfSigning, newSSIIdentifier, lastSSIIdenti
     }
 
     if (SSICapableOfSigning.canSign() === true) {
-        return SSICapableOfSigning.sign(dataToSign);
+        return SSICapableOfSigning.sign(dataToSign, callback);
     }
 
-    console.log("Create digital proof for ", SSICapableOfSigning.getIdentifier(true));
-    return {signature: "", publicKey: ""}
+    callback(undefined, {signature: "", publicKey: ""});
 }
 
 const getObservable = (keySSI, fromVersion, authToken, timeout) => {

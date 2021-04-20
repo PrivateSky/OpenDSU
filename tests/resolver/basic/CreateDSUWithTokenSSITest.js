@@ -6,7 +6,7 @@ const assert = dc.assert;
 
 const resolver = require("../../../resolver");
 const keySSI = require("../../../keyssi");
-const { promisify } = require("../../../utils/promise");
+const {promisify} = require("../../../utils/promise");
 
 assert.callback(
     "Create DSU on already configured domain",
@@ -16,35 +16,33 @@ assert.callback(
                 throw err;
             }
 
-            testIntegration.launchApiHubTestNode(10, folder, async (err) => {
+            testIntegration.launchApiHubTestNode(10, folder, (err) => {
                 if (err) {
                     throw err;
                 }
 
                 const domain = "default";
+                keySSI.createToken(domain, "SN", async (err, res) => {
+                    const ownershipSSI = res.ownershipSSI;
+                    const dsu = await promisify(resolver.createDSUForExistingSSI)(ownershipSSI);
 
-                let { ownershipSSI } = keySSI.createToken(domain, "SN");
+                    await promisify(dsu.writeFile)("/fld/file1", "someData");
+                    const createdDsuHashLink = await promisify(dsu.getLastHashLinkSSI)();
+                    assert.equal(createdDsuHashLink.getDLDomain(), domain);
 
-                const dsu = await promisify(resolver.createDSUForExistingSSI)(ownershipSSI);
-                const createdDsuHashLink = await promisify(dsu.getLastHashLinkSSI)();
+                    const loadedDsu = await promisify(resolver.loadDSU)(ownershipSSI);
+                    const loadedDsuHashLink = await promisify(loadedDsu.getLastHashLinkSSI)();
 
-                assert.equal(createdDsuHashLink.getDLDomain(), domain);
+                    assert.equal(createdDsuHashLink.getIdentifier(true), loadedDsuHashLink.getIdentifier(true));
 
-                // temporary commented out due to issue with DSUFactory's initializeKeySSI
+                    const loadedDsuWithORead = await promisify(resolver.loadDSU)(ownershipSSI.derive());
+                    const content = await promisify(loadedDsuWithORead.readFile)("/fld/file1");
+                    assert.equal(content.toString(), "someData");
 
-                const loadedDsu = await promisify(resolver.loadDSU)(ownershipSSI);
-                const loadedDsuHashLink = await promisify(loadedDsu.getLastHashLinkSSI)();
-
-                assert.equal(createdDsuHashLink.getIdentifier(true), loadedDsuHashLink.getIdentifier(true));
-
-                const loadedDsuWithORead = await promisify(resolver.loadDSU)(ownershipSSI.derive());
-                const loadedDsuWithOReadHashLink = await promisify(loadedDsuWithORead.getLastHashLinkSSI)();
-
-                assert.equal(createdDsuHashLink.getIdentifier(true), loadedDsuWithOReadHashLink.getIdentifier(true));
-
-                testFinished();
+                    testFinished();
+                });
             });
         });
     },
-    5000
+    500000
 );
