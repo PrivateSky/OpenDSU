@@ -290,6 +290,10 @@ function SingleDSUStorageStrategy() {
     }
 
     function updateIndexesForRecord(tableName, pk, record, callback) {
+        if(record.__deleted){
+            //deleted records don't need to be into indexes
+            return callback();
+        }
         const fields = Object.keys(record);
         getIndexedFieldsList(tableName, (err, indexedFields) => {
             if (err) {
@@ -435,20 +439,19 @@ function SingleDSUStorageStrategy() {
             }
 
             if (typeof currentRecord !== "undefined") {
-                deleteIndexesForRecord(tableName, key, currentRecord, (err) => {
+                return deleteIndexesForRecord(tableName, key, currentRecord, (err) => {
                     if (err) {
                         return callback(createOpenDSUErrorWrapper(`Failed to delete index files for record ${JSON.stringify(currentRecord)}`, err));
                     }
 
-                    updateIndexesForRecord(tableName, key, record, (err) => {
+                    return updateIndexesForRecord(tableName, key, record, (err) => {
                         if (err) {
                             return callback(createOpenDSUErrorWrapper(`Failed to update indexes for record ${record}`, err));
                         }
 
-                        callback(undefined);
+                        callback(undefined, record);
                     });
                 });
-                return;
             }
 
             updateIndexesForRecord(tableName, key, record, (err) => {
@@ -456,7 +459,7 @@ function SingleDSUStorageStrategy() {
                     return callback(createOpenDSUErrorWrapper(`Failed to update indexes for record ${record}`, err));
                 }
 
-                callback(undefined);
+                callback(undefined, record);
             });
         });
     };
