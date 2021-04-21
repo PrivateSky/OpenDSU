@@ -1,5 +1,5 @@
 function boot(keySSI) {
-    const { handleMessage, getInitializeSwarmEngineForKeySSI } = require("./boot-utils.js");
+    const { handleMessage } = require("./boot-utils.js");
 
     onmessage = (message) => {
         handleMessage(message.data, (error, result) => {
@@ -15,8 +15,7 @@ function boot(keySSI) {
 
     console.log(`[worker] booting DSU for keySSI ${keySSI}...`);
 
-    const initializeSwarmEngine = getInitializeSwarmEngineForKeySSI(keySSI);
-    const booter = new BootEngine(getKeySSI, initializeSwarmEngine);
+    const booter = new BootEngine(getKeySSI);
 
     booter.boot((error) => {
         if (error) {

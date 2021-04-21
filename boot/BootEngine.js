@@ -1,13 +1,8 @@
-function BootEngine(getKeySSI, initializeSwarmEngine) {
+function BootEngine(getKeySSI) {
     if (typeof getKeySSI !== "function") {
         throw new Error("getSeed missing or not a function");
     }
     getKeySSI = promisify(getKeySSI);
-
-    if (typeof initializeSwarmEngine !== "function") {
-        throw new Error("initializeSwarmEngine missing or not a function");
-    }
-    initializeSwarmEngine = promisify(initializeSwarmEngine);
 
     const openDSU = require("opendsu");
     const { constants } = openDSU;
@@ -76,7 +71,6 @@ function BootEngine(getKeySSI, initializeSwarmEngine) {
             }
 
             if (!isBootFilePresent || !bootConfig) {
-                await initializeSwarmEngine();
                 return;
             }
 
@@ -98,8 +92,6 @@ function BootEngine(getKeySSI, initializeSwarmEngine) {
                     return callback(err);
                 }
             }
-
-            await initializeSwarmEngine();
 
             if (typeof constitutionBundles !== "undefined") {
                 try {

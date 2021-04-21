@@ -1,7 +1,7 @@
 function boot(keySSI) {
     const worker_threads = "worker_threads";
     const { parentPort } = require(worker_threads);
-    const { handleMessage, getInitializeSwarmEngineForKeySSI } = require("./boot-utils.js");
+    const { handleMessage } = require("./boot-utils.js");
 
     parentPort.on("message", (message) => {
         handleMessage(message, (error, result) => {
@@ -24,8 +24,7 @@ function boot(keySSI) {
 
     console.log(`[worker] booting DSU for keySSI ${keySSI}...`);
 
-    const initializeSwarmEngine = getInitializeSwarmEngineForKeySSI(keySSI);
-    const booter = new BootEngine(getKeySSI, initializeSwarmEngine);
+    const booter = new BootEngine(getKeySSI);
 
     booter.boot((error) => {
         if (error) {

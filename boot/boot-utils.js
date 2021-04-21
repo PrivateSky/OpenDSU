@@ -36,18 +36,6 @@ function handleMessage(message, onHandleMessage) {
     }
 }
 
-function getInitializeSwarmEngineForKeySSI() {
-    return (callback) => {
-        global.rawDossier.start((err) => {
-            if (err) {
-                return callback(err);
-            }
-            callback(undefined);
-        });
-    };
-}
-
 module.exports = {
     handleMessage,
-    getInitializeSwarmEngineForKeySSI,
 };
