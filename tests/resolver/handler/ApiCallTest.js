@@ -1,12 +1,12 @@
-require("../../../../psknode/bundles/testsRuntime");
-const testIntegration = require("../../../../psknode/tests/util/tir");
+require("../../../../../psknode/bundles/testsRuntime");
+const testIntegration = require("../../../../../psknode/tests/util/tir");
 
 const dc = require("double-check");
 const assert = dc.assert;
 
-const resolver = require("../../resolver");
-const keySSI = require("../../keyssi");
-const { promisify } = require("../../utils/promise");
+const resolver = require("../../../resolver");
+const keySSI = require("../../../keyssi");
+const { promisify } = require("../../../utils/promise");
 
 assert.callback(
     "getDSUHandler callApi test",

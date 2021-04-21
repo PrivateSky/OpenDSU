@@ -5,10 +5,10 @@
 ...
  */
 
-require("../../../../psknode/bundles/testsRuntime");
+require("../../../../../psknode/bundles/testsRuntime");
 const assert = require("double-check").assert;
-const db = require("../../db");
-const tir = require("../../../../psknode/tests/util/tir");
+const db = require("../../../db");
+const tir = require("../../../../../psknode/tests/util/tir");
 
 require("callflow").initialise();
 //ow.register("opendsu", "../index.js")
@@ -20,7 +20,7 @@ $$.flows.describe("FilterDB", {
         tir.launchVirtualMQNode((err, port) => {
             assert.true(err === null || typeof err === "undefined", "Failed to create server.");
 
-            let keySSIApis = require("../../keyssi");
+            let keySSIApis = require("../../../keyssi");
             let storageSSI = keySSIApis.createSeedSSI("default");
             this.db = db.getWalletDB(storageSSI, "testDb");
             this.insertRecords();
@@ -73,15 +73,14 @@ $$.flows.describe("FilterDB", {
             }
             
             
-            assert.true(res.length === 1);
+            assert.true(res.length === 1, `Expected to receive 1 record, but got ${res.length}`);
             assert.arraysMatch(res.map(el => el.value), [1]);
             this.db.filter("test", "value <= 2", "dsc", (err, res) => {
                 if (err) {
                     throw err;
                 }
 
-                assert.true(res.length === 3);
-                // assert.arraysMatch(res.map(el => el.__key), ["key3", "key2", "key1"]);
+                assert.true(res.length === 3, `Expected to receive 3 records, but got ${res.length}`);
                 this.updateRecords();
             });
         });
@@ -137,4 +136,4 @@ $$.flows.describe("FilterDB", {
 
 assert.callback("DB filtering test", (callback) => {
     $$.flows.start("FilterDB", "start", callback);
-}, 300000);
+}, 10000);

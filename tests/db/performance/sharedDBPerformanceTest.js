@@ -1,7 +1,7 @@
-require("../../../../psknode/bundles/testsRuntime");
+require("../../../../../psknode/bundles/testsRuntime");
 const assert = require("double-check").assert;
-const db = require("../../db");
-const tir = require("../../../../psknode/tests/util/tir");
+const db = require("../../../db");
+const tir = require("../../../../../psknode/tests/util/tir");
 
 require("callflow").initialise();
 
@@ -10,7 +10,7 @@ $$.flows.describe("PopulateDB", {
         this.callback = callback;
 
         tir.launchVirtualMQNode((err, port) => {
-            let keySSIApis = require("../../keyssi");
+            let keySSIApis = require("../../../keyssi");
             let storageSSI = keySSIApis.createSeedSSI("default");
             this.db = db.getWalletDB(storageSSI, "testDb");
             this.insertRecords();
@@ -19,7 +19,7 @@ $$.flows.describe("PopulateDB", {
     },
 
     insertRecords: function () {
-        const crypto = require("../../crypto");
+        const crypto = require("../../../crypto");
         let noRecords = 100000;
         const self = this;
         this.keys = [];
@@ -89,4 +89,4 @@ $$.flows.describe("PopulateDB", {
 
 assert.callback("DB performance test", (callback) => {
     $$.flows.start("PopulateDB", "start", callback);
-}, 30000000);
+}, 3000);

@@ -1,12 +1,12 @@
-require("../../../../psknode/bundles/testsRuntime");
-const testIntegration = require("../../../../psknode/tests/util/tir");
+require("../../../../../psknode/bundles/testsRuntime");
+const testIntegration = require("../../../../../psknode/tests/util/tir");
 
 const dc = require("double-check");
 const assert = dc.assert;
 
-const resolver = require("../../resolver");
-const { BOOT_CONFIG_FILE } = require("../../moduleConstants");
-const keySSI = require("../../keyssi");
+const resolver = require("../../../resolver");
+const { BOOT_CONFIG_FILE } = require("../../../moduleConstants");
+const keySSI = require("../../../keyssi");
 
 assert.callback(
     "getHandler with boot config",

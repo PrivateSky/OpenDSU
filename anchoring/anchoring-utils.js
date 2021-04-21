@@ -1,20 +1,62 @@
 const constants = require("../moduleConstants");
 
-function validateHashLinks(hashLinks, callback) {
-    // todo: validate transferSSI and shl
-    // todo: filter to ignore transferSSI
-
-    const validatedHashLinks = hashLinks.map((hashLink) => {
-        let ssiType = hashLink.getTypeName();
-
-        // convert SIGNED_HASH_LINK_SSI to HASH_LINK_SSI
-        if (ssiType === constants.KEY_SSIS.SIGNED_HASH_LINK_SSI) {
-            return hashLink.derive();
+function validateHashLinks(keySSI, hashLinks, callback) {
+    const validatedHashLinks = [];
+    let lastSSI;
+    let lastTransferSSI;
+    for (let i = 0; i < hashLinks.length; i++) {
+        const newSSI = hashLinks[i];
+        if (!verifySignature(keySSI, newSSI, lastSSI)) {
+            return callback(Error("Failed to verify signature"));
         }
 
-        return hashLink;
-    });
+        if (!validateAnchoredSSI(lastTransferSSI, newSSI)) {
+            return callback(Error("Failed to validate SSIs"));
+        }
+
+        if (newSSI.getTypeName() === constants.KEY_SSIS.TRANSFER_SSI) {
+            lastTransferSSI = newSSI;
+        } else {
+            validatedHashLinks.push(newSSI);
+            lastSSI = newSSI;
+        }
+    }
     callback(undefined, validatedHashLinks);
+}
+
+
+function validateAnchoredSSI(lastTransferSSI, currentSSI) {
+    if (!lastTransferSSI) {
+        return true;
+    }
+    if (lastTransferSSI.getPublicKeyHash() !== currentSSI.getPublicKeyHash()) {
+        return false;
+    }
+
+    return true;
+}
+
+function verifySignature(keySSI, newSSI, lastSSI) {
+    if (!keySSI.canSign()) {
+        return true;
+    }
+    const timestamp = newSSI.getTimestamp();
+    const signature = newSSI.getSignature();
+    let dataToVerify = timestamp;
+    if (lastSSI) {
+        dataToVerify = lastSSI.getIdentifier() + dataToVerify;
+    }
+
+    if (newSSI.getTypeName() === constants.KEY_SSIS.SIGNED_HASH_LINK_SSI) {
+        dataToVerify += keySSI.getAnchorId();
+        return keySSI.verify(dataToVerify, signature)
+    }
+    if (newSSI.getTypeName() === constants.KEY_SSIS.TRANSFER_SSI) {
+        dataToVerify += newSSI.getSpecificString();
+        return keySSI.verify(dataToVerify, signature);
+    }
+
+    return false;
 }
 
 module.exports = {
