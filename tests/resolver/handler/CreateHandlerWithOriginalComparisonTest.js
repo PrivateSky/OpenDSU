@@ -3,7 +3,7 @@ require("../../../../../psknode/bundles/testsRuntime");
 const dc = require("double-check");
 const assert = dc.assert;
 
-const { testHandlerMethod } = require("./dsu-handler-utils");
+const { testHandlerMethod } = require("./utils");
 
 assert.callback(
     "getHandler listFiles",

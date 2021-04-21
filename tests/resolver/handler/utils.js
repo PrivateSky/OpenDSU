@@ -1,3 +1,4 @@
+require("../../../../../psknode/bundles/testsRuntime");
 const testIntegration = require("../../../../../psknode/tests/util/tir");
 
 const dc = require("double-check");

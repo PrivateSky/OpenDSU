@@ -4,7 +4,7 @@ const dc = require("double-check");
 const assert = dc.assert;
 
 const resolver = require("../../../resolver");
-const { createTestFolderWithDSU } = require("./dsu-handler-utils");
+const { createTestFolderWithDSU } = require("./utils");
 
 assert.callback(
     "getHandler writeFile",

@@ -5,7 +5,7 @@ const dc = require("double-check");
 const assert = dc.assert;
 
 const resolver = require("../../../resolver");
-const { BOOT_CONFIG_FILE } = require("../../../moduleConstants");
+const { BOOT_CONFIG_FILE, CONSTITUTION_FOLDER } = require("../../../moduleConstants");
 const keySSI = require("../../../keyssi");
 
 assert.callback(
@@ -21,38 +21,33 @@ assert.callback(
                 }
 
                 const domain = "default";
-                createDSU(domain, (err, { dsu: dsuToMount, keySSI: dsuToMountKeySSI } = {}) => {
+                createDSU(domain, async (err, { dsu: dsuToMount, keySSI: dsuToMountKeySSI } = {}) => {
                     if (err) {
                         throw err;
                     }
 
+                    const writeFile = $$.promisify(dsuToMount.writeFile);
+
                     const bootConfigContent =
                         '{"runtimeBundles":["pskruntime.js","webshims.js"],"constitutionBundles":["domain.js"]}';
-                    dsuToMount.writeFile(BOOT_CONFIG_FILE, bootConfigContent, function (err) {
-                        if (err) {
-                            throw err;
-                        }
 
-                        createDSU(domain, (err, { dsu: mainDSU, keySSI: mainDsuKeySSI } = {}) => {
-                            if (err) {
-                                throw err;
-                            }
+                    try {
+                        await writeFile(BOOT_CONFIG_FILE, bootConfigContent);
 
-                            mainDSU.mount("/code", dsuToMountKeySSI, (err) => {
-                                if (err) {
-                                    throw err;
-                                }
+                        const { dsu: mainDSU, keySSI: mainDsuKeySSI } = await $$.promisify(createDSU)(domain);
 
-                                resolver.getDSUHandler(mainDsuKeySSI).listFiles("/", (err, result) => {
-                                    if (err) {
-                                        throw err;
-                                    }
+                        await $$.promisify(mainDSU.mount)("/code", dsuToMountKeySSI);
 
-                                    testFinished();
-                                });
-                            });
-                        });
-                    });
+                        await writeFile(`/constitution/pskruntime.js`, "");
+                        await writeFile(`/constitution/webshims.js`, "");
+                        await writeFile(`/constitution/domain.js`, "");
+
+                        const dsuResolver = resolver.getDSUHandler(mainDsuKeySSI);
+                        await $$.promisify(dsuResolver.listFiles)("/");
+                        testFinished();
+                    } catch (error) {
+                        throw error;
+                    }
                 });
             });
         });
