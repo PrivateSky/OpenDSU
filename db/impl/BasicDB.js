@@ -86,7 +86,7 @@ function BasicDB(storageStrategy) {
      */
     this.updateRecord = function (tableName, key, newRecord, callback) {
         callback = callback ? callback : getDefaultCallback("Updating a record", tableName, key);
-        let currentRecord
+        let currentRecord;
 
         function doVersionIncAndUpdate(currentRecord) {
             newRecord.__version++;
@@ -142,10 +142,15 @@ function BasicDB(storageStrategy) {
      */
     this.deleteRecord = function (tableName, key, callback) {
         self.getRecord(tableName, key, function (err, record) {
+            if (err) {
+                return callback(createOpenDSUErrorWrapper(`Could not retrieve record with key ${key} does not exist ${tableName} `, err));
+            }
+
+            const currentRecord = JSON.parse(JSON.stringify(record));
             record.__version++;
             record.__timestamp = Date.now();
             record.__deleted = true;
-            storageStrategy.updateRecord(tableName, key, record, callback);
+            storageStrategy.updateRecord(tableName, key, record, currentRecord, callback);
         })
     };
 
