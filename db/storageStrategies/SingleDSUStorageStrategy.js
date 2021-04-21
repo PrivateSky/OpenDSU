@@ -416,6 +416,18 @@ function SingleDSUStorageStrategy() {
         Update a record
      */
     this.updateRecord = function (tableName, key, record, currentRecord, callback) {
+        if (typeof record !== "object") {
+            return callback(Error(`Invalid record type. Expected "object"`))
+        }
+
+        if (Buffer.isBuffer(record)) {
+            return callback(Error(`"Buffer" is not a valid record type. Expected "object".`))
+        }
+
+        if (Array.isArray(record)) {
+            return callback(Error(`"Array" is not a valid record type. Expected "object".`))
+        }
+
         const recordPath = `/${dbName}/${tableName}/records/${key}`;
         storageDSU.writeFile(recordPath, JSON.stringify(record), function (err, res) {
             if (err) {
