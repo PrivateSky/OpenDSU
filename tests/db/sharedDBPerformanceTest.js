@@ -89,4 +89,4 @@ $$.flows.describe("PopulateDB", {
 
 assert.callback("DB performance test", (callback) => {
     $$.flows.start("PopulateDB", "start", callback);
-}, 30000000);
+}, 3000);
