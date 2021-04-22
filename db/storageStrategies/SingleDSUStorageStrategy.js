@@ -70,50 +70,6 @@ function SingleDSUStorageStrategy() {
         });
     };
 
-    /*
-        where field1 >=3 and field2 <=7 and field2 like /regex/ == !=
-        [operator, field, value]
-     */
-
-    function filterIndexedTable(tableName, query, callback) {
-        let queryResults = [];
-        const filteredRecords = [];
-
-        function getRecordsRecursively(index) {
-            const pk = queryResults[index];
-            if (typeof pk === "undefined") {
-                return callback(undefined, filteredRecords);
-            }
-
-            self.getRecord(tableName, pk, (err, record) => {
-                if (err) {
-                    return callback(createOpenDSUErrorWrapper(`Failed to get record with key ${pk} from table ${tableName}`, err));
-                }
-
-                record.__key = pk;
-                filteredRecords.push(record);
-
-                getRecordsRecursively(index + 1);
-            });
-        }
-
-
-        loadValuesForIndex(tableName, query[0][0], (err, index) => {
-            if (err) {
-                return callback(createOpenDSUErrorWrapper(`Failed to load index for field ${fieldQuery[0]} from table ${tableName}`, err));
-            }
-
-            for (let queryIndex = 0; queryIndex < query.length; queryIndex++) {
-                index = applyQuery(index, query[queryIndex]);
-            }
-
-            return callback(undefined, index);
-
-        });
-
-    }
-
-
     function checkFieldIsIndexed(tableName, fieldName, callback) {
         const path = getIndexPath(tableName, fieldName);
         storageDSU.stat(path, (err, stat) => {
@@ -125,10 +81,21 @@ function SingleDSUStorageStrategy() {
     }
 
     this.filter = function (tableName, conditionsArray, sort, limit, callback) {
+        if (typeof conditionsArray === "function") {
+            callback = conditionsArray;
+            conditionsArray = undefined;
+            sort = undefined;
+            limit = undefined;
+        }
+
+        if (typeof conditionsArray === "undefined") {
+            conditionsArray = "__timestamp > 0";
+        }
+
         if (typeof conditionsArray === "string") {
             conditionsArray = [conditionsArray];
         } else if (!Array.isArray(conditionsArray)) {
-            return callback(Error(`Condition argument of filter function need to be string or array of strings`))
+            return callback(Error(`Condition argument of filter function need to be string or array of strings`));
         }
         let Query = require("./Query");
         let query = new Query(conditionsArray);
@@ -209,6 +176,7 @@ function SingleDSUStorageStrategy() {
                     pksArray = pks;
                     currentPosition = 0;
                     currentValue = value
+
                     getNext(callback);
                 });
             } else {
@@ -258,26 +226,6 @@ function SingleDSUStorageStrategy() {
         });
     }
 
-    function loadValuesForIndex(tableName, fieldName, callback) {
-        const indexFolderPath = getIndexPath(tableName, fieldName);
-        storageDSU.listFiles(indexFolderPath, (err, indexFiles) => {
-            if (err) {
-                return callback(createOpenDSUErrorWrapper(`Failed to list files in folder ${indexFolderPath}`, err));
-            }
-
-            const index = [];
-            indexFiles.forEach(indexFileName => {
-                const splitIndexFileName = indexFileName.split(":=");
-                index.push({
-                    __key: splitIndexFileName[0],
-                    value: splitIndexFileName[1]
-                })
-            });
-
-            callback(undefined, index);
-        })
-    }
-
     function createIndexEntry(tableName, fieldName, pk, value, callback) {
         storageDSU.writeFile(getIndexPath(tableName, fieldName, value, pk), (err) => {
             let retErr = undefined;
@@ -286,11 +234,17 @@ function SingleDSUStorageStrategy() {
             }
 
             callback(retErr);
+
+
+
+
+
+
         });
     }
 
     function updateIndexesForRecord(tableName, pk, record, callback) {
-        if(record.__deleted){
+        if (record.__deleted) {
             //deleted records don't need to be into indexes
             return callback();
         }
@@ -315,7 +269,11 @@ function SingleDSUStorageStrategy() {
                             return callback(createOpenDSUErrorWrapper(`Failed to update index for field ${field} in table ${tableName}`, err));
                         }
 
-                        updateIndexesRecursively(index + 1);
+                        updateIndexesRecu
+
+
+
+rsively(index + 1);
                     });
                 } else {
                     updateIndexesRecursively(index + 1);
@@ -339,6 +297,10 @@ function SingleDSUStorageStrategy() {
         return path;
     }
 
+    function getRecordPath(tableName, pk) {
+        return `/${dbName}/${tableName}/records/${pk}`;
+    }
+
     function deleteIndex(tableName, fieldName, pk, value, callback) {
         storageDSU.delete(getIndexPath(tableName, fieldName, value, pk), (err) => {
             let retErr = undefined;
@@ -347,6 +309,8 @@ function SingleDSUStorageStrategy() {
             }
 
             callback(retErr);
+
+
         });
     }
 
@@ -429,10 +393,11 @@ function SingleDSUStorageStrategy() {
         }
 
         if (Array.isArray(record)) {
+            this.writeKey(key, value, callback);
             return callback(Error(`"Array" is not a valid record type. Expected "object".`))
         }
 
-        const recordPath = `/${dbName}/${tableName}/records/${key}`;
+        const recordPath = getRecordPath(tableName, key);
         storageDSU.writeFile(recordPath, JSON.stringify(record), function (err, res) {
             if (err) {
                 return callback(createOpenDSUErrorWrapper(`Failed to update record in ${recordPath}`, err));
@@ -468,7 +433,7 @@ function SingleDSUStorageStrategy() {
         Get a single row from a table
      */
     this.getRecord = function (tableName, key, callback) {
-        const recordPath = `/${dbName}/${tableName}/records/${key}`;
+        const recordPath = getRecordPath(tableName, key);
         storageDSU.readFile(recordPath, function (err, res) {
             let record;
             let retErr = undefined;
@@ -485,6 +450,52 @@ function SingleDSUStorageStrategy() {
         });
     };
 
+    const READ_WRITE_KEY_TABLE = "KeyValueTable";
+    this.writeKey = function (key, value, callback) {
+        let valueObject = {
+            type: typeof value,
+            value: value
+        };
+
+        if (typeof value === "object") {
+            if (Buffer.isBuffer(value)) {
+                valueObject = {
+                    type: "buffer",
+                    value: value.toString()
+                }
+            } else {
+                valueObject = {
+                    type: "object",
+                    value: JSON.stringify(value)
+                }
+            }
+        }
+
+        const recordPath = getRecordPath(READ_WRITE_KEY_TABLE, key);
+        storageDSU.writeFile(recordPath, JSON.stringify(valueObject), callback);
+    };
+
+    this.readKey = function (key, callback) {
+        this.getRecord(READ_WRITE_KEY_TABLE, key, (err, record) => {
+            if (err) {
+                return callback(createOpenDSUErrorWrapper(`Failed to read key ${key}`, err));
+            }
+
+            let value;
+            switch (record.type) {
+                case "buffer":
+                    value = Buffer.from(record.value);
+                    break;
+                case "object":
+                    value = JSON.parse(record.value);
+                    break;
+                default:
+                    value = record.value;
+            }
+
+            callback(undefined, value);
+        });
+    }
 }
 
 module.exports.SingleDSUStorageStrategy = SingleDSUStorageStrategy;

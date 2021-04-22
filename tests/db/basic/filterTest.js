@@ -127,9 +127,19 @@ $$.flows.describe("FilterDB", {
                 }
 
                 assert.true(res.length === 3);
-                // assert.arraysMatch(res.map(el => el.__key), ["key1", "key2", "key4"]);
-                this.callback()
+                this.showAllValues();
             });
+        });
+    },
+    
+    showAllValues: function () {
+        this.db.filter("test", (err, res) => {
+            if (err) {
+                throw err;
+            }
+
+            assert.true(res.length === 4);
+            this.callback()
         });
     }
 });

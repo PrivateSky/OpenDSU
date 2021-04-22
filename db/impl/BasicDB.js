@@ -74,6 +74,7 @@ function BasicDB(storageStrategy) {
             }
             const sharedDSUMetadata = {}
             sharedDSUMetadata.__version = 0;
+            sharedDSUMetadata.pk = key;
             //sharedDSUMetadata.__changeId = uid();
             sharedDSUMetadata.__timestamp = Date.now();
             storageStrategy.insertRecord(tableName, key, Object.assign(sharedDSUMetadata, record), callback);
@@ -163,6 +164,13 @@ function BasicDB(storageStrategy) {
         return arrRes;
     }
 
+    this.writeKey = function (key, value, callback) {
+        storageStrategy.writeKey(key, value, callback);
+    };
+
+    this.readKey = function (key, callback) {
+        storageStrategy.readKey(key, callback);
+    }
     this.beginBatch = () => {
         storageStrategy.beginBatch()
     }
