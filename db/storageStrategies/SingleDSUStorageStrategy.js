@@ -186,13 +186,31 @@ function SingleDSUStorageStrategy() {
 
     }
 
-    this.addIndex = function (tableName, fieldName, callback) {
-        createIndex(tableName, fieldName, (err) => {
-            if (err) {
-                return callback(createOpenDSUErrorWrapper(`Failed to create index for field ${fieldName} in table ${tableName}`, err));
-            }
-            callback(undefined);
-        });
+    this.addIndex = function (tableName, fieldName, forceReindex, callback) {
+        if (typeof forceReindex === "function") {
+            callback = forceReindex;
+            forceReindex = false;
+        }
+
+        if (typeof forceReindex === "undefined") {
+            forceReindex = false;
+        }
+
+        if (forceReindex === false) {
+            checkFieldIsIndexed(tableName, fieldName, (err, status) => {
+                if (err) {
+                    return callback(createOpenDSUErrorWrapper(`Failed to check if field ${fieldName} in table ${tableName} is indexed`, err));
+                }
+
+                if (status === true) {
+                    return callback();
+                }
+
+                createIndex(tableName, fieldName, callback);
+            });
+        } else {
+            createIndex(tableName, fieldName, callback);
+        }
     }
 
     this.getIndexedFields = function (tableName, callback) {
