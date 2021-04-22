@@ -234,12 +234,6 @@ function SingleDSUStorageStrategy() {
             }
 
             callback(retErr);
-
-
-
-
-
-
         });
     }
 
