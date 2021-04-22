@@ -54,7 +54,7 @@ function Query(queryArray){
                     if (currentIndex === sortedValues.length || filteredRecords.length === limit) {
                         return callback(undefined, filteredRecords);
                     }
-                    getNextRecord(currentIndex + 1);
+                    getNextRecord(currentIndex);
                 }
             });
         }

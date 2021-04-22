@@ -196,8 +196,7 @@ function SingleDSUStorageStrategy() {
                 return callback(undefined, null);
             }
 
-            self.getRecord(tableName, pksArray[currentPosition], callback);
-            currentPosition++;
+            self.getRecord(tableName, pksArray[currentPosition++], callback);
         }
 
         return function (value, callback) {
@@ -209,6 +208,7 @@ function SingleDSUStorageStrategy() {
 
                     pksArray = pks;
                     currentPosition = 0;
+                    currentValue = value
                     getNext(callback);
                 });
             } else {
