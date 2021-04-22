@@ -233,7 +233,7 @@ function SingleDSUStorageStrategy() {
                 retErr = createOpenDSUErrorWrapper(`Failed to create file ${getIndexPath(tableName, fieldName, value, pk)}`, err);
             }
 
-            callback(retErr);
+            callback(retErr)
         });
     }
 
@@ -263,11 +263,7 @@ function SingleDSUStorageStrategy() {
                             return callback(createOpenDSUErrorWrapper(`Failed to update index for field ${field} in table ${tableName}`, err));
                         }
 
-                        updateIndexesRecu
-
-
-
-rsively(index + 1);
+                        updateIndexesRecursively(index + 1);
                     });
                 } else {
                     updateIndexesRecursively(index + 1);
