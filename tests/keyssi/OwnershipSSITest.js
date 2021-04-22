@@ -15,7 +15,7 @@ assert.callback("Derive from OWNERSHIP_SSI", (callback) => {
     assert.equal("oread", oReadSSI.getTypeName());
     assert.equal(domain, oReadSSI.getDLDomain());
     assert.equal(ownershipSSI.getPrivateKeyHash(), oReadSSI.getSpecificString());
-    assert.equal(oReadControl, oReadSSI.getControl());
+    assert.equal(oReadControl, oReadSSI.getControlString());
 
     const zatSSI = oReadSSI.derive();
     const zatControl = ownershipSSI.getPublicKeyHash();
@@ -23,7 +23,7 @@ assert.callback("Derive from OWNERSHIP_SSI", (callback) => {
     assert.equal("zat", zatSSI.getTypeName());
     assert.equal(domain, zatSSI.getDLDomain());
     assert.equal(token, zatSSI.getSpecificString());
-    assert.equal(zatControl, zatSSI.getControl());
+    assert.equal(zatControl, zatSSI.getControlString());
 
     callback();
 });
