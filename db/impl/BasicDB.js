@@ -164,6 +164,10 @@ function BasicDB(storageStrategy) {
         return arrRes;
     }
 
+    this.getIndexedFields = function (tableName, callback){
+        storageStrategy.getIndexedFields(tableName, callback);
+    }
+
     this.writeKey = function (key, value, callback) {
         storageStrategy.writeKey(key, value, callback);
     };

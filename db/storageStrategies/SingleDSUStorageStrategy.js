@@ -195,6 +195,10 @@ function SingleDSUStorageStrategy() {
         });
     }
 
+    this.getIndexedFields = function (tableName, callback) {
+        getIndexedFieldsList(tableName, callback);
+    };
+
     function createIndex(tableName, fieldName, callback) {
         getPrimaryKeys(tableName, (err, primaryKeys) => {
             if (err) {
