@@ -23,9 +23,24 @@ $$.flows.describe("FilterDB", {
             let keySSIApis = require("../../../keyssi");
             let storageSSI = keySSIApis.createSeedSSI("default");
             this.db = db.getWalletDB(storageSSI, "testDb");
-            this.insertRecords();
+            this.addIndexes();
         });
 
+    },
+
+    addIndexes: function () {
+        this.db.addIndex("test", "value", (err) => {
+            if (err) {
+                throw err;
+            }
+
+            this.db.addIndex("test", "text", (err) => {
+                if (err) {
+                    throw err;
+                }
+                this.insertRecords();
+            });
+        });
     },
 
     insertRecords: function () {
@@ -44,26 +59,11 @@ $$.flows.describe("FilterDB", {
                         throw err;
                     }
 
-                    this.addIndexes();
+                    this.showValuesLessThan();
                 });
             });
         });
 
-    },
-
-    addIndexes: function () {
-        this.db.addIndex("test", "value", (err) => {
-            if (err) {
-                throw err;
-            }
-
-            this.db.addIndex("test", "text", (err) => {
-                if (err) {
-                    throw err;
-                }
-                this.showValuesLessThan();
-            });
-        });
     },
 
     showValuesLessThan: function () {

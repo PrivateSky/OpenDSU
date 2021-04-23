@@ -120,35 +120,22 @@ function SingleDSUStorageStrategy() {
         }
 
         const indexName = query.getIndexName();
-        checkFieldIsIndexed(tableName, indexName, (err, status) => {
+
+        this.addIndex(tableName, indexName, (err) => {
             if (err) {
-                return callback(createOpenDSUErrorWrapper(`Failed to check if all fields are indexed in table ${tableName}`, err));
+                return callback(createOpenDSUErrorWrapper(`Failed to add index for fields ${indexName} in table ${tableName}`, err));
             }
 
-            if (!status) {
-                this.addIndex(tableName, indexName, (err) => {
-                    if (err) {
-                        return callback(createOpenDSUErrorWrapper(`Failed to add index for fields ${indexName} in table ${tableName}`, err));
-                    }
+            storageDSU.listFolders(getIndexPath(tableName, indexName), (err, values) => {
+                if (err) {
+                    return callback(createOpenDSUErrorWrapper(`Failed read values for field ${indexName}`, err));
+                }
 
-                    __filter();
-                });
-            } else {
-                __filter();
-            }
-
-            function __filter() {
-                storageDSU.listFolders(getIndexPath(tableName, indexName), (err, values) => {
-                    if (err) {
-                        return callback(createOpenDSUErrorWrapper(`Failed read values for field ${indexName}`, err));
-                    }
-
-                    let filteredValues = query.filterValuesForIndex(values);
-                    query.sortValues(filteredValues, sort);
-                    const getNextRecordForValue = getNextRecordFunction(tableName, indexName)
-                    query.filter(filteredValues, getNextRecordForValue, limit, callback);
-                });
-            }
+                let filteredValues = query.filterValuesForIndex(values);
+                query.sortValues(filteredValues, sort);
+                const getNextRecordForValue = getNextRecordFunction(tableName, indexName)
+                query.filter(filteredValues, getNextRecordForValue, limit, callback);
+            });
         });
     }
 
@@ -244,7 +231,22 @@ function SingleDSUStorageStrategy() {
                 });
             }
 
-            createIndexFilesRecursively(0);
+            if (primaryKeys.length === 0) {
+                storageDSU.listFolders(getIndexPath(tableName, fieldName), (err, folders) => {
+                    console.log("This are the folders .......", folders);
+                    storageDSU.createFolder(getIndexPath(tableName, fieldName), (err) => {
+
+                        if (err) {
+                            return callback(createOpenDSUErrorWrapper(`Failed to create empty index for field ${fieldName} in table ${tableName}`, err));
+                        }
+
+                        callback(undefined)
+                    });
+                });
+
+            } else {
+                createIndexFilesRecursively(0);
+            }
         });
     }
 
