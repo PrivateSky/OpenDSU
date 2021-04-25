@@ -126,8 +126,13 @@ function loadDSUHandlerWithDSUMethod(
     resolver.getDSUHandler(keySSI)[handlerMethod].apply(null, [...dsuMethodArgs, callback]);
 }
 
+function isHashLinkSSI(result) {
+    return result && result.constructor && result.constructor.name.includes("HashLinkSSI");
+}
+
 module.exports = {
     createTestFolderWithDSU,
     createDSU,
     testHandlerMethod,
+    isHashLinkSSI
 };

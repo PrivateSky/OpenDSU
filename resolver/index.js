@@ -168,11 +168,17 @@ const getDSUHandler = (dsuKeySSI) => {
                     return callback(error);
                 }
 
-                if (result instanceof Uint8Array) {
-                    // the buffers sent from the worker will be converted to Uint8Array when sending to parent
-                    result = Buffer.from(result);
-                } else if (result.type === "HashLinkSSI") {
-                    result = keySSISpace.parse(result.identifier);
+                if (result) {
+                    if (result instanceof Uint8Array) {
+                        // the buffers sent from the worker will be converted to Uint8Array when sending to parent
+                        result = Buffer.from(result);
+                    } else {
+                        try {
+                            result = JSON.parse(result);
+                        } catch (error) {
+                            // if parsing fails then the string must be an ordinary one so we leave it as it is
+                        }
+                    }
                 }
 
                 callback(error, result);
@@ -182,7 +188,22 @@ const getDSUHandler = (dsuKeySSI) => {
         this.callDSUAPI = function (fn, ...args) {
             const fnArgs = [...args];
             const callback = fnArgs.pop();
-            sendTaskToWorker({ fn, args: fnArgs }, callback);
+
+            const parseResult = (error, result) => {
+                if (error) {
+                    return callback(error);
+                }
+
+                // try to recreate keyssi
+                try {
+                    result = keySSISpace.parse(result);
+                } catch (error) {
+                    // if it fails, then the result is not a valid KeySSI
+                }
+                callback(undefined, result);
+            };
+
+            sendTaskToWorker({ fn, args: fnArgs }, parseResult);
         };
 
         this.callApi = function (fn, ...args) {

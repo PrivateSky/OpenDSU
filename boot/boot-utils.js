@@ -5,13 +5,9 @@ function handleMessage(message, onHandleMessage) {
     const callback = (error, result) => {
         console.log(`[worker] finished work ${message}`, error, result);
 
-        // if the result is a HashLinkSSI then we need to "serialize" it because the default worker copy mechanism doesn't handle complex types
-        // (HashLinkSSI is an object which contains functions and they cannot be serialized)
-        if (result && result.constructor && result.constructor.name === "HashLinkSSI") {
-            result = {
-                type: "HashLinkSSI",
-                identifier: result.getIdentifier(),
-            };
+         // in order to ensure result serializability we JSON.stringify it if isn't a Buffer
+         if (!$$.Buffer.isBuffer(result)) {
+            result = JSON.stringify(result);
         }
 
         onHandleMessage(error, result);
