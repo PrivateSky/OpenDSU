@@ -39,8 +39,18 @@ function BasicDB(storageStrategy) {
         this.finishInitialisation();
         this.dispatchEvent("initialised");
     });
-    this.addIndex = function (tableName, fieldName, callback) {
-        storageStrategy.addIndex(tableName, fieldName, callback);
+
+    this.addIndex = function (tableName, fieldName, forceReindex, callback) {
+        if (typeof forceReindex === "function") {
+            callback = forceReindex;
+            forceReindex = false;
+        }
+
+        if (typeof forceReindex === "undefined") {
+            forceReindex = false;
+        }
+
+        storageStrategy.addIndex(tableName, fieldName, forceReindex, callback);
     }
     /*
         Get the whole content of the table and asynchronously return an array with all the  records satisfying the condition tested by the filterFunction
@@ -162,6 +172,10 @@ function BasicDB(storageStrategy) {
             record = record.__previousRecord;
         }
         return arrRes;
+    }
+
+    this.getIndexedFields = function (tableName, callback){
+        storageStrategy.getIndexedFields(tableName, callback);
     }
 
     this.writeKey = function (key, value, callback) {
