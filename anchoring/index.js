@@ -134,41 +134,6 @@ const addVersion = (SSICapableOfSigning, newSSI, lastSSI, zkpValue, callback) =>
     });
 };
 
-function getVersionForOwnershipSSI(ownershipSSI, newSSI, lastSSI, callback) {
-    let retSSIIdentifier;
-    const timestamp = Date.now();
-    let dataToSign;
-    if (typeof lastSSI === "undefined") {
-        dataToSign = timestamp;
-    } else {
-        dataToSign = lastSSI.getIdentifier();
-    }
-    if (newSSI.getTypeName() === constants.KEY_SSIS.TRANSFER_SSI) {
-        //sign(lastEntryInAnchor, timestamp, hash New Public Key)
-        dataToSign += newSSI.getControlString();
-        ownershipSSI.sign(dataToSign, (err, signature) => {
-            if (err) {
-                return callback(createOpenDSUErrorWrapper("Filed to sign data", err));
-            }
-            const transferSSI = keyssi.createTransferSSI(newSSI.getDLDomain(), newSSI.getControlString(), timestamp, signature);
-            retSSIIdentifier = transferSSI.getIdentifier();
-            callback(undefined, retSSIIdentifier);
-        });
-    } else if (newSSI.getTypeName() === constants.KEY_SSIS.HASH_LINK_SSI) {
-        //sign(lastEntryInAnchor, timestamp, hashLink)
-        dataToSign += newSSI.getIdentifier();
-        ownershipSSI.sign(dataToSign, (err, signature) => {
-            if (err) {
-                return callback(createOpenDSUErrorWrapper("Filed to sign data", err));
-            }
-            const signedHashLinkSSI = keyssi.createSignedHashLinkSSI(newSSI.getDLDomain(), newSSI.getIdentifier(), timestamp, signature);
-            retSSIIdentifier = signedHashLinkSSI.getIdentifier();
-        });
-    }
-
-    callback(createOpenDSUErrorWrapper("Invalid ssi type"));
-}
-
 function createDigitalProof(SSICapableOfSigning, newSSIIdentifier, lastSSIIdentifier, zkp, callback) {
     let anchorId = SSICapableOfSigning.getAnchorId();
     let dataToSign = anchorId + newSSIIdentifier + zkp;

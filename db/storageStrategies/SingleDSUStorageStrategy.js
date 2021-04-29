@@ -232,18 +232,14 @@ function SingleDSUStorageStrategy() {
             }
 
             if (primaryKeys.length === 0) {
-                storageDSU.listFolders(getIndexPath(tableName, fieldName), (err, folders) => {
-                    console.log("This are the folders .......", folders);
-                    storageDSU.createFolder(getIndexPath(tableName, fieldName), (err) => {
+                storageDSU.createFolder(getIndexPath(tableName, fieldName), (err) => {
 
-                        if (err) {
-                            return callback(createOpenDSUErrorWrapper(`Failed to create empty index for field ${fieldName} in table ${tableName}`, err));
-                        }
+                    if (err) {
+                        return callback(createOpenDSUErrorWrapper(`Failed to create empty index for field ${fieldName} in table ${tableName}`, err));
+                    }
 
-                        callback(undefined)
-                    });
+                    callback(undefined)
                 });
-
             } else {
                 createIndexFilesRecursively(0);
             }
