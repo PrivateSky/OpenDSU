@@ -41,6 +41,7 @@ if(!PREVENT_DOUBLE_LOADING_OF_OPENDSU.INITIALISED){
             case "http":return require("./http"); break;
             case "crypto":return require("./crypto"); break;
             case "anchoring":return require("./anchoring"); break;
+            case "contracts":return require("./contracts"); break;
             case "bricking":return require("./bricking"); break;
             case "bdns":return require("./bdns"); break;
             case "boot":return require("./boot"); break;
