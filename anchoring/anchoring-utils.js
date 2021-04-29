@@ -40,6 +40,9 @@ function verifySignature(keySSI, newSSI, lastSSI) {
     if (!keySSI.canSign()) {
         return true;
     }
+    if (!newSSI.canBeVerified()) {
+        return true;
+    }
     const timestamp = newSSI.getTimestamp();
     const signature = newSSI.getSignature();
     let dataToVerify = timestamp;
