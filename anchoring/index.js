@@ -187,7 +187,44 @@ const getObservable = (keySSI, fromVersion, authToken, timeout) => {
     // TODO: to be implemented
 }
 
+
+const callContractMethod = (domain, method, ...args) => {
+    const callback = args.pop();
+    const contracts = require("opendsu").loadApi("contracts");
+    contracts.callContractMethod(domain, "anchoring", method, args, callback);
+}
+
+const createAnchor = (domain, ...args) => {
+    callContractMethod(domain, "createAnchor", ...args);
+}
+
+const createNFT = (domain, ...args) => {
+    callContractMethod(domain, "createNFT", ...args);
+}
+
+const appendAnchor = (domain, ...args) => {
+    callContractMethod(domain, "appendAnchor", ...args);
+}
+
+const transferTokenOwnership = (domain, ...args) => {
+    callContractMethod(domain, "transferTokenOwnership", ...args);
+}
+
+const getAllVersions = (domain, ...args) => {
+    callContractMethod(domain, "versions", ...args);
+}
+
+const getLatestVersion = (domain, ...args) => {
+    callContractMethod(domain, "getLatestVersion", ...args);
+}
+
 module.exports = {
     addVersion,
-    versions
+    versions,
+    createAnchor,
+    createNFT,
+    appendAnchor,
+    transferTokenOwnership,
+    getAllVersions,
+    getLatestVersion
 }
