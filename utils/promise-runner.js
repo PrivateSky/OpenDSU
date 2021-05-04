@@ -39,8 +39,14 @@ function runAll(listEntries, executeEntry, validateResults, callback, debugInfo)
   Promise.all(allInitialExecutions)
     .then((results) => {
       const successExecutions = results.filter((run) => run.success);
-      const errorExecutions = results.filter((run) => !run.success);
-
+      let errorExecutions = results.filter((run) => !run.success);
+      errorExecutions = errorExecutions.map(e => {
+        if (e.error && e.error.error) {
+          return e.error.error;
+        }else {
+          return e;
+        }
+      });
       const isConsideredSuccessfulRun = validateResults(successExecutions, errorExecutions);
       if (isConsideredSuccessfulRun) {
         const successExecutionResults = successExecutions.map((run) => run.result);
@@ -50,7 +56,7 @@ function runAll(listEntries, executeEntry, validateResults, callback, debugInfo)
       let baseError = debugInfo;
       if(errorExecutions.length){
         if(baseError){
-          baseError = createOpenDSUErrorWrapper("Error found during runAll", errorExecutions[0], debugInfo);
+          baseError = createOpenDSUErrorWrapper("Error found during runAll", errorExecutions[0], errorExecutions, debugInfo);
         }
       }
       return callback(createOpenDSUErrorWrapper("FAILED to runAll " , baseError));
