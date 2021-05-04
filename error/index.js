@@ -1,7 +1,32 @@
 function ErrorWrapper(message, err, otherErrors){
-    let newErr;
+    let newErr = {};
+    if((err && err.message) || otherErrors) {
+        if (err.originalMessage) {
+            newErr.originalMessage = err.originalMessage;
+        }else{
+            newErr.originalMessage = err.message;
+            if(otherErrors){
+                if (typeof otherErrors === "string") {
+                    newErr.originalMessage += otherErrors;
+                }
+
+                if (Array.isArray(otherErrors)) {
+                    otherErrors.forEach(e => newErr.originalMessage += `[${e.message}]`);
+                }
+            }
+            newErr.originalMessage = newErr.originalMessage.replace(/\n/g, " ");
+        }
+    }
+
     try{
-        throw Error(message);
+        if (err.originalMessage) {
+            newErr = new Error(message + `(${err.originalMessage})`);
+            newErr.originalMessage = err.originalMessage;
+        }else{
+            newErr = new Error(newErr.originalMessage);
+            newErr.originalMessage = newErr.message;
+        }
+        throw newErr;
     }catch (e) {
         newErr = e;
     }
