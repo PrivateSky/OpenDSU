@@ -1,2 +1,2 @@
 delete /
-addfolder ../../../apihub-contracts/code
+addfolder ./modules/apihub-contracts/code

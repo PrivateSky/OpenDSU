@@ -3,11 +3,6 @@ html API space
 */
 
 let constants = require("./moduleConstants.js");
-const { promisify } = require('./utils/promise');
-
-$$.promisify = promisify;
-
-
 
 switch ($$.environmentType) {
     case constants.ENVIRONMENT_TYPES.WEB_WORKER_ENVIRONMENT_TYPE:

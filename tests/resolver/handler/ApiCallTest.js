@@ -6,14 +6,13 @@ const assert = dc.assert;
 
 const resolver = require("../../../resolver");
 const keySSI = require("../../../keyssi");
-const { promisify } = require("../../../utils/promise");
 
 assert.callback(
     "getDSUHandler callApi test",
     async (testFinished) => {
         try {
-            const folder = await promisify(dc.createTestFolder)("dsu");
-            await promisify(testIntegration.launchApiHubTestNode)(10, folder);
+            const folder = await $$.promisify(dc.createTestFolder)("dsu");
+            await $$.promisify(testIntegration.launchApiHubTestNode)(10, folder);
 
             const domain = "default";
 
@@ -27,13 +26,13 @@ assert.callback(
                     dummyApiMethod
                 };
             `;
-            await promisify(dsuToMount.writeFile)("api.js", apiJsContent);
+            await $$.promisify(dsuToMount.writeFile)("api.js", apiJsContent);
 
             const { dsu: mainDSU, keySSI: mainDsuKeySSI } = await createDSU(domain);
 
-            await promisify(mainDSU.mount)("/code", dsuToMountKeySSI);
+            await $$.promisify(mainDSU.mount)("/code", dsuToMountKeySSI);
 
-            const result = await promisify(resolver.getDSUHandler(mainDsuKeySSI).callApi)("dummyApiMethod");
+            const result = await $$.promisify(resolver.getDSUHandler(mainDsuKeySSI).callApi)("dummyApiMethod");
 
             assert.equal(result, "RESULT_FROM_API_JS");
             testFinished();
@@ -46,7 +45,7 @@ assert.callback(
 
 async function createDSU(domain) {
     const keyssitemplate = keySSI.createTemplateKeySSI("seed", domain);
-    const dsu = await promisify(resolver.createDSU)(keyssitemplate);
-    const keySSIString = await promisify(dsu.getKeySSIAsString)();
+    const dsu = await $$.promisify(resolver.createDSU)(keyssitemplate);
+    const keySSIString = await $$.promisify(dsu.getKeySSIAsString)();
     return { dsu, keySSI: keySSIString };
 }
