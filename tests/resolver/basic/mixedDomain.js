@@ -10,8 +10,8 @@ const keySSI = require("../../../keyssi");
 
 const testIntegration = require("../../../../../psknode/tests/util/tir");
 
-const DOMAIN_1 = 'default'
-const DOMAIN_2 = 'predefined'
+const DOMAIN_1 = 'test1'
+const DOMAIN_2 = 'test2'
 
 assert.callback("Resolver DSU Creation with different domains", (testFinishCallback) => {
 
@@ -34,7 +34,7 @@ assert.callback("Resolver DSU Creation with different domains", (testFinishCallb
         const defaultTemplate = keySSI.createTemplateSeedSSI(DOMAIN_1, undefined, undefined, 'v0', JSON.stringify(hintJSON));
         resolver.createDSU(defaultTemplate, (err, dsu) => {
             if (err) {
-                throw err;
+               return console.log(err);
             }
 
             test(dsu)
