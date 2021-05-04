@@ -29,10 +29,11 @@ assert.callback(
           throw err;
         }
         httpSpace.doPut(
-          `http://localhost:${port}/bricking/${dlDomain}/put-brick/${dlDomain}`,
+          `http://localhost:${port}/bricking/${dlDomain}/put-brick`,
           JSON.stringify(brickData),
           async (err, data) => {
             if (err) {
+              console.log(err)
               assert.true(false, 'Unexpected error');
               throw err;
             }
