@@ -42,7 +42,7 @@ const versions = (keySSI, authToken, callback) => {
 
         //TODO: security issue (which response we trust)
         const fetchAnchor = (service) => {
-            return fetch(`${service}/anchor/${dlDomain}/versions/${anchorId}`)
+            return fetch(`${service}/anchor/${dlDomain}/get-all-versions/${anchorId}`)
                 .then((response) => {
                     return response.json().then((hlStrings) => {
                         const hashLinks = hlStrings.map((hlString) => {
@@ -71,6 +71,13 @@ const versions = (keySSI, authToken, callback) => {
  * @param {function} callback
  */
 const addVersion = (SSICapableOfSigning, newSSI, lastSSI, zkpValue, callback) => {
+    if (typeof newSSI === "function") {
+        callback = newSSI;
+        newSSI = undefined;
+        lastSSI = undefined;
+        zkpValue = '';
+    }
+
     if (typeof lastSSI === "function") {
         callback = lastSSI;
         lastSSI = undefined;
@@ -86,7 +93,7 @@ const addVersion = (SSICapableOfSigning, newSSI, lastSSI, zkpValue, callback) =>
     const anchorId = SSICapableOfSigning.getAnchorId();
 
     if (dlDomain === constants.DOMAINS.VAULT && isValidVaultCache()) {
-        return cachedAnchoring.addVersion(anchorId, newSSI.getIdentifier(), callback);
+        return cachedAnchoring.addVersion(anchorId, newSSI ? newSSI.getIdentifier() : undefined, callback);
     }
 
     bdns.getAnchoringServices(dlDomain, (err, anchoringServicesArray) => {
@@ -100,7 +107,7 @@ const addVersion = (SSICapableOfSigning, newSSI, lastSSI, zkpValue, callback) =>
 
         const hashLinkIds = {
             last: lastSSI ? lastSSI.getIdentifier() : null,
-            new: newSSI.getIdentifier()
+            new: newSSI ? newSSI.getIdentifier(): null
         };
 
         createDigitalProof(SSICapableOfSigning, hashLinkIds.new, hashLinkIds.last, zkpValue, (err, digitalProof) => {
@@ -112,7 +119,8 @@ const addVersion = (SSICapableOfSigning, newSSI, lastSSI, zkpValue, callback) =>
 
             const addAnchor = (service) => {
                 return new Promise((resolve, reject) => {
-                    const putResult = doPut(`${service}/anchor/${dlDomain}/add/${anchorId}`, JSON.stringify(body), (err, data) => {
+                    const anchorAction = newSSI ? "append-to-anchor" : "create-anchor";
+                    const putResult = doPut(`${service}/anchor/${dlDomain}/${anchorAction}/${anchorId}`, JSON.stringify(body), (err, data) => {
                         if (err) {
                             return reject({
                                 statusCode: err.statusCode,
@@ -135,6 +143,11 @@ const addVersion = (SSICapableOfSigning, newSSI, lastSSI, zkpValue, callback) =>
 };
 
 function createDigitalProof(SSICapableOfSigning, newSSIIdentifier, lastSSIIdentifier, zkp, callback) {
+     // when the anchor is first created, no version is created yet
+    if(newSSIIdentifier) {
+        newSSIIdentifier = "";
+    }
+
     let anchorId = SSICapableOfSigning.getAnchorId();
     let dataToSign = anchorId + newSSIIdentifier + zkp;
     if (lastSSIIdentifier) {
@@ -159,36 +172,38 @@ const callContractMethod = (domain, method, ...args) => {
     contracts.callContractMethod(domain, "anchoring", method, args, callback);
 }
 
-const createAnchor = (domain, ...args) => {
-    callContractMethod(domain, "createAnchor", ...args);
+const createAnchor = (dsuKeySSI, callback) => {
+    addVersion(dsuKeySSI, callback)
 }
 
-const createNFT = (domain, ...args) => {
-    callContractMethod(domain, "createNFT", ...args);
+const createNFT = (nftKeySSI, callback) => {
+    addVersion(nftKeySSI, callback)
 }
 
-const appendAnchor = (domain, ...args) => {
-    callContractMethod(domain, "appendAnchor", ...args);
+const appendToAnchor = (dsuKeySSI, newShlSSI, previousShlSSI, zkpValue, callback) => {   
+    addVersion(dsuKeySSI, newShlSSI, previousShlSSI, zkpValue, callback)
 }
 
-const transferTokenOwnership = (domain, ...args) => {
+const transferTokenOwnership = (nftKeySSI, ownershipSSI, callback) => {
+    // TODO: to be implemented
     callContractMethod(domain, "transferTokenOwnership", ...args);
 }
 
-const getAllVersions = (domain, ...args) => {
-    callContractMethod(domain, "versions", ...args);
+const getAllVersions = (keySSI, authToken, callback) => {
+    versions(keySSI, authToken, callback);
 }
 
 const getLatestVersion = (domain, ...args) => {
+    // TODO: to be implemented
     callContractMethod(domain, "getLatestVersion", ...args);
 }
 
 module.exports = {
-    addVersion,
-    versions,
+    // addVersion,
+    // versions,
     createAnchor,
     createNFT,
-    appendAnchor,
+    appendToAnchor,
     transferTokenOwnership,
     getAllVersions,
     getLatestVersion

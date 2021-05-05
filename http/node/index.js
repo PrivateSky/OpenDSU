@@ -60,19 +60,26 @@ function generateMethodForRequestWithData(httpMethod) {
 					`URL: ${options.hostname}:${options.port}${options.path}`);
 			}
 
-			if (error) {
-				callback({error: error, statusCode: statusCode});
-				// free up memory
-				res.resume();
-				return;
-			}
-
 			let rawData = '';
 			res.on('data', (chunk) => {
 				rawData += chunk;
 			});
 			res.on('end', () => {
 				try {
+					if (error) {
+						let response;
+						try {
+							response = JSON.parse(rawData);
+						} catch (error) {
+							console.log('parse error', error);
+							// the received response is not a JSON, so we keep it as it is
+						}
+
+						const message = response.message ? response.message : response;
+						callback({error: error, statusCode: statusCode, message: message});
+						return;
+					}
+
 					callback(undefined, rawData, res.headers);
 				} catch (err) {
 					console.error(err);

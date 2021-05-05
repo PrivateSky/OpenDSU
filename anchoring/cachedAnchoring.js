@@ -14,7 +14,10 @@ function addVersion(anchorId, newHashLinkId, callback) {
             hashLinkIds = [];
         }
 
-        hashLinkIds.push(newHashLinkId);
+        // when the anchor is first created, no version is created yet
+        if(newHashLinkId) {
+            hashLinkIds.push(newHashLinkId);
+        }
         cache.put(anchorId, hashLinkIds, callback);
     });
 }
