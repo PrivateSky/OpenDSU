@@ -58,6 +58,21 @@ const createDSU = (templateKeySSI, options, callback) => {
     });
 };
 
+const createDSUx = (domain, ssiType, options, callback) => {
+    const templateKeySSI = keySSISpace.createTemplateKeySSI(ssiType, domain);
+    createDSU(templateKeySSI, options, callback);
+}
+
+const createSeedDSU = (domain, options, callback) => {
+    const seedSSI = keySSISpace.createTemplateSeedSSI(domain);
+    createDSU(seedSSI, options, callback);
+}
+
+const createArrayDSU = (domain, arr, options, callback) => {
+    const arraySSI = keySSISpace.createArraySSI(domain, arr);
+    createDSU(arraySSI, options, callback);
+}
+
 const createDSUForExistingSSI = (ssi, options, callback) => {
     if (typeof options === "function") {
         callback = options;
@@ -264,6 +279,9 @@ function invalidateDSUCache(dsuKeySSI) {
 
 module.exports = {
     createDSU,
+    createDSUx,
+    createSeedDSU,
+    createArrayDSU,
     createDSUForExistingSSI,
     loadDSU,
     getDSUHandler,
