@@ -118,25 +118,24 @@ const getMultipleBricks = (hashLinkSSIList, authToken, callback) => {
  * @param {function} callback
  * @returns {string} brickhash
  */
-const putBrick = (keySSI, brick, authToken, callback) => {
+const putBrick = (domain, brick, authToken, callback) => {
     if (typeof authToken === 'function') {
         callback = authToken;
         authToken = undefined;
     }
 
-    const dlDomain = keySSI.getBricksDomain();
 
-    if (dlDomain === constants.DOMAINS.VAULT && isValidVaultCache()) {
+    if (domain === constants.DOMAINS.VAULT && isValidVaultCache()) {
         return cachedBricking.putBrick(brick, callback);
     }
 
-    bdns.getBrickStorages(dlDomain, (err, brickStorageArray) => {
+    bdns.getBrickStorages(domain, (err, brickStorageArray) => {
         if (err) {
             return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to get brick storage services from bdns`, err));
         }
         const setBrick = (storage) => {
             return new Promise((resolve, reject) => {
-                const putResult = doPut(`${storage}/bricking/${dlDomain}/put-brick`, brick, (err, data) => {
+                const putResult = doPut(`${storage}/bricking/${domain}/put-brick`, brick, (err, data) => {
                     if (err) {
                         return reject(err);
                     }

@@ -70,7 +70,7 @@ const createSeedDSU = (domain, options, callback) => {
 
 const createArrayDSU = (domain, arr, options, callback) => {
     const arraySSI = keySSISpace.createArraySSI(domain, arr);
-    createDSU(arraySSI, options, callback);
+    createDSUForExistingSSI(arraySSI, options, callback);
 }
 
 const createDSUForExistingSSI = (ssi, options, callback) => {
