@@ -71,18 +71,18 @@ function fetch(url, options = {}) {
 			resolve(new Response(request, response));
 		});
 
-        if (options && options.body) {
-            let body = options.body;
-            if (typeof body.pipe === 'function') {
-                body.pipe(request);
-            } else {
-                if (typeof body !== 'string' && !$$.Buffer.isBuffer(body) && !ArrayBuffer.isView(body)) {
-                    body = JSON.stringify(body);
-                }
+		if (options && options.body) {
+			let body = options.body;
+			if (typeof body.pipe === 'function') {
+				body.pipe(request);
+			} else {
+				if (typeof body !== 'string' && !$$.Buffer.isBuffer(body) && !ArrayBuffer.isView(body)) {
+					body = JSON.stringify(body);
+				}
 
-                request.write(body);
-            }
-        }
+				request.write(body);
+			}
+		}
 
 		request.on("error", (error) => {
 			reject(error);

@@ -9,12 +9,12 @@ function PollRequestManager(fetchFunction, pollingTimeout = 1000){
 		this.execute = function(){
 			//if there is a delayedStart and it's the first time when the request is executed
 			if(delayedStart && typeof currentState === "undefined"){
-                return new Promise((resolve, reject) => {
-                    setTimeout(function(){
-                        currentState = fetchFunction(url, options);
-                        currentState.then(resolve).catch(reject);
-                    }, delayedStart);
-                })
+				return new Promise((resolve, reject) => {
+					setTimeout(function(){
+						currentState = fetchFunction(url, options);
+						currentState.then(resolve).catch(reject);
+					}, delayedStart);
+				})
 			}else{
 				currentState = fetchFunction(url, options);
 			}
