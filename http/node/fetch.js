@@ -67,13 +67,22 @@ function fetch(url, options = {}) {
 	let promise = new Promise((resolve, reject) => {
 		decipherUrl(url, options);
 
-		if(options && options.method && options.method.toLowerCase() !== "get"){
-			throw Error("http.fetch on nodejs environment should be used only for GET requests for the moment. Use http.doPost instead.");
-		}
-
 		let request = protocol.request(url, options, (response) => {
 			resolve(new Response(request, response));
 		});
+
+        if (options && options.body) {
+            let body = options.body;
+            if (typeof body.pipe === 'function') {
+                body.pipe(request);
+            } else {
+                if (typeof body !== 'string' && !$$.Buffer.isBuffer(body) && !ArrayBuffer.isView(body)) {
+                    body = JSON.stringify(body);
+                }
+
+                request.write(body);
+            }
+        }
 
 		request.on("error", (error) => {
 			reject(error);

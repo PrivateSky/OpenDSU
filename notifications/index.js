@@ -5,14 +5,20 @@ KeySSI Notification API space
 let http = require("../index").loadApi("http");
 let bdns = require("../index").loadApi("bdns");
 
-function publish(keySSI, message, callback){
-	bdns.getNotificationEndpoints(keySSI, (err, endpoints) => {
-		if(err || endpoints.length === 0){
-			return callback(new Error("Not available!"));
-		}
+function publish(keySSI, message, timeout, callback){
+    bdns.getRawInfo(keySSI.getDLDomain(), (err, info) => {
+        if (err) {
+            throw new Error(err);
+        }
 
-		let url = endpoints[0]+`/notifications/publish/${keySSI}`;
-		let options = {body: message};
+        const endpoints = info.notifications || [];
+
+        if (endpoints.length === 0) {
+            throw new Error("Not available!");
+        }
+
+		let url = endpoints[0]+`/notifications/publish/${keySSI.getAnchorId()}`;
+        let options = {body: message, method: 'PUT'};
 
 		let request = http.poll(url, options, timeout);
 
@@ -21,35 +27,45 @@ function publish(keySSI, message, callback){
 		}).catch((err)=>{
 			return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to publish message`, err));
 		});
-	});
+    });
 }
 
 let requests = {};
 function getObservableHandler(keySSI, timeout){
 	let obs = require("../utils/observable").createObservable();
-	bdns.getNotificationEndpoints(keySSI, (err, endpoints) => {
-		if(err || endpoints.length === 0){
-			throw (new Error("Not available!"));
-		}
 
-		function makeRequest(){
-			let url = endpoints[0] + `/notifications/subscribe/${keySSI}`;
-			let options = {};
-			let request = http.poll(url, options, timeout);
+    bdns.getRawInfo(keySSI.getDLDomain(), (err, info) => {
+        if (err) {
+            throw new Error(err);
+        }
 
-			request.then((response) => {
-				obs.dispatch("message", response);
-				makeRequest();
-			}).catch((err) => {
-				obs.dispatch("error", err);
-			});
+        const endpoints = info.notifications || [];
 
-			requests[obs] = request;
-		}
+        if (endpoints.length === 0) {
+            throw new Error("Not available!");
+        }
 
-		makeRequest();
-	});
-	return obs;
+        function makeRequest(){
+            let url = endpoints[0] + `/notifications/subscribe/${keySSI.getAnchorId()}`;
+            let options = {
+                method: 'POST'
+            };
+            let request = http.poll(url, options, timeout);
+
+            request.then((response) => {
+                obs.dispatchEvent("message", response);
+                makeRequest();
+            }).catch((err) => {
+                obs.dispatchEvent("error", err);
+            });
+
+            requests[obs] = request;
+        }
+
+        makeRequest();
+    })
+
+    return obs;
 }
 
 function unsubscribe(keySSI, observable){
