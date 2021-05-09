@@ -88,7 +88,25 @@ const getMultipleBricks = (hashLinkSSIList, authToken, callback) => {
     if (dlDomain === constants.DOMAINS.VAULT && isValidVaultCache()) {
         return cachedBricking.getMultipleBricks(bricksHashes, callback);
     }
-    hashLinkSSIList.forEach(hashLinkSSI => getBrick(hashLinkSSI, authToken, callback));
+
+    // The bricks need to be returned in the same order they were requested
+    let brickPromise = Promise.resolve();
+    for (const hl of hashLinkSSIList) {
+        // TODO: FIX ME
+        // This is a HACK. It should cover 99% of the cases
+        // but it might still fail if the brick data transfer
+        // is delayed due to network issues and the next iteration
+        // resolves faster. The correct solution involves changing
+        // multiple layers
+        brickPromise = brickPromise.then(() => {
+            return new Promise((resolve) => {
+                getBrick(hl, authToken, (err, brick) => {
+                    callback(err, brick);
+                    resolve();
+                });
+            })
+        })
+    }
 };
 
 
@@ -100,25 +118,24 @@ const getMultipleBricks = (hashLinkSSIList, authToken, callback) => {
  * @param {function} callback
  * @returns {string} brickhash
  */
-const putBrick = (keySSI, brick, authToken, callback) => {
+const putBrick = (domain, brick, authToken, callback) => {
     if (typeof authToken === 'function') {
         callback = authToken;
         authToken = undefined;
     }
 
-    const dlDomain = keySSI.getBricksDomain();
 
-    if (dlDomain === constants.DOMAINS.VAULT && isValidVaultCache()) {
+    if (domain === constants.DOMAINS.VAULT && isValidVaultCache()) {
         return cachedBricking.putBrick(brick, callback);
     }
 
-    bdns.getBrickStorages(dlDomain, (err, brickStorageArray) => {
+    bdns.getBrickStorages(domain, (err, brickStorageArray) => {
         if (err) {
             return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to get brick storage services from bdns`, err));
         }
         const setBrick = (storage) => {
             return new Promise((resolve, reject) => {
-                const putResult = doPut(`${storage}/bricking/${dlDomain}/put-brick`, brick, (err, data) => {
+                const putResult = doPut(`${storage}/bricking/${domain}/put-brick`, brick, (err, data) => {
                     if (err) {
                         return reject(err);
                     }

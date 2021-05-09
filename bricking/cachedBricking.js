@@ -30,10 +30,24 @@ function getBrick(brickHash, callback) {
 }
 
 function getMultipleBricks(brickHashes, callback) {
-    brickHashes.forEach(brickHash => {
-        getBrick(brickHash, callback);
-    });
-
+    // The bricks need to be returned in the same order they were requested
+    let brickPromise = Promise.resolve();
+    for (const hl of brickHashes) {
+        // TODO: FIX ME
+        // This is a HACK. It should cover 99% of the cases
+        // but it might still fail if the brick data transfer
+        // is delayed due to network issues and the next iteration
+        // resolves faster. The correct solution involves changing
+        // multiple layers
+        brickPromise = brickPromise.then(() => {
+            return new Promise((resolve) => {
+                getBrick(hl, (err, brick) => {
+                    callback(err, brick);
+                    resolve();
+                });
+            })
+        })
+    }
 }
 
 module.exports = {

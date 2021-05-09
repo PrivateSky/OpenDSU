@@ -144,7 +144,7 @@ const addVersion = (SSICapableOfSigning, newSSI, lastSSI, zkpValue, callback) =>
 
 function createDigitalProof(SSICapableOfSigning, newSSIIdentifier, lastSSIIdentifier, zkp, callback) {
      // when the anchor is first created, no version is created yet
-    if(newSSIIdentifier) {
+    if(!newSSIIdentifier) {
         newSSIIdentifier = "";
     }
 
@@ -180,7 +180,7 @@ const createNFT = (nftKeySSI, callback) => {
     addVersion(nftKeySSI, callback)
 }
 
-const appendToAnchor = (dsuKeySSI, newShlSSI, previousShlSSI, zkpValue, callback) => {   
+const appendToAnchor = (dsuKeySSI, newShlSSI, previousShlSSI, zkpValue, callback) => {
     addVersion(dsuKeySSI, newShlSSI, previousShlSSI, zkpValue, callback)
 }
 
