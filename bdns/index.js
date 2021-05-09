@@ -61,6 +61,19 @@ function BDNS() {
         }
     };
 
+    this.getContractServices = (dlDomain, callback) => {
+        if (!isInitialized) {
+            return this.addPendingCall(() => {
+                callback(undefined, bdnsCache[dlDomain].contractServices);
+            })
+        }
+        if(dlDomain !== undefined){
+            callback(undefined, bdnsCache[dlDomain].contractServices);
+        } else {
+            callback(new Error("undefined domain does not exist"));
+        }
+    };
+
     this.getReplicas = (dlDomain, callback) => {
         if (!isInitialized) {
             return this.addPendingCall(() => {
