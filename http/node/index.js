@@ -67,7 +67,7 @@ function generateMethodForRequestWithData(httpMethod) {
 			res.on('end', () => {
 				try {
 					if (error) {
-						let response;
+						let response = rawData;
 						try {
 							response = JSON.parse(rawData);
 						} catch (error) {

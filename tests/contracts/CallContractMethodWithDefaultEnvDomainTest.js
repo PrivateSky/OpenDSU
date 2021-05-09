@@ -18,7 +18,7 @@ assert.callback(
 
             const callContractMethod = $$.promisify(contracts.callContractMethod);
 
-            const result = await callContractMethod("test", "anchoring", "versions");
+            const result = await callContractMethod("contract", "anchoring", "versions");
             console.log("result", result);
 
             testFinished();
