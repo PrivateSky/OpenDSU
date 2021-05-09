@@ -71,7 +71,7 @@ function fetch(url, options = {}) {
 			resolve(new Response(request, response));
 		});
 
-		if (options && options.body) {
+		if (options.body) {
 			let body = options.body;
 			if (typeof body.pipe === 'function') {
 				body.pipe(request);
