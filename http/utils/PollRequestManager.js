@@ -1,10 +1,11 @@
 function PollRequestManager(fetchFunction, pollingTimeout = 1000){
 
-	const requests = {};
+	const requests = new Map();
 
 	function Request(url, options, delayedStart) {
 		let self = this;
 
+		let promiseHandlers = {};
 		let currentState = undefined;
 		this.execute = function(){
 			//if there is a delayedStart and it's the first time when the request is executed
@@ -26,31 +27,40 @@ function PollRequestManager(fetchFunction, pollingTimeout = 1000){
 			if(typeof this.currentState !== "undefined"){
 				this.currentState = undefined;
 			}
-			this.resolve = ()=>{};
-			this.reject = ()=>{};
+			promiseHandlers.resolve = () => {};
+			promiseHandlers.reject = () => {};
 		}
 
-		let promiseHandlers = {};
 		this.setExecutor = function(resolve, reject){
 			promiseHandlers.resolve = resolve;
 			promiseHandlers.reject = reject;
 		}
 
 		this.resolve = function(...args){
-			this.destroy();
 			promiseHandlers.resolve(...args);
+			this.destroy();
 		}
 
 		this.reject = function(...args){
-			this.destroy();
 			promiseHandlers.reject(...args);
+			this.destroy();
 		}
 
 		this.destroy = function(identifier){
 			this.cancelExecution();
 
-			requests[identifier] = undefined;
-			delete requests[identifier];
+			if (!identifier) {
+				// Find our identifier
+				const requestsEntries = requests.entries()
+				for (const [key, value] of requestsEntries) {
+					if (value === this) {
+						identifier = key;
+						break;
+					}
+				}
+			}
+			requests.delete(identifier);
+			console.log(requests.size);
 		}
 	}
 
@@ -70,21 +80,19 @@ function PollRequestManager(fetchFunction, pollingTimeout = 1000){
 			}
 		});
 
-		requests[promise] = request;
+		requests.set(promise, request);
 		promise.abort = () => {
-			this.cancelRequest(promise);
+			this.cancelRequest(request);
 		};
 
 		return promise;
 	};
 
-	this.cancelRequest = function(promiseHandler){
-		let request = requests[promiseHandler];
+	this.cancelRequest = function(request){
 		if(typeof request === "undefined"){
 			console.log("No active request found.");
 			return;
 		}
-
 		request.destroy();
 	}
 

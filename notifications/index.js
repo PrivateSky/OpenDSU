@@ -6,14 +6,12 @@ let http = require("../index").loadApi("http");
 let bdns = require("../index").loadApi("bdns");
 
 function publish(keySSI, message, timeout, callback){
-	bdns.getRawInfo(keySSI.getDLDomain(), (err, info) => {
+	bdns.getNotificationEndpoints(keySSI.getDLDomain(), (err, endpoints) => {
 		if (err) {
 			throw new Error(err);
 		}
 
-		const endpoints = info.notifications || [];
-
-		if (endpoints.length === 0) {
+		if (!endpoints.length) {
 			throw new Error("Not available!");
 		}
 
@@ -30,18 +28,16 @@ function publish(keySSI, message, timeout, callback){
     });
 }
 
-let requests = {};
+let requests = new Map();
 function getObservableHandler(keySSI, timeout){
 	let obs = require("../utils/observable").createObservable();
 
-	bdns.getRawInfo(keySSI.getDLDomain(), (err, info) => {
+	bdns.getNotificationEndpoints(keySSI.getDLDomain(), (err, endpoints) => {
 		if (err) {
 			throw new Error(err);
 		}
 
-		const endpoints = info.notifications || [];
-
-		if (endpoints.length === 0) {
+		if (!endpoints.length) {
 			throw new Error("Not available!");
 		}
 
@@ -59,7 +55,7 @@ function getObservableHandler(keySSI, timeout){
 				obs.dispatchEvent("error", err);
 			});
 
-			requests[obs] = request;
+			requests.set(obs, request);
 		}
 
 		makeRequest();
@@ -68,8 +64,9 @@ function getObservableHandler(keySSI, timeout){
 	return obs;
 }
 
-function unsubscribe(keySSI, observable){
-	http.unpoll(requests[observable]);
+function unsubscribe(observable){
+	console.log(requests.get(observable));
+	http.unpoll(requests.get(observable));
 }
 
 module.exports = {
