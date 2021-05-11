@@ -19,12 +19,3 @@ assert.callback('Test buildWalletSSI ', (callback) => {
 
   callback();
 });
-
-assert.callback('Check if arg is not array', (callback) => {
-  try {
-    const walletSSI = keySSISpace.buildWalletSSI('default', 12, 'hint');
-    console.log(walletSSI);
-  } catch (error) {
-    callback();
-  }
-});
