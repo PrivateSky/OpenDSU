@@ -50,11 +50,23 @@ async function callContractMethod(domain, contract, method, params, callback) {
         }
 
         const runContractMethod = async (service) => {
-            console.log("caallling");
-            const response = await fetch(`${service}/contracts/${contractMethodPath}`);
+            const url = `${service}/contracts/${contractMethodPath}`;
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`An error occurred while calling: ${url}`);
+            }
+
             let result;
             try {
                 result = await response.json();
+                if (result && result.message) {
+                    result = result.message;
+                    try {
+                        result = JSON.parse(result);
+                    } catch (error) {
+                        // the message field from the result is not a valid JSON
+                    }
+                }
             } catch (error) {
                 // the response is not a valid JSON
             }
