@@ -23,6 +23,7 @@ const S_READ_PK_SUBTYPE = "sReadPK";
 const S_READ_SUBTYPE = "sRead";
 const CONST_SUBTYPE = "const";
 const DEMO_METHOD_NAME = "demo";
+const GROUP_METHOD_NAME = "group";
 
 let methodRegistry = {};
 
@@ -62,6 +63,7 @@ registerDIDMethod(S_READ_PK_SUBTYPE, require("./didssi/ssiMethods").create_sRead
 registerDIDMethod(CONST_SUBTYPE, require("./didssi/ssiMethods").create_constssi_DIDMethod());
 
 registerDIDMethod(DEMO_METHOD_NAME, require("./demo/diddemo").create_demo_DIDMethod());
+registerDIDMethod(GROUP_METHOD_NAME, require("./group/groupDID").create_group_DIDMethod());
 
 
 module.exports = {
