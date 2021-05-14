@@ -143,19 +143,25 @@ const createToken = (domain, amountOrSerialNumber, vn, hint, callback) => {
             }
 
             let transferSSI = createTransferSSI(domain, ownershipPublicKeyHash, transferTimestamp, signature);
-            const {addVersion} = require("../anchoring");
-            addVersion(ownershipSSI, transferSSI, (err) => {
+            const {createAnchor, appendToAnchor} = require("../anchoring");
+            createAnchor(ownershipSSI, (err) => {
                 if (err) {
-                    return callback(createOpenDSUErrorWrapper("Failed to anchor transferSSI", err));
+                    return callback(createOpenDSUErrorWrapper("Failed to anchor ownershipSSI", err));
                 }
 
-                const result = {
-                    tokenSSI: tokenSSI,
-                    ownershipSSI: ownershipSSI,
-                    transferSSI: transferSSI
-                }
-
-                callback(undefined, result);
+                appendToAnchor(ownershipSSI, transferSSI, (err) => {
+                    if (err) {
+                        return callback(createOpenDSUErrorWrapper("Failed to anchor transferSSI", err));
+                    }
+    
+                    const result = {
+                        tokenSSI: tokenSSI,
+                        ownershipSSI: ownershipSSI,
+                        transferSSI: transferSSI
+                    }
+    
+                    callback(undefined, result);
+                });
             });
         });
     });

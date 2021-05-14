@@ -7,7 +7,7 @@ const crypto = require('../../crypto');
 assert.callback('Build seedSSI test', (callback) => {
   const seedSSI = keySSISpace.buildTemplateSeedSSI('default');
 
-  seedSSI.initialize('default', undefined, undefined, 'vn0', 'hint', (err) => {
+  seedSSI.initialize('default', undefined, undefined, 'v0', 'hint', (err) => {
     if (err) {
       throw err;
     }

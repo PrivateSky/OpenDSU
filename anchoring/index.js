@@ -199,8 +199,6 @@ const getLatestVersion = (domain, ...args) => {
 }
 
 module.exports = {
-    // addVersion,
-    // versions,
     createAnchor,
     createNFT,
     appendToAnchor,

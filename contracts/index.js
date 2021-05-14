@@ -1,6 +1,10 @@
-const getBaseURL = require("../utils/getBaseURL");
+const promiseRunner = require("../utils/promise-runner");
+const { fetch } = require("../http");
 
-function callContractMethod(domain, contract, method, params, callback) {
+async function callContractMethod(domain, contract, method, params, callback) {
+    // use bdns service
+    // use promise runner - at least one request to succeed
+
     if (!domain || typeof domain !== "string") {
         return callback(`Invalid domain specified: ${domain}!`);
     }
@@ -30,20 +34,60 @@ function callContractMethod(domain, contract, method, params, callback) {
         .map((param) => encodeURIComponent(param))
         .join("/");
 
-    const url = `${getBaseURL()}/contracts/${contractMethodPath}`;
+    try {
+        let contractServicesArray = [];
+        try {
+            const bdns = require("opendsu").loadApi("bdns");
+            contractServicesArray = await $$.promisify(bdns.getContractServices)(domain);
+        } catch (error) {
+            return OpenDSUSafeCallback(callback)(
+                createOpenDSUErrorWrapper(`Failed to get contract services from bdns'`, error)
+            );
+        }
 
-    const http = require("opendsu").loadApi("http");
-    http.fetch(url)
-        .then((response) => {
-            return response.json();
-        })
-        .then((result) => {
-            callback(null, result);
-        })
-        .catch((err) => {
-            console.error(`Failed to call contract method: ${url}`, err);
-            callback(err);
-        });
+        if (!contractServicesArray.length) {
+            return callback("No contract service provided");
+        }
+
+        const runContractMethod = async (service) => {
+            const url = `${service}/contracts/${contractMethodPath}`;
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`An error occurred while calling: ${url}`);
+            }
+
+            let result;
+            try {
+                result = await response.json();
+                if (result && result.message) {
+                    result = result.message;
+                    try {
+                        result = JSON.parse(result);
+                    } catch (error) {
+                        // the message field from the result is not a valid JSON
+                    }
+                }
+            } catch (error) {
+                // the response is not a valid JSON
+            }
+            return result;
+        };
+
+        promiseRunner.runOneSuccessful(
+            contractServicesArray,
+            runContractMethod,
+            callback,
+            new Error("get Contract Service")
+        );
+    } catch (error) {
+        console.log("eeeeee", error);
+        OpenDSUSafeCallback(callback)(
+            createOpenDSUErrorWrapper(
+                `Failed to call method '${method}' from '${contract}' contract from domain '${domain}'`,
+                error
+            )
+        );
+    }
 }
 
 module.exports = {
