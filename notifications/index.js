@@ -6,6 +6,10 @@ let http = require("../index").loadApi("http");
 let bdns = require("../index").loadApi("bdns");
 
 function publish(keySSI, message, timeout, callback){
+	if (typeof timeout === 'function') {
+		callback = timeout;
+		timeout = 0;
+	}
 	bdns.getNotificationEndpoints(keySSI.getDLDomain(), (err, endpoints) => {
 		if (err) {
 			throw new Error(err);
@@ -30,6 +34,7 @@ function publish(keySSI, message, timeout, callback){
 
 let requests = new Map();
 function getObservableHandler(keySSI, timeout){
+	timeout = timeout || 0;
 	let obs = require("../utils/observable").createObservable();
 
 	bdns.getNotificationEndpoints(keySSI.getDLDomain(), (err, endpoints) => {
@@ -50,7 +55,11 @@ function getObservableHandler(keySSI, timeout){
 
 			request.then((response) => {
 				obs.dispatchEvent("message", response);
-				makeRequest();
+
+				// If a subscription still exists, continue polling for messages
+				if (requests.has(obs)) {
+					makeRequest();
+				}
 			}).catch((err) => {
 				obs.dispatchEvent("error", err);
 			});
@@ -65,12 +74,21 @@ function getObservableHandler(keySSI, timeout){
 }
 
 function unsubscribe(observable){
-	console.log(requests.get(observable));
-	http.unpoll(requests.get(observable));
+	const request = requests.get(observable);
+	if (!request) {
+		return;
+	}
+	http.unpoll(request);
+	requests.delete(observable);
+}
+
+function isSubscribed(observable) {
+	return requests.has(observable);
 }
 
 module.exports = {
 	publish,
 	getObservableHandler,
-	unsubscribe
+	unsubscribe,
+	isSubscribed
 }

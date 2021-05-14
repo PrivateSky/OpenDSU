@@ -2,98 +2,103 @@ function PollRequestManager(fetchFunction, pollingTimeout = 1000){
 
 	const requests = new Map();
 
-	function Request(url, options, delayedStart) {
-		let self = this;
-
+	function Request(url, options, delay = 0) {
 		let promiseHandlers = {};
 		let currentState = undefined;
-		this.execute = function(){
-			//if there is a delayedStart and it's the first time when the request is executed
-			if(delayedStart && typeof currentState === "undefined"){
-				return new Promise((resolve, reject) => {
-					setTimeout(function(){
-						currentState = fetchFunction(url, options);
-						currentState.then(resolve).catch(reject);
-					}, delayedStart);
-				})
-			}else{
+		let timeout;
+		this.url = url;
+
+		this.execute = function() {
+			if (!currentState && delay) {
+				currentState = new Promise((resolve, reject) => {
+					timeout = setTimeout(() => {
+						fetchFunction(url, options).then((response) => {
+							resolve(response);
+						}).catch((err) => {
+							reject(err);
+						})
+					}, delay);
+				});
+			} else {
 				currentState = fetchFunction(url, options);
 			}
-
 			return currentState;
 		}
 
-		this.cancelExecution = function(){
-			if(typeof this.currentState !== "undefined"){
-				this.currentState = undefined;
+		this.cancelExecution = function() {
+			clearTimeout(timeout);
+			timeout = undefined;
+			if(typeof currentState !== "undefined"){
+				currentState = undefined;
 			}
 			promiseHandlers.resolve = () => {};
 			promiseHandlers.reject = () => {};
 		}
 
-		this.setExecutor = function(resolve, reject){
+		this.setExecutor = function(resolve, reject) {
 			promiseHandlers.resolve = resolve;
 			promiseHandlers.reject = reject;
 		}
 
-		this.resolve = function(...args){
+		this.resolve = async function(...args) {
 			promiseHandlers.resolve(...args);
 			this.destroy();
 		}
 
-		this.reject = function(...args){
+		this.reject = function(...args) {
 			promiseHandlers.reject(...args);
 			this.destroy();
 		}
 
-		this.destroy = function(identifier){
+		this.destroy = function(removeFromPool = true) {
 			this.cancelExecution();
 
-			if (!identifier) {
-				// Find our identifier
-				const requestsEntries = requests.entries()
-				for (const [key, value] of requestsEntries) {
-					if (value === this) {
-						identifier = key;
-						break;
-					}
+			if (!removeFromPool) {
+				return;
+			}
+
+			// Find our identifier
+			const requestsEntries = requests.entries()
+			let identifier;
+			for (const [key, value] of requestsEntries) {
+				if (value === this) {
+					identifier = key;
+					break;
 				}
 			}
-			requests.delete(identifier);
-			console.log(requests.size);
+
+			if (identifier) {
+				requests.delete(identifier);
+			}
 		}
 	}
 
-	this.createRequest = function (url, options, delayedStart=0) {
-		let request = new Request(url, options, delayedStart);
+	this.createRequest = function (url, options, delayedStart = 0) {
+		const request = new Request(url, options, delayedStart);
 
-		let promise = new Promise((resolve, reject) => {
-
+		const promise = new Promise((resolve, reject) => {
 			request.setExecutor(resolve, reject);
-
-			if(delayedStart){
-				setTimeout(function(){
-					createPollThread(request);
-				}, delayedStart);
-			}else{
-				createPollThread(request);
-			}
+			createPollThread(request);
 		});
-
-		requests.set(promise, request);
 		promise.abort = () => {
-			this.cancelRequest(request);
+			this.cancelRequest(promise);
 		};
 
+		requests.set(promise, request);
 		return promise;
 	};
 
-	this.cancelRequest = function(request){
-		if(typeof request === "undefined"){
+	this.cancelRequest = function(promiseOfRequest){
+		if(typeof promiseOfRequest === "undefined"){
 			console.log("No active request found.");
 			return;
 		}
-		request.destroy();
+
+		const request = requests.get(promiseOfRequest);
+		if (request) {
+			request.destroy(false);
+			requests.delete(promiseOfRequest);
+		}
 	}
 
 
