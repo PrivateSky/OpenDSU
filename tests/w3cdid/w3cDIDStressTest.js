@@ -59,7 +59,7 @@ const someData = {
 
 // If we kill the consumer we need to wait for at least 30 seconds for it to 'decide' call the callback
 // otherwise, 1 seconds per message should be plenty
-const assertTimeout = 1000 * config.messages + config.kill ? 30000 : 0;
+const assertTimeout = 1000 * config.messages + (config.kill ? 30000 : 0);
 
 assert.callback('w3cDID MQ Stress test', (testFinished) => {
     tir.launchVirtualMQNode(function (err, port) {
