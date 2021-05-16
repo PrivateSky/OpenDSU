@@ -58,7 +58,7 @@ dc.createTestFolder("ODSU_UnsubscribeTest", (err, testFolder) => {
 			const testUnsuscribeFromDelayedRequest = async () => {
 				let messageReceived = false;
 				return new Promise(async (resolve) => {
-					const observable = notifications.getObservableHandler(keySSI, 1000);
+					const observable = notifications.getObservableHandler(keySSI, 499);
 					observable.on('error', (err) => {
 						throw err;
 					})
