@@ -22,10 +22,37 @@ dc.createTestFolder("ODSU_SimplePubSubTest", (err, testFolder) => {
 
 		tir.launchApiHubTestNode(10, testFolder, async (err) => {
 			assert.true(err === null || typeof err === "undefined", "Failed to launch MQNode");
-			const helpers = require('./helpers');
+			const keySSISpace = require('./../../keyssi');
 			const notifications = require('./../../notifications');
 
-			const keySSI = await helpers.createKeySSI();
+			/**
+			* Common test helpers
+			*/
+			const createKeySSI = (domain) => {
+				domain = domain || 'default';
+				return new Promise((resolve, reject) => {
+					keySSISpace.createTemplateSeedSSI('default', (err, templateKeySSI) => {
+						if (err) {
+							return reject(err);
+						}
+						templateKeySSI.initialize(templateKeySSI.getDLDomain(), undefined, undefined, undefined, templateKeySSI.getHint(), (err, keySSI) => {
+							if (err) {
+								return reject(err);
+							}
+							resolve(keySSI);
+						});
+					});
+				})
+			}
+			const delay = (delay) => {
+				return new Promise((resolve) => {
+					setTimeout(() => {
+						resolve();
+					}, delay);
+				})
+			}
+
+			const keySSI = await createKeySSI();
 
 			const observable = notifications.getObservableHandler(keySSI);
 			observable.on('error', (err) => {
@@ -38,7 +65,7 @@ dc.createTestFolder("ODSU_SimplePubSubTest", (err, testFolder) => {
 				assert.true(message.message === "ping", "Message payload is correct");
 				done(messageReceived = true);
 			})
-			await helpers.delay(50);
+			await delay(50);
 			assert.true(notifications.isSubscribed(observable), "Subscription exists");
 
 			notifications.publish(keySSI, "ping", 500, async (err, response) => {

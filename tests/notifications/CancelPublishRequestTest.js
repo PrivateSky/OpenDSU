@@ -13,9 +13,36 @@ dc.createTestFolder("ODSU_CancelPublishRequestTest", (err, testFolder) => {
 
 		tir.launchApiHubTestNode(10, testFolder, async (err) => {
 			assert.true(err === null || typeof err === "undefined", "Failed to launch MQNode");
-			const helpers = require('./helpers');
+			const keySSISpace = require('./../../keyssi');
 			const http = require('./../../http');
-			const keySSI = await helpers.createKeySSI();
+
+			/**
+			* Common test helpers
+			*/
+			const createKeySSI = (domain) => {
+				domain = domain || 'default';
+				return new Promise((resolve, reject) => {
+					keySSISpace.createTemplateSeedSSI('default', (err, templateKeySSI) => {
+						if (err) {
+							return reject(err);
+						}
+						templateKeySSI.initialize(templateKeySSI.getDLDomain(), undefined, undefined, undefined, templateKeySSI.getHint(), (err, keySSI) => {
+							if (err) {
+								return reject(err);
+							}
+							resolve(keySSI);
+						});
+					});
+				})
+			}
+			const delay = (delay) => {
+				return new Promise((resolve) => {
+					setTimeout(() => {
+						resolve();
+					}, delay);
+				})
+			}
+			const keySSI = await createKeySSI();
 
 			let requestExecuted = false;
 			let requestError = null;
@@ -29,7 +56,7 @@ dc.createTestFolder("ODSU_CancelPublishRequestTest", (err, testFolder) => {
 			});
 
 			http.unpoll(request);
-			await helpers.delay(1.5 * 1000);
+			await delay(1.5 * 1000);
 
 			assert.false(requestExecuted, "The request wasn't executed");
 			assert.true(requestError === null, "The request error handler wasn't called");

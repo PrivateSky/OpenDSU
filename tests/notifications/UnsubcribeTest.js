@@ -1,3 +1,4 @@
+const utils = require('util');
 require("../../../../psknode/bundles/testsRuntime");
 const tir = require("../../../../psknode/tests/util/tir");
 
@@ -12,9 +13,41 @@ dc.createTestFolder("ODSU_UnsubscribeTest", (err, testFolder) => {
 	assert.callback('Test notification unsubscribing', (callback) => {
 		tir.launchApiHubTestNode(10, testFolder, async (err) => {
 			assert.true(err === null || typeof err === "undefined", "Failed to launch MQNode");
-			const helpers = require('./helpers');
+			const keySSISpace = require('./../../keyssi');
 			const notifications = require('./../../notifications');
-			const keySSI = await helpers.createKeySSI();
+
+			/**
+			* Common test helpers
+			*/
+			const createKeySSI = (domain) => {
+				domain = domain || 'default';
+				return new Promise((resolve, reject) => {
+					keySSISpace.createTemplateSeedSSI('default', (err, templateKeySSI) => {
+						if (err) {
+							return reject(err);
+						}
+						templateKeySSI.initialize(templateKeySSI.getDLDomain(), undefined, undefined, undefined, templateKeySSI.getHint(), (err, keySSI) => {
+							if (err) {
+								return reject(err);
+							}
+							resolve(keySSI);
+						});
+					});
+				})
+			}
+			const delay = (delay) => {
+				return new Promise((resolve) => {
+					setTimeout(() => {
+						resolve();
+					}, delay);
+				})
+			}
+
+			const promisifyPublish = () => {
+				return utils.promisify(notifications.publish);
+			}
+
+			const keySSI = await createKeySSI();
 
 			/**
 			 * Test that the observable message handler isn't called
@@ -32,11 +65,11 @@ dc.createTestFolder("ODSU_UnsubscribeTest", (err, testFolder) => {
 					})
 
 					// Allow the request to be created
-					await helpers.delay(50);
+					await delay(50);
 					notifications.unsubscribe(observable);
 					assert.false(notifications.isSubscribed(observable));
 
-					const publishNotification = helpers.promisifyPublish();
+					const publishNotification = promisifyPublish();
 					const publishResponse = await publishNotification(keySSI, "ping", 250);
 					assert.true(publishResponse.ok, 'Message was published');
 					const message = await publishResponse.json();
@@ -45,7 +78,7 @@ dc.createTestFolder("ODSU_UnsubscribeTest", (err, testFolder) => {
 					assert.true(message.message === "Message delivered to 1 subscribers.", "Message was delivered");
 
 					// Allow some time for the message to be delivered
-					await helpers.delay(100);
+					await delay(100);
 					assert.false(messageReceived, "Observable message handler wasn't called");
 					resolve();
 				})
@@ -67,17 +100,17 @@ dc.createTestFolder("ODSU_UnsubscribeTest", (err, testFolder) => {
 					})
 
 					// Allow the request to be created
-					await helpers.delay(50);
+					await delay(50);
 					notifications.unsubscribe(observable);
 					assert.false(notifications.isSubscribed(observable));
 
-					const publishNotification = helpers.promisifyPublish();
+					const publishNotification = promisifyPublish();
 					const publishResponse = await publishNotification(keySSI, "ping", 250);
 					assert.true(publishResponse.ok, 'Message was published');
 					const message = await publishResponse.json();
 					assert.true(message.message === "Message was added to queue and will be delivered later.", "Message was queued");
 
-					await helpers.delay(100);
+					await delay(100);
 					assert.false(messageReceived, "Observable message handler wasn't called");
 					resolve();
 				})
@@ -97,16 +130,16 @@ dc.createTestFolder("ODSU_UnsubscribeTest", (err, testFolder) => {
 						}
 					})
 					// Allow the request to be created
-					await helpers.delay(50);
+					await delay(50);
 					assert.true(notifications.isSubscribed(observable));
 
-					const publishNotification = helpers.promisifyPublish();
+					const publishNotification = promisifyPublish();
 					await publishNotification(keySSI, "ping");
 					await publishNotification(keySSI, "pong");
 					await publishNotification(keySSI, "ping");
 					await publishNotification(keySSI, "pong");
 
-					await helpers.delay(500);
+					await delay(500);
 					assert.true(messageCounter === 2, "Only two messages received");
 					resolve();
 				})

@@ -1,3 +1,4 @@
+const utils = require('util');
 require("../../../../psknode/bundles/testsRuntime");
 const tir = require("../../../../psknode/tests/util/tir");
 
@@ -13,11 +14,42 @@ dc.createTestFolder("ODSU_StaleMessagesTest", (err, testFolder) => {
 
 		tir.launchApiHubTestNode(10, testFolder, async (err) => {
 			assert.true(err === null || typeof err === "undefined", "Failed to launch MQNode");
-			const helpers = require('./helpers');
-			const keySSI = await helpers.createKeySSI();
+			const keySSISpace = require('./../../keyssi');
 			const notifications = require('./../../notifications');
 
-			const publishNotification = helpers.promisifyPublish();
+			/**
+			* Common test helpers
+			*/
+			const createKeySSI = (domain) => {
+				domain = domain || 'default';
+				return new Promise((resolve, reject) => {
+					keySSISpace.createTemplateSeedSSI('default', (err, templateKeySSI) => {
+						if (err) {
+							return reject(err);
+						}
+						templateKeySSI.initialize(templateKeySSI.getDLDomain(), undefined, undefined, undefined, templateKeySSI.getHint(), (err, keySSI) => {
+							if (err) {
+								return reject(err);
+							}
+							resolve(keySSI);
+						});
+					});
+				})
+			}
+			const delay = (delay) => {
+				return new Promise((resolve) => {
+					setTimeout(() => {
+						resolve();
+					}, delay);
+				})
+			}
+			const promisifyPublish = () => {
+				return utils.promisify(notifications.publish);
+			}
+
+			const keySSI = await createKeySSI();
+
+			const publishNotification = promisifyPublish();
 			const publishResponse = await publishNotification(keySSI, "ping");
 			let messageReceived = false;
 
@@ -34,7 +66,7 @@ dc.createTestFolder("ODSU_StaleMessagesTest", (err, testFolder) => {
 				messageReceived = true;
 			})
 
-			await helpers.delay(1500);
+			await delay(1500);
 			assert.false(messageReceived, "Queued message wasn't delivered");
 			callback();
 		});
