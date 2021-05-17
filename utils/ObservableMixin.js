@@ -37,6 +37,7 @@ function ObservableMixin(target) {
             try{
                 c(message);
             }catch(err){
+				console.error(err);
                 reportDevRelevantInfo(`Caught an error during the delivery of ${eventType} to ${c.toString()}`);
             }
 

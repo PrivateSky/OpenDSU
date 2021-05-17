@@ -43,7 +43,7 @@ function BDNS() {
             })
         }
         if (dlDomain === undefined){
-            callback(new Error("The domain is not defined"));
+            return callback(new Error("The domain is not defined"));
         }
         callback(undefined, bdnsCache[dlDomain].brickStorages);
     };
@@ -82,6 +82,17 @@ function BDNS() {
         }
         callback(undefined, bdnsCache[dlDomain].replicas);
     };
+
+	this.getNotificationEndpoints = (dlDomain, callback) => {
+		this.getRawInfo(dlDomain, (err, domainInfo) => {
+			if (err) {
+				return callback(err);
+			}
+
+			callback(undefined, domainInfo.notifications || []);
+		})
+
+	}
 
     this.addRawInfo = (dlDomain, rawInfo) => {
         console.warn("This function is obsolete. Doing nothing");
