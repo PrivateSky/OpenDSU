@@ -2,7 +2,6 @@
     Security Context related functionalities
 
  */
-const PendingCallMixin = require("../utils/PendingCallMixin");
 
 const getMainDSU = () => {
 
@@ -16,43 +15,46 @@ const setMainDSU = (mainDSU) => {
     return setGlobalVariable("rawDossier", mainDSU);
 };
 
-function SecurityContext(storage) {
-    const keySSISpace = require("../keyssi");
-    const crypto = require("../crypto")
-    PendingCallMixin(this);
+function SecurityContext(keySSI) {
+    const DB_NAME = "security_context";
+    const KEY_SSIS_TABLE = "keyssis";
+    const DIDS_TABLE = "dids";
 
     let isInitialized = false;
     const SECURITY_CONTEXT_PERSISTENCE_PATH = "/security_context.json";
+    const crypto = require("../index").loadAPI("crypto");
+    const db = require("../index").loadAPI("db")
+    const bindAutoPendingFunctions = require("../utils/BindAutoPendingFunctions").bindAutoPendingFunctions;
 
-    const load = () => {
-        storage.getItem(SECURITY_CONTEXT_PERSISTENCE_PATH, (err, scData) => {
-            if (err) {
-                return console.log(err);
-            }
-
-            if ($$.Buffer.isBuffer(scData)) {
-                scData = scData.toString();
-            }
-            try {
-                keySSIs = JSON.parse(scData)
-            } catch (e) {
-                throw Error(`Failed to load security context data`);
-            }
-
-            isInitialized = true;
-            this.executePendingCalls();
+    let storageDB;
+    setTimeout(() => {
+        storageDB = db.getWalletDB(keySSI, DB_NAME);
+        storageDB.on("initialised", () => {
+            this.finishInitialisation();
         });
-    }
-
-    let keySSIs;
-    if (typeof storage === "undefined") {
-        keySSIs = {};
-        isInitialized = true;
-    } else {
-        load();
-    }
+    }, 0);
 
 
+
+    this.addDID = (did, keySSI, callback) => {
+        if (typeof keySSI === "object") {
+            keySSI = keySSI.getIdentifier();
+        }
+
+        storageDB.insertRecord(DIDS_TABLE, did, {keySSI}, callback);
+    };
+
+    this.getKeySSIForDID = (did, callback) => {
+        storageDB.getRecord(DIDS_TABLE, did, (err, record) => {
+            if (err) {
+                return callback(err);
+            }
+
+            callback(undefined, record.keySSI);
+        });
+    };
+
+    const keySSIs = {};
     this.registerKeySSI = (keySSI, callback) => {
         if (typeof keySSI === "undefined") {
             return callback(Error(`A SeedSSI should be specified.`));
@@ -70,8 +72,8 @@ function SecurityContext(storage) {
                 derivedKeySSI = derivedKeySSI.derive();
                 keySSIs[derivedKeySSI.getIdentifier()] = keySSIIdentifier;
             } catch (e) {
-                if (storage) {
-                    storage.setItem(SECURITY_CONTEXT_PERSISTENCE_PATH, (JSON.stringify(keySSIs)), callback);
+                if (storageDB) {
+                    storageDB.setItem(SECURITY_CONTEXT_PERSISTENCE_PATH, (JSON.stringify(keySSIs)), callback);
                 }
                 return;
             }
@@ -123,16 +125,21 @@ function SecurityContext(storage) {
     this.decrypt = (keySSI, data, callback) => {
 
     };
+
+    bindAutoPendingFunctions(this);
+    return this;
 }
 
-let sc;
-const getSecurityContext = (storage) => {
-    if (sc) {
-        return sc;
+const getSecurityContext = (keySSI) => {
+    if (typeof $$.sc === "undefined") {
+        if (typeof keySSI === "undefined") {
+            const keySSISpace = require("../index").loadAPI("keyssi");
+            keySSI = keySSISpace.createSeedSSI("default");
+        }
+        $$.sc = new SecurityContext(keySSI);
     }
 
-    sc = new SecurityContext(storage);
-    return sc;
+    return $$.sc;
 };
 module.exports = {
     getMainDSU,
