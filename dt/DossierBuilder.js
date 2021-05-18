@@ -158,7 +158,7 @@ const DossierBuilder = function(sourceDSU, varStore){
 
             _getResolver().loadDSU(keySSI, (err, bar) => {
                 if (err){
-                    console.log("DSU not available. Creating a new DSU for", keySSI);
+                    console.log("DSU not available. Creating a new DSU for", keySSI.getIdentifier());
                     return _getResolver().createDSU(keySSI, {useSSIAsIdentifier: true}, (err, bar)=>{
                         if(err)
                             return callback(err);
