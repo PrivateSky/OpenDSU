@@ -61,10 +61,6 @@ function GroupPKDocument(identifier) {
     };
 
     this.addMember = (identity, alias, callback) => {
-        if (typeof alias === "function") {
-            callback = alias;
-            alias = identity;
-        }
         updateMembers("add", identity, alias, callback);
     };
 
@@ -177,14 +173,25 @@ function GroupPKDocument(identifier) {
     };
 
     const updateMembers = (operation, identity, alias, callback) => {
+        if (typeof alias === "function") {
+            callback = alias;
+            alias = identity;
+        }
         readMembers((err, members) => {
+            debugger;
             if (err) {
                 return callback(err);
             }
 
             if (operation === "remove") {
                 delete members[identity];
-                return dsu.writeFile(MEMBERS_FILE, JSON.stringify(members), callback);
+                return dsu.writeFile(MEMBERS_FILE, JSON.stringify(members), err => {
+                    if (err) {
+                        return callback(err);
+                    }
+
+                    callback();
+                });
             } else if (operation === "add") {
                 members[identity] = alias;
                 return dsu.writeFile(MEMBERS_FILE, JSON.stringify(members), callback);
