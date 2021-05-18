@@ -22,8 +22,8 @@ function SecurityContext(keySSI) {
 
     let isInitialized = false;
     const SECURITY_CONTEXT_PERSISTENCE_PATH = "/security_context.json";
-    const crypto = require("../index").loadAPI("crypto");
-    const db = require("../index").loadAPI("db")
+    const crypto = require("opendsu").loadAPI("crypto");
+    const db = require("opendsu").loadAPI("db")
     const bindAutoPendingFunctions = require("../utils/BindAutoPendingFunctions").bindAutoPendingFunctions;
 
     let storageDB;
@@ -133,7 +133,7 @@ function SecurityContext(keySSI) {
 const getSecurityContext = (keySSI) => {
     if (typeof $$.sc === "undefined") {
         if (typeof keySSI === "undefined") {
-            const keySSISpace = require("../index").loadAPI("keyssi");
+            const keySSISpace = require("opendsu").loadAPI("keyssi");
             keySSI = keySSISpace.createSeedSSI("default");
         }
         $$.sc = new SecurityContext(keySSI);
