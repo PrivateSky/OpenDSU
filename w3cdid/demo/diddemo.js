@@ -21,7 +21,7 @@ function DemoPKDocument(identifier){
         return getBaseURL();
     }
 
-    this.sendMessage = function(message, toOtherDID, callback){
+    this.sendMessage = (message, toOtherDID, callback) => {
         const opendsu = require("opendsu");
         const http = opendsu.loadApi("http");
 
@@ -37,7 +37,7 @@ function DemoPKDocument(identifier){
         });
     };
 
-    this.readMessage = function(callback){
+    this.readMessage = (callback) => {
         const endpoint = getApiHubEndpoint();
         const opendsu = require("opendsu");
         const http = opendsu.loadApi("http");

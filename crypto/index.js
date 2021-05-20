@@ -1,4 +1,5 @@
 const keySSIResolver = require("key-ssi-resolver");
+const crypto = require("pskcrypto");
 const cryptoRegistry = keySSIResolver.CryptoAlgorithmsRegistry;
 const keySSIFactory = keySSIResolver.KeySSIFactory;
 const SSITypes = keySSIResolver.SSITypes;
@@ -7,9 +8,9 @@ const jwtUtils = require("./jwt");
 const templateSeedSSI = keySSIFactory.createType(SSITypes.SEED_SSI);
 templateSeedSSI.load(SSITypes.SEED_SSI, "default");
 
-const { JWT_ERRORS } = jwtUtils;
+const {JWT_ERRORS} = jwtUtils;
 
-const getCryptoFunctionForKeySSI = (keySSI, cryptoFunctionType)=>{
+const getCryptoFunctionForKeySSI = (keySSI, cryptoFunctionType) => {
     return cryptoRegistry.getCryptoFunction(keySSI, cryptoFunctionType);
 }
 const hash = (keySSI, data, callback) => {
@@ -26,23 +27,19 @@ const hashSync = (keySSI, data) => {
     return hash(data);
 }
 
-const encrypt = (keySSI, buffer, callback) => {
-    console.log("This function is obsolete");
-    const encrypt = cryptoRegistry.getEncryptionFunction(keySSI);
-    callback(undefined, encrypt(buffer, keySSI.getEncryptionKey()));
+const encrypt = (data, encryptionKey) => {
+    const pskEncryption = crypto.createPskEncryption("aes-256-gcm");
+    return pskEncryption.encrypt(data, encryptionKey);
 };
 
-const decrypt = (keySSI, encryptedBuffer, callback) => {
-    console.log("This function is obsolete");
-    const decrypt = cryptoRegistry.getDecryptionFunction(keySSI);
-    let decryptedBuffer;
-    try {
-        decryptedBuffer = decrypt(encryptedBuffer, keySSI.getEncryptionKey());
-    } catch (e) {
-        return callback(e);
-    }
-    callback(undefined, decryptedBuffer);
+const decrypt = (data, encryptionKey) => {
+    const pskEncryption = crypto.createPskEncryption("aes-256-gcm");
+    return pskEncryption.decrypt(data, encryptionKey);
 };
+
+const deriveEncryptionKey = (password) => {
+    return crypto.deriveKey(password);
+}
 
 const convertDerSignatureToASN1 = (derSignature) => {
     return require('pskcrypto').decodeDerToASN1ETH(derSignature);
@@ -135,7 +132,7 @@ const verifyJWT = (jwt, rootOfTrustVerificationStrategy, callback) => {
 };
 
 const createCredential = (issuerSeedSSI, credentialSubjectSReadSSI, callback) => {
-    createJWT(issuerSeedSSI, "", null, { subject: credentialSubjectSReadSSI }, callback);
+    createJWT(issuerSeedSSI, "", null, {subject: credentialSubjectSReadSSI}, callback);
 };
 
 const createAuthToken = (holderSeedSSI, scope, credential, callback) => {
@@ -150,8 +147,8 @@ const verifyAuthToken = (jwt, listOfIssuers, callback) => {
     if (!listOfIssuers || !listOfIssuers.length) return callback(JWT_ERRORS.EMPTY_LIST_OF_ISSUERS_PROVIDED);
 
     // checks every credentials from the JWT's body to see if it has at least one JWT issues by one of listOfIssuers for the current subject
-    const rootOfTrustVerificationStrategy = ({ body }, verificationCallback) => {
-        const { sub: subject, credentials } = body;
+    const rootOfTrustVerificationStrategy = ({body}, verificationCallback) => {
+        const {sub: subject, credentials} = body;
         // the JWT doesn't have credentials specified so we cannot check for valid authorizarion
         if (!credentials) return verificationCallback(null, false);
 
@@ -161,7 +158,7 @@ const verifyAuthToken = (jwt, listOfIssuers, callback) => {
             return new Promise((resolve) => {
                 verifyJWT(
                     credential,
-                    ({ body }, credentialVerificationCallback) => {
+                    ({body}, credentialVerificationCallback) => {
                         // check if credential was issued for the JWT that we are verifying the authorization for
                         const credentialSubject = jwtUtils.getReadableSSI(body.sub);
                         const isCredentialIssuedForSubject = !!credentialSubject && credentialSubject === currentSubject;
@@ -205,7 +202,6 @@ const verifyAuthToken = (jwt, listOfIssuers, callback) => {
 };
 
 
-
 function createBloomFilter(options) {
     const BloomFilter = require("psk-dbf");
     return new BloomFilter(options);
@@ -238,4 +234,5 @@ module.exports = {
     parseJWTSegments: jwtUtils.parseJWTSegments,
     createBloomFilter,
     JWT_ERRORS,
+    deriveEncryptionKey
 };

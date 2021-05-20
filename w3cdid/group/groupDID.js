@@ -2,16 +2,16 @@
 
 function GroupPKDocument(identifier) {
     const DOMAIN = "default";
-    const teamID = `did:group:${identifier}`;
+    const teamDID = `did:group:${identifier}`;
 
     let mixin = require("../W3CDID_Mixin");
     mixin(this);
     const bindAutoPendingFunctions = require("../../utils/BindAutoPendingFunctions").bindAutoPendingFunctions;
-
-    const sc = require("../../index").loadAPI("sc").getSecurityContext();
-    const error = require("../../index").loadAPI("error");
-    const keySSISpace = require("../../index").loadAPI("keyssi");
-    const resolver = require("../../index").loadAPI("resolver");
+    const openDSU = require("opendsu");
+    const sc = openDSU.loadAPI("sc").getSecurityContext();
+    const error = openDSU.loadAPI("error");
+    const keySSISpace = openDSU.loadAPI("keyssi");
+    const resolver = openDSU.loadAPI("resolver");
 
     let dsu;
     const MEMBERS_FILE = "members";
@@ -28,9 +28,9 @@ function GroupPKDocument(identifier) {
                     return error.reportUserRelevantError(`Failed to get keySSI`, err);
                 }
 
-                sc.addDID(teamID, keySSI, (err) => {
+                sc.addDID(teamDID, keySSI, (err) => {
                     if (err) {
-                        return error.reportUserRelevantError(`Failed to add DID`, teamID);
+                        return error.reportUserRelevantError(`Failed to add DID`, teamDID);
                     }
 
                     this.finishInitialisation();
@@ -51,7 +51,7 @@ function GroupPKDocument(identifier) {
     };
 
     const init = () => {
-        sc.getKeySSIForDID(teamID, (err, keySSI) => {
+        sc.getKeySSIForDID(teamDID, (err, keySSI) => {
             if (err) {
                 __createDSU();
             } else {
@@ -61,11 +61,19 @@ function GroupPKDocument(identifier) {
     };
 
     this.addMember = (identity, alias, callback) => {
-        updateMembers("add", identity, alias, callback);
+        updateMembers("add", [identity], [alias], callback);
+    };
+
+    this.addMembers = (identities, aliases, callback) => {
+        updateMembers("add", identities, aliases, callback);
     };
 
     this.removeMember = (identity, callback) => {
-        updateMembers("remove", identity, callback);
+        updateMembers("remove", [identity], callback);
+    };
+
+    this.removeMembers = (identities, callback) => {
+        updateMembers("remove", identities, callback);
     };
 
     this.listMembersByAlias = (callback) => {
@@ -117,16 +125,17 @@ function GroupPKDocument(identifier) {
     };
 
     this.getIdentifier = () => {
-        return teamID;
+        return teamDID;
     };
 
     this.sendMessage = (message, sender, callback) => {
-        const w3cDID = require("../../index").loadAPI("w3cdid");
+        const w3cDID = openDSU.loadAPI("w3cdid");
         readMembers((err, members) => {
             if (err) {
                 return callback(err);
             }
 
+            debugger;
             w3cDID.resolveDID(sender, (err, senderDIDDocument) => {
                 if (err) {
                     return callback(err);
@@ -143,7 +152,7 @@ function GroupPKDocument(identifier) {
 
                 for (let i = 0; i < noMembers; i++) {
                     if (membersIds[i] !== sender) {
-                        const messageToSend = `${teamID}|${sender}|${message}`;
+                        const messageToSend = `${teamDID}|${sender}|${message}`;
                         senderDIDDocument.sendMessage(messageToSend, membersIds[i], (err) => {
                             if (err) {
                                 return callback(err);
@@ -172,28 +181,30 @@ function GroupPKDocument(identifier) {
         });
     };
 
-    const updateMembers = (operation, identity, alias, callback) => {
-        if (typeof alias === "function") {
-            callback = alias;
-            alias = identity;
+    const updateMembers = (operation, identities, aliases, callback) => {
+        if (typeof aliases === "function") {
+            callback = aliases;
+            aliases = identities;
         }
         readMembers((err, members) => {
-            debugger;
             if (err) {
                 return callback(err);
             }
 
             if (operation === "remove") {
-                delete members[identity];
-                return dsu.writeFile(MEMBERS_FILE, JSON.stringify(members), err => {
-                    if (err) {
-                        return callback(err);
+                identities.forEach(id => {
+                    if (typeof members[id] !== "undefined") {
+                        delete members[id];
                     }
-
-                    callback();
                 });
+
+                return dsu.writeFile(MEMBERS_FILE, JSON.stringify(members), callback);
             } else if (operation === "add") {
-                members[identity] = alias;
+                identities.forEach((id, index) => {
+                    if (typeof members[id] === "undefined") {
+                        members[id] = aliases[index]
+                    }
+                });
                 return dsu.writeFile(MEMBERS_FILE, JSON.stringify(members), callback);
             } else {
                 callback(Error(`Invalid operation ${operation}`));
@@ -201,7 +212,7 @@ function GroupPKDocument(identifier) {
         });
     };
 
-    bindAutoPendingFunctions(this);
+    bindAutoPendingFunctions(this, ["getIdentifier"]);
     init();
     return this;
 }
