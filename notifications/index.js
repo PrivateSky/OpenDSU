@@ -16,7 +16,7 @@ function publish(keySSI, message, timeout, callback){
 		}
 
 		if (!endpoints.length) {
-			throw new Error("Not available!");
+			throw new Error("No notification endpoints are available!");
 		}
 
 		let url = endpoints[0]+`/notifications/publish/${keySSI.getAnchorId()}`;
@@ -43,7 +43,7 @@ function getObservableHandler(keySSI, timeout){
 		}
 
 		if (!endpoints.length) {
-			throw new Error("Not available!");
+			throw new Error("No notification endpoints are available!");
 		}
 
 		function makeRequest(){
