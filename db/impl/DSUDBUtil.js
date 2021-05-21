@@ -11,21 +11,10 @@ module.exports = {
 
         resolver.loadDSU(keySSI, (err, dsuInstance) => {
             if ((err || !dsuInstance) && keySSI.getTypeName() === constants.KEY_SSIS.SEED_SSI) {
-              return  createSeedDSU();
+                return  createSeedDSU();
             }
 
-            if (keySSI.getTypeName() === constants.KEY_SSIS.SEED_SSI) {
-                dsuInstance.getKeySSIAsString((err, seedSSI) => {
-                    if (err) {
-                        return callback(createOpenDSUErrorWrapper("Failed to get seedSSI", err));
-                    }
-
-                    doStorageDSUInitialisation(dsuInstance, seedSSI);
-                });
-            }else{
-                waitForWritableSSI(dsuInstance)
-            }
-
+            waitForWritableSSI(dsuInstance);
         });
 
         function createSeedDSU() {
