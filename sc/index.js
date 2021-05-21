@@ -48,8 +48,6 @@ function SecurityContext(keySSI) {
             keySSI = keySSI.getIdentifier();
         }
 
-        let localSSI =
-
         storageDB.insertRecord(DIDS_TABLE, did, {keySSI}, callback);
     };
 
