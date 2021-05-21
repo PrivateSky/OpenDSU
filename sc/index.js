@@ -16,16 +16,23 @@ const setMainDSU = (mainDSU) => {
 };
 
 function SecurityContext(keySSI) {
+    const openDSU = require("opendsu");
+    const crypto = openDSU.loadAPI("crypto");
+    const db = openDSU.loadAPI("db")
+    const keySSISpace = openDSU.loadAPI("keyssi")
+
     const DB_NAME = "security_context";
     const KEY_SSIS_TABLE = "keyssis";
     const DIDS_TABLE = "dids";
 
     let isInitialized = false;
     const SECURITY_CONTEXT_PERSISTENCE_PATH = "/security_context.json";
-    const crypto = require("opendsu").loadAPI("crypto");
-    const db = require("opendsu").loadAPI("db")
+
     const bindAutoPendingFunctions = require("../utils/BindAutoPendingFunctions").bindAutoPendingFunctions;
 
+    if (typeof keySSI === "string") {
+        keySSI = keySSISpace.parse(keySSI);
+    }
     let storageDB;
     setTimeout(() => {
         storageDB = db.getWalletDB(keySSI, DB_NAME);
@@ -41,16 +48,28 @@ function SecurityContext(keySSI) {
             keySSI = keySSI.getIdentifier();
         }
 
+        let localSSI =
+
         storageDB.insertRecord(DIDS_TABLE, did, {keySSI}, callback);
     };
 
-    this.getKeySSIForDID = (did, callback) => {
+    this.getKeySSIForDIDAsString = (did, callback) => {
         storageDB.getRecord(DIDS_TABLE, did, (err, record) => {
             if (err) {
                 return callback(err);
             }
 
             callback(undefined, record.keySSI);
+        });
+    };
+
+    this.getKeySSIForDIDAsObject = (did, callback) => {
+        this.getKeySSIForDIDAsString(did, (err, keySSIString) => {
+            if (err) {
+                return callback(err);
+            }
+
+            callback(undefined, keySSISpace.parse(keySSIString));
         });
     };
 
@@ -132,9 +151,11 @@ function SecurityContext(keySSI) {
 
 const getSecurityContext = (keySSI) => {
     if (typeof $$.sc === "undefined") {
+        const keySSISpace = require("opendsu").loadAPI("keyssi");
         if (typeof keySSI === "undefined") {
-            const keySSISpace = require("opendsu").loadAPI("keyssi");
-            keySSI = keySSISpace.createSeedSSI("default");
+          keySSI = keySSISpace.createSeedSSI("default");
+        } else if (typeof keySSI === "string") {
+            keySSI = keySSISpace.parse(keySSI);
         }
         $$.sc = new SecurityContext(keySSI);
     }

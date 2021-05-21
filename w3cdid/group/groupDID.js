@@ -51,7 +51,7 @@ function GroupPKDocument(identifier) {
     };
 
     const init = () => {
-        sc.getKeySSIForDID(teamDID, (err, keySSI) => {
+        sc.getKeySSIForDIDAsObject(teamDID, (err, keySSI) => {
             if (err) {
                 __createDSU();
             } else {
@@ -61,6 +61,10 @@ function GroupPKDocument(identifier) {
     };
 
     this.addMember = (identity, alias, callback) => {
+        if (typeof alias === "function") {
+            callback = alias;
+            alias = identity;
+        }
         updateMembers("add", [identity], [alias], callback);
     };
 
@@ -128,6 +132,10 @@ function GroupPKDocument(identifier) {
         return teamDID;
     };
 
+    this.getName = () => {
+        return identifier;
+    };
+
     this.sendMessage = (message, sender, callback) => {
         const w3cDID = openDSU.loadAPI("w3cdid");
         readMembers((err, members) => {
@@ -135,7 +143,6 @@ function GroupPKDocument(identifier) {
                 return callback(err);
             }
 
-            debugger;
             w3cDID.resolveDID(sender, (err, senderDIDDocument) => {
                 if (err) {
                     return callback(err);
@@ -186,6 +193,7 @@ function GroupPKDocument(identifier) {
             callback = aliases;
             aliases = identities;
         }
+
         readMembers((err, members) => {
             if (err) {
                 return callback(err);
@@ -212,7 +220,7 @@ function GroupPKDocument(identifier) {
         });
     };
 
-    bindAutoPendingFunctions(this, ["getIdentifier"]);
+    bindAutoPendingFunctions(this, ["getIdentifier", "getName"]);
     init();
     return this;
 }

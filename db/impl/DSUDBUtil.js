@@ -9,71 +9,88 @@ module.exports = {
                 callback(undefined, dsu, sharableSSI);
             }, 10000);
 
-        if (keySSI.getTypeName() === constants.KEY_SSIS.SEED_SSI) {
-            let writableDSU;
-
-            function createWritableDSU() {
-                let writableSSI = keySSIApis.createTemplateKeySSI(constants.KEY_SSIS.SEED_SSI, keySSI.getDLDomain());
-                resolver.createDSU(writableSSI, function (err, res) {
+        resolver.loadDSU(keySSI, (err, seedDSU) => {
+            if (err || !seedDSU) {
+                createDSU();
+            }else{
+                seedDSU.getKeySSIAsString((err, seedSSI) => {
                     if (err) {
-                        return callback(createOpenDSUErrorWrapper("Failed to create writable DSU while initialising shared database " + dbName, err));
+                        return callback(createOpenDSUErrorWrapper("Failed to get seedSSI", err));
                     }
-                    writableDSU = res;
-                    createWrapperDSU();
+
+                    doStorageDSUInitialisation(seedDSU, seedSSI);
                 });
             }
+        });
 
-            function createWrapperDSU() {
-                resolver.createDSUForExistingSSI(keySSI, function (err, res) {
-                    if (err) {
-                        return callback(createOpenDSUErrorWrapper("Failed to create wrapper DSU while initialising shared database " + dbName, err));
-                    }
-                    res.beginBatch();
-                    res.mount("/data", writableDSU.getCreationSSI(), function (err, resSSI) {
+        function createDSU() {
+            if (keySSI.getTypeName() === constants.KEY_SSIS.SEED_SSI) {
+                let writableDSU;
+
+                function createWritableDSU() {
+                    let writableSSI = keySSIApis.createTemplateKeySSI(constants.KEY_SSIS.SEED_SSI, keySSI.getDLDomain());
+                    resolver.createDSU(writableSSI, function (err, res) {
                         if (err) {
-                            return callback(createOpenDSUErrorWrapper("Failed to mount writable DSU in wrapper DSU while initialising shared database " + dbName, err));
+                            return callback(createOpenDSUErrorWrapper("Failed to create writable DSU while initialising shared database " + dbName, err));
                         }
-                        res.commitBatch((err) => {
+                        writableDSU = res;
+                        createWrapperDSU();
+                    });
+                }
+
+                function createWrapperDSU() {
+                    resolver.createDSUForExistingSSI(keySSI, function (err, res) {
+                        if (err) {
+                            return callback(createOpenDSUErrorWrapper("Failed to create wrapper DSU while initialising shared database " + dbName, err));
+                        }
+                        res.beginBatch();
+                        res.mount("/data", writableDSU.getCreationSSI(), function (err, resSSI) {
                             if (err) {
-                                return callback(createOpenDSUErrorWrapper("Failed to anchor batch", err));
+                                return callback(createOpenDSUErrorWrapper("Failed to mount writable DSU in wrapper DSU while initialising shared database " + dbName, err));
                             }
-                            doStorageDSUInitialisation(writableDSU, keySSI.derive());
+                            res.commitBatch((err) => {
+                                if (err) {
+                                    return callback(createOpenDSUErrorWrapper("Failed to anchor batch", err));
+                                }
+                                doStorageDSUInitialisation(writableDSU, keySSI.derive());
+                            });
                         });
                     });
+                }
+
+
+                reportUserRelevantWarning("Creating a new shared database");
+                createWritableDSU();
+            } else {
+                resolver.loadDSU(keySSI, function (err, res) {
+                    if (err) {
+                        return callback(createOpenDSUErrorWrapper("Failed to load the DSU of a shared database " + dbName, err));
+                    }
+
+                    function waitForWritableSSI() {
+                        res.getArchiveForPath("/data/dsu-metadata-log", (err, result) => {
+                            if (err) {
+                                return callback(createOpenDSUErrorWrapper("Failed to load writable DSU " + dbName, err));
+                            }
+
+                            const keyssiAPI = require("opendsu").loadAPI("keyssi");
+                            const writableSSI = keyssiAPI.parse(result.archive.getCreationSSI());
+                            if (writableSSI.getTypeName() === "sread") {
+                                console.log("Delaying the loading of DSU based on the fact that current stare not reflecting a DB dsu type structure");
+                                return setTimeout(() => {
+                                    res.load(waitForWritableSSI);
+                                }, 1000);
+                            }
+
+                            doStorageDSUInitialisation(result.archive, keySSI);
+                            reportUserRelevantWarning("Loading a shared database");
+                        });
+                    }
+
+                    waitForWritableSSI();
                 });
+
             }
-
-            reportUserRelevantWarning("Creating a new shared database");
-            createWritableDSU();
-        } else {
-            resolver.loadDSU(keySSI, function (err, res) {
-                if (err) {
-                    return callback(createOpenDSUErrorWrapper("Failed to load the DSU of a shared database " + dbName, err));
-                }
-
-                function waitForWritableSSI() {
-                    res.getArchiveForPath("/data/dsu-metadata-log", (err, result) => {
-                        if (err) {
-                            return callback(createOpenDSUErrorWrapper("Failed to load writable DSU " + dbName, err));
-                        }
-
-                        const keyssiAPI = require("opendsu").loadAPI("keyssi");
-                        const writableSSI = keyssiAPI.parse(result.archive.getCreationSSI());
-                        if (writableSSI.getTypeName() === "sread") {
-                            console.log("Delaying the loading of DSU based on the fact that current stare not reflecting a DB dsu type structure");
-                            return setTimeout(()=>{
-                                res.load(waitForWritableSSI);
-                            }, 1000);
-                        }
-
-                        doStorageDSUInitialisation(result.archive, keySSI);
-                        reportUserRelevantWarning("Loading a shared database");
-                    });
-                }
-
-                waitForWritableSSI();
-            });
-
         }
     },
     ensure_MultiUserDB_DSU_Initialisation: function (keySSI, dbName, userId, callback) {
