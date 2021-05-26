@@ -9,7 +9,15 @@ module.exports = {
                 callback(undefined, dsu, sharableSSI);
             }, 10000);
 
-        if (keySSI.getTypeName() === constants.KEY_SSIS.SEED_SSI) {
+        resolver.loadDSU(keySSI, (err, dsuInstance) => {
+            if ((err || !dsuInstance) && keySSI.getTypeName() === constants.KEY_SSIS.SEED_SSI) {
+                return  createSeedDSU();
+            }
+
+            waitForWritableSSI(dsuInstance);
+        });
+
+        function createSeedDSU() {
             let writableDSU;
 
             function createWritableDSU() {
@@ -45,38 +53,29 @@ module.exports = {
 
             reportUserRelevantWarning("Creating a new shared database");
             createWritableDSU();
-        } else {
-            resolver.loadDSU(keySSI, function (err, res) {
-                if (err) {
-                    return callback(createOpenDSUErrorWrapper("Failed to load the DSU of a shared database " + dbName, err));
-                }
-
-                function waitForWritableSSI() {
-                    res.getArchiveForPath("/data/dsu-metadata-log", (err, result) => {
-                        if (err) {
-                            return callback(createOpenDSUErrorWrapper("Failed to load writable DSU " + dbName, err));
-                        }
-
-                        const keyssiAPI = require("opendsu").loadAPI("keyssi");
-                        const writableSSI = keyssiAPI.parse(result.archive.getCreationSSI());
-                        if (writableSSI.getTypeName() === "sread") {
-                            console.log("Delaying the loading of DSU based on the fact that current stare not reflecting a DB dsu type structure");
-                            return setTimeout(()=>{
-                                res.load(waitForWritableSSI);
-                            }, 1000);
-                        }
-
-                        doStorageDSUInitialisation(result.archive, keySSI);
-                        reportUserRelevantWarning("Loading a shared database");
-                    });
-                }
-
-                waitForWritableSSI();
-            });
-
         }
+
+        function waitForWritableSSI(dsuInstance) {
+            dsuInstance.getArchiveForPath("/data/dsu-metadata-log", (err, result) => {
+                if (err) {
+                    return callback(createOpenDSUErrorWrapper("Failed to load writable DSU " + dbName, err));
+                }
+
+                const keyssiAPI = require("opendsu").loadAPI("keyssi");
+                const writableSSI = keyssiAPI.parse(result.archive.getCreationSSI());
+                if (writableSSI.getTypeName() === "sread") {
+                    console.log("Delaying the loading of DSU based on the fact that current stare not reflecting a DB dsu type structure");
+                    return setTimeout(() => {
+                        dsuInstance.load(waitForWritableSSI);
+                    }, 1000);
+                }
+
+                doStorageDSUInitialisation(result.archive, keySSI);
+                reportUserRelevantWarning("Loading a shared database");
+            });
+        }
+
     },
     ensure_MultiUserDB_DSU_Initialisation: function (keySSI, dbName, userId, callback) {
-
     }
 }
