@@ -25,12 +25,17 @@ function addDSUInstanceInCache(dsuInstance, callback) {
 }
 
 const createDSU = (templateKeySSI, options, callback) => {
-    if (typeof templateKeySSI === "string") {
-        templateKeySSI = keySSISpace.parse(templateKeySSI);
-    }
     if (typeof options === "function") {
         callback = options;
         options = undefined;
+    }
+
+    if (typeof templateKeySSI === "string") {
+        try {
+            templateKeySSI = keySSISpace.parse(templateKeySSI);
+        }catch (e) {
+            return callback(createOpenDSUErrorWrapper(`Failed to parse keySSI ${templateKeySSI}`, e));
+        }
     }
 
     const keySSIResolver = initializeResolver(options);
@@ -86,16 +91,18 @@ const createDSUForExistingSSI = (ssi, options, callback) => {
 };
 
 const loadDSU = (keySSI, options, callback) => {
-
-    if (typeof keySSI === "string") {
-        keySSI = keySSISpace.parse(keySSI);
-    }
-
     if (typeof options === "function") {
         callback = options;
         options = undefined;
     }
 
+    if (typeof keySSI === "string") {
+        try {
+            keySSI = keySSISpace.parse(keySSI);
+        } catch (e) {
+            return callback(createOpenDSUErrorWrapper(`Failed to parse keySSI ${keySSI}`, e));
+        }
+    }
     const ssiId = keySSI.getIdentifier();
     let fromCache = dsuCache.get(ssiId);
     if (fromCache) {
