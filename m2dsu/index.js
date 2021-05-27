@@ -7,16 +7,19 @@ require("./defaultApis");
 //loading defaultMappings
 require("./defaultMappings");
 
-function MappingEngine(persistenceDSU, options) {
-	if (typeof persistenceDSU === "undefined" || typeof persistenceDSU.beginBatch !== "function") {
-		throw Error("The MappingEngine requires a valid persistence DSU to be provided!");
+function MappingEngine(storageService, options) {
+	if (typeof storageService === "undefined"
+		|| typeof storageService.beginBatch !== "function"
+		|| typeof storageService.commitBatch !== "function"
+		|| typeof storageService.cancelBatch !== "function") {
+		throw Error("The MappingEngine requires a storage service that exposes beginBatch, commitBatch, cancelBatch apis!");
 	}
 
 	const errorHandler = require("opendsu").loadApi("error");
 
 	//the purpose of the method is to create a "this" instance to be used during a message mapping process
 	function buildMappingInstance() {
-		let instance = {persistenceDSU, options};
+		let instance = {storageService, options};
 		const apis = apisRegistry.getApis();
 
 		//we inject all the registered apis on the instance that will become the "this" for a mapping
@@ -69,7 +72,7 @@ function MappingEngine(persistenceDSU, options) {
 						}
 
 						Promise.all(commitPromises)
-							.then( async results => {
+							.then(async results => {
 									for (let i = 0; i < results.length; i++) {
 										let result = results[i];
 										if (result && result.status == "rejected") {
@@ -98,12 +101,30 @@ function MappingEngine(persistenceDSU, options) {
 		});
 	}
 
+	let inProgress = false;
 	this.digestMessages = (messages) => {
 		if (!Array.isArray(messages)) {
 			messages = [messages];
 		}
 
+		async function rollback(){
+			const cancelBatch = $$.promisify(storageService.cancelBatch);
+			await cancelBatch();
+			inProgress = false;
+		}
+
+		async function finish() {
+			const commitBatch = $$.promisify(storageService.commitBatch);
+			await commitBatch();
+			inProgress = false;
+		}
+
 		return new Promise((resolve, reject) => {
+				if (inProgress) {
+					throw Error("Mapping Engine is digesting messages for the moment.");
+				}
+				inProgress = true;
+				storageService.beginBatch();
 
 				//digests will contain promises for each of message digest
 				let digests = [];
@@ -115,25 +136,34 @@ function MappingEngine(persistenceDSU, options) {
 					}
 
 					function digestConfirmation(results) {
-						let collectedResults = [];
+						let failedMessages = [];
 						for (let index = 0; index < results.length; index++) {
 							let result = results[index];
 							switch (result.status) {
 								case "fulfilled" :
 									if (result.value === false) {
 										// message digest failed
-										return reject(errorHandler.createOpenDSUErrorWrapper(`Not able to digest message ${JSON.stringify(messages[index])}`, Error("Mapping failed.")));
-									} else {
-										collectedResults.push(result.value);
+										failedMessages.push({
+											message: messages[index],
+											reason: `Not able to digest message due to missing suitable mapping`
+										});
 									}
 									break;
 								case "rejected" :
-									reject(errorHandler.createOpenDSUErrorWrapper("Not able to digest messages.", result.reason));
+									failedMessages.push({
+										message: messages[index],
+										reason: result.reason
+									});
 									break;
 							}
 						}
 
-						resolve(collectedResults);
+						finish().then(()=>{
+							resolve(failedMessages);
+						}).catch(async (err)=>{
+							await rollback();
+							reject(err);
+						});
 					}
 
 					function handleErrorsDuringPromiseResolving(err) {
@@ -165,4 +195,3 @@ module.exports = {
 	defineMapping: mappingRegistry.defineMapping,
 	defineApi: apisRegistry.defineApi
 }
-
