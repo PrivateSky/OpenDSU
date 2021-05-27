@@ -89,7 +89,23 @@ registry.defineApi("registerDSU", function (dsu) {
 	return promisifyDSUAPIs(dsu);
 });
 
-registry.defineApi("loadConstDSU", async function (domain, arr) {
+registry.defineApi("loadConstSSIDSU", async function (constSSI,options) {
+	const opendsu = require("opendsu");
+	const resolver = this.getResolver();
+	const keySSISpace = opendsu.loadApi("keyssi");
+
+	let dsu = await resolver.loadDSU(constSSI);
+	if (dsu) {
+		//take note that this.registerDSU returns a Proxy Object over the DSU and this Proxy we need to return also
+		return {dsu: this.registerDSU(dsu), alreadyExists: true};
+	}
+
+	dsu = await resolver.createDSUForExistingSSI(constSSI, options);
+	//take note that this.registerDSU returns a Proxy Object over the DSU and this Proxy we need to return also
+	return {dsu: this.registerDSU(dsu), alreadyExists: false};
+});
+
+registry.defineApi("loadArraySSIDSU", async function (domain, arr) {
 	const opendsu = require("opendsu");
 	const resolver = this.getResolver();
 	const keySSISpace = opendsu.loadApi("keyssi");
@@ -108,6 +124,12 @@ registry.defineApi("loadConstDSU", async function (domain, arr) {
 
 registry.defineApi("createDSU", async function (domain, ssiType, options) {
 	let dsu = await this.getResolver().createDSUx(domain, ssiType, options);
+	//take note that this.registerDSU returns a Proxy Object over the DSU and this Proxy we need to return also
+	return this.registerDSU(dsu);
+});
+
+registry.defineApi("loadDSU", async function (keySSI, options) {
+	let dsu = await this.getResolver().loadDSU(keySSI, options);
 	//take note that this.registerDSU returns a Proxy Object over the DSU and this Proxy we need to return also
 	return this.registerDSU(dsu);
 });

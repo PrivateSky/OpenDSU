@@ -189,8 +189,8 @@ function MappingEngine(storageService, options) {
 }
 
 module.exports = {
-	getMappingEngine: function (persistenceDSU/*, options*/) {
-		return new MappingEngine(persistenceDSU/*, options*/);
+	getMappingEngine: function (persistenceDSU, options) {
+		return new MappingEngine(persistenceDSU, options);
 	},
 	defineMapping: mappingRegistry.defineMapping,
 	defineApi: apisRegistry.defineApi
