@@ -11,6 +11,54 @@ registry.defineApi("loadJSONS", async function(dsu, jsonIndications){
 	}
 });
 
+const promisifyAPIs = [
+	"addFile",
+	"addFiles",
+	"addFolder",
+	"appendToFile",
+	"batch",
+	"beginBatch",
+	"cancelBatch",
+	"cloneFolder",
+	"commitBatch",
+	"createFolder",
+	"delete",
+	"dsuLog",
+	"extractFile",
+	"extractFolder",
+	"getKeySSI",
+	"getKeySSIAsObject",
+	"getKeySSIAsString",
+	"getSSIForMount",
+	"init",
+	"listFiles",
+	"listFolders",
+	"listMountedDossiers",
+	"load",
+	"mount",
+	"readDir",
+	"readFile",
+	"rename",
+	"stat",
+	"unmount",
+	"writeFile",
+	"listMountedDSUs",
+	"refresh"
+];
+
+function promisifyDSUAPIs(dsu){
+	const promisifyHandler = {
+		get: function(target, prop, receiver) {
+			if(promisifyAPIs.indexOf(prop) !==-1 ){
+				return $$.promisify(target[prop]);
+			}
+			return target[prop];
+		}
+	};
+
+	return new Proxy(dsu, promisifyHandler);
+}
+
 //all DSUs that are created with different exposed APIs need to be registered in order to control the batch operations on them
 registry.defineApi("registerDSU", function(dsu){
 	if(typeof dsu === "undefined" || typeof dsu.beginBatch !== "function"){
@@ -19,8 +67,11 @@ registry.defineApi("registerDSU", function(dsu){
 	if(typeof this.registeredDSUs === "undefined"){
 		this.registeredDSUs = [];
 	}
+
 	this.registeredDSUs.push(dsu);
 	dsu.beginBatch();
+
+	return promisifyDSUAPIs(dsu);
 });
 
 registry.defineApi("loadConstDSU", async function(domain, arr){
@@ -32,13 +83,12 @@ registry.defineApi("loadConstDSU", async function(domain, arr){
 	const loadDSU = $$.promisify(resolver.loadDSU);
 	let dsu = await loadDSU(keySSI);
 	if(dsu){
-		return {dsu, alreadyExists: true};
+		return {dsu:this.registerDSU(dsu), alreadyExists: true};
 	}
 
 	const createConstDSU = $$.promisify(resolver.createArrayDSU);
 	dsu = await createConstDSU(domain, arr);
-	this.registerDSU(dsu);
-	return {dsu, alreadyExists: false};
+	return {dsu:this.registerDSU(dsu), alreadyExists: false};
 });
 
 registry.defineApi("createDSU", async function(domain, ssiType, options){
@@ -47,7 +97,6 @@ registry.defineApi("createDSU", async function(domain, ssiType, options){
 
 	createDSU = $$.promisify(resolver.createDSUx);
 	let dsu = await createDSU(domain, ssiType, options);
-	this.registerDSU(dsu);
-	return dsu;
+	return this.registerDSU(dsu);
 });
 

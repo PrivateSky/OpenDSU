@@ -26,13 +26,11 @@ assert.callback('basicMappingTest', (testFinished) => {
 		const mapping = async function (message) {
 			let dsu = await this.createDSU("default", "seed");
 
-			const getKeySSI = $$.promisify(dsu.getKeySSIAsString);
+			const getKeySSI = dsu.getKeySSIAsString;
 			keySSI = await getKeySSI();
 			console.log("DSU built has the keySSI", keySSI);
 
-			const writeFile = $$.promisify(dsu.writeFile);
-
-			await writeFile(filePath, fileContent);
+			await dsu.writeFile(filePath, fileContent);
 
 			console.log(`Wrote file ${filePath} into the DSU`);
 		}
