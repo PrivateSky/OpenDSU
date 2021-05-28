@@ -5,7 +5,6 @@ const dc = require("double-check");
 const assert = dc.assert;
 
 const w3cDID = require('../../index').loadAPI("w3cdid");
-const message = "Hello DID based MQs!"
 const TaskCounter = require("swarmutils").TaskCounter;
 
 function createIdentities(callback) {
@@ -26,16 +25,66 @@ function createIdentities(callback) {
     }
 }
 
+
+function Message(content) {
+    let message = {};
+    if (typeof content !== "undefined") {
+        try {
+            message = JSON.parse(content);
+        } catch (e) {
+            throw createOpenDSUErrorWrapper(`Invalid message serialisation ${content}`, e);
+        }
+    }
+
+    this.setGroup = (_teamDID) => {
+        message.group = _teamDID;
+    };
+
+    this.getGroup = () => {
+        return message.group;
+    }
+
+
+    this.setContent = (content) => {
+        message.content = content;
+    };
+
+    this.getContent = () => {
+        return message.content;
+    };
+
+    this.setSender = (senderDID) => {
+        message.sender = senderDID
+    };
+
+    this.getSender = () => {
+        return message.sender;
+    };
+
+    this.getSerialisation = () => {
+        return JSON.stringify(message);
+    }
+}
+
+const messageContent = "Hello DID based MQs!"
+
 assert.callback('w3cDID Group test', (testFinished) => {
-    tir.launchVirtualMQNode(function (err, port) {
+    tir.launchVirtualMQNode(async (err, port) => {
         if (err) {
             throw err;
         }
+
+        const domain = "default";
+        const keySSISpace = require("opendsu").loadAPI("keyssi");
+        const sc = require("opendsu").loadAPI("sc");
+
+        const seedSSI = await $$.promisify(keySSISpace.createSeedSSI)(domain);
+        await sc.getSecurityContext(seedSSI);
         createIdentities((err, didDocuments) => {
             if (err) {
                 throw err;
             }
-            w3cDID.createIdentity("group", "myTeam", (err, groupDIDDocument) => {
+            w3cDID.createIdentity("group", "default", "myTeam", (err, groupDIDDocument) => {
                 if (err) {
                     throw err;
                 }
@@ -43,11 +92,14 @@ assert.callback('w3cDID Group test', (testFinished) => {
                 const secondTC = new TaskCounter(() => {
                     const sender = didDocuments[0].getIdentifier();
                     setTimeout(() => {
-                        groupDIDDocument.sendMessage(message, sender, (err) => {
+                        const message = new Message();
+                        message.setContent(messageContent);
+                        message.setSender(sender)
+                        groupDIDDocument.sendMessage(message, (err) => {
                             if (err) {
                                 throw err;
                             }
-                            console.log(sender, "sent message", message);
+                            console.log(sender, "sent message", message.getSerialisation());
                         });
                     }, 1000);
                 });

@@ -35,7 +35,7 @@ assert.callback('w3cDID Group remove member test', (testFinished) => {
             if (err) {
                 throw err;
             }
-            w3cDID.createIdentity("group", "myTeam", (err, groupDIDDocument) => {
+            w3cDID.createIdentity("group", "default", "myTeam", (err, groupDIDDocument) => {
                 if (err) {
                     throw err;
                 }
