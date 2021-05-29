@@ -2,8 +2,8 @@ const KeySSIResolver = require("key-ssi-resolver");
 const keySSISpace = require("opendsu").loadApi("keyssi");
 const cache = require("../cache");
 let dsuCache = cache.getMemoryCache("DSUs");
-let { ENVIRONMENT_TYPES } = require("../moduleConstants.js");
-const { getWebWorkerBootScript, getNodeWorkerBootScript } = require("./resolver-utils");
+let {ENVIRONMENT_TYPES, KEY_SSIS} = require("../moduleConstants.js");
+const {getWebWorkerBootScript, getNodeWorkerBootScript} = require("./resolver-utils");
 
 const initializeResolver = (options) => {
     options = options || {};
@@ -25,12 +25,17 @@ function addDSUInstanceInCache(dsuInstance, callback) {
 }
 
 const createDSU = (templateKeySSI, options, callback) => {
-    if (typeof templateKeySSI === "string") {
-        templateKeySSI = keySSISpace.parse(templateKeySSI);
-    }
     if (typeof options === "function") {
         callback = options;
-        options = undefined;
+        options = {addLog: true};
+    }
+
+    if (typeof templateKeySSI === "string") {
+        try {
+            templateKeySSI = keySSISpace.parse(templateKeySSI);
+        } catch (e) {
+            return callback(createOpenDSUErrorWrapper(`Failed to parse keySSI ${templateKeySSI}`, e));
+        }
     }
 
     const keySSIResolver = initializeResolver(options);
@@ -53,7 +58,11 @@ const createDSU = (templateKeySSI, options, callback) => {
 
             // const sc = require("../sc").getSecurityContext();
             // sc.registerKeySSI(keySSI);
-            dsuInstance.dsuLog("DSU created on " + Date.now(), addInCache);
+            if (options.addLog && keySSI.getTypeName() !== KEY_SSIS.CONST_SSI) {
+                dsuInstance.dsuLog("DSU created on " + Date.now(), addInCache);
+            } else {
+                addInCache(undefined, dsuInstance);
+            }
         });
     });
 };
@@ -73,6 +82,11 @@ const createArrayDSU = (domain, arr, options, callback) => {
     createDSUForExistingSSI(arraySSI, options, callback);
 }
 
+const createConstDSU = (domain, constString, options, callback) => {
+    const constSSI = keySSISpace.createConstSSI(domain, constString);
+    createDSUForExistingSSI(constSSI, options, callback);
+}
+
 const createDSUForExistingSSI = (ssi, options, callback) => {
     if (typeof options === "function") {
         callback = options;
@@ -86,16 +100,18 @@ const createDSUForExistingSSI = (ssi, options, callback) => {
 };
 
 const loadDSU = (keySSI, options, callback) => {
-
-    if (typeof keySSI === "string") {
-        keySSI = keySSISpace.parse(keySSI);
-    }
-
     if (typeof options === "function") {
         callback = options;
         options = undefined;
     }
 
+    if (typeof keySSI === "string") {
+        try {
+            keySSI = keySSISpace.parse(keySSI);
+        } catch (e) {
+            return callback(createOpenDSUErrorWrapper(`Failed to parse keySSI ${keySSI}`, e));
+        }
+    }
     const ssiId = keySSI.getIdentifier();
     let fromCache = dsuCache.get(ssiId);
     if (fromCache) {
@@ -178,7 +194,7 @@ const getDSUHandler = (dsuKeySSI) => {
                     return callback(err);
                 }
 
-                let { error, result } =
+                let {error, result} =
                     typeof Event !== "undefined" && message instanceof Event ? message.data : message;
 
                 if (error) {
@@ -220,13 +236,13 @@ const getDSUHandler = (dsuKeySSI) => {
                 callback(undefined, result);
             };
 
-            sendTaskToWorker({ fn, args: fnArgs }, parseResult);
+            sendTaskToWorker({fn, args: fnArgs}, parseResult);
         };
 
         this.callApi = function (fn, ...args) {
             const apiArgs = [...args];
             const callback = apiArgs.pop();
-            sendTaskToWorker({ api: fn, args: apiArgs }, callback);
+            sendTaskToWorker({api: fn, args: apiArgs}, callback);
         };
     }
 
@@ -283,6 +299,7 @@ module.exports = {
     createDSU,
     createDSUx,
     createSeedDSU,
+    createConstDSU,
     createArrayDSU,
     createDSUForExistingSSI,
     loadDSU,

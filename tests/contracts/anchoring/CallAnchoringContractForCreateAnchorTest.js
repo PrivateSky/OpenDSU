@@ -12,20 +12,21 @@ assert.callback(
     "CallAnchoringContractForCreateAnchorTest",
     async (testFinished) => {
         try {
+            const domain = "contract";
+            const contract = "anchoring";
+
             await $$.promisify(launchApiHubTestNodeWithTestDomain)();
 
-            const callContractMethod = $$.promisify(contracts.callContractMethod);
+            const generatePublicCommand = $$.promisify(contracts.generatePublicCommand);
 
             // create a token SSI since it doesn't required digital signing for anchoring
             const tokenSSI = createTemplateKeySSI("token", "contract");
             tokenSSI.initialize("contract", undefined, undefined, "vn0", "hint");
 
             const anchorId = tokenSSI.getAnchorId();
-            await callContractMethod("contract", "anchoring", "createAnchor", [anchorId]);
+            await generatePublicCommand(domain, contract, "createAnchor", [anchorId]);
 
-            const versionsAfterCreateAnchor = await callContractMethod("contract", "anchoring", "getAllVersions", [
-                anchorId,
-            ]);
+            const versionsAfterCreateAnchor = await generatePublicCommand(domain, contract, "getAllVersions", [anchorId]);
             assert.true(versionsAfterCreateAnchor.length === 0);
 
             const hl = createHashLinkSSI("contract", "HASH");
@@ -35,16 +36,9 @@ assert.callback(
             };
             const digitalProof = { signature: "", publicKey: "" };
             const zkp = "";
-            await callContractMethod("contract", "anchoring", "appendToAnchor", [
-                anchorId,
-                hashLinkIds,
-                digitalProof,
-                zkp,
-            ]);
+            await generatePublicCommand(domain, contract, "appendToAnchor", [anchorId, hashLinkIds, digitalProof, zkp]);
 
-            const versionsAfterAppendAnchor = await callContractMethod("contract", "anchoring", "getAllVersions", [
-                anchorId,
-            ]);
+            const versionsAfterAppendAnchor = await generatePublicCommand(domain, contract, "getAllVersions", [anchorId]);
             assert.true(versionsAfterAppendAnchor.length === 1);
 
             testFinished();

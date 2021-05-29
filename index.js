@@ -53,6 +53,7 @@ if(!PREVENT_DOUBLE_LOADING_OF_OPENDSU.INITIALISED){
             case "db":return require("./db"); break;
             case "w3cdid":return require("./w3cdid"); break;
             case "error":return require("./error"); break;
+            case "m2dsu":return require("./m2dsu"); break;
             default: throw new Error("Unknown API space " + apiSpaceName);
         }
     }

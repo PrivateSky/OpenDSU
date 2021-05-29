@@ -90,6 +90,13 @@ const createTemplateWalletSSI = (domain, arrayWIthCredentials, hint) => {
         console.log("Failing to build WalletSSI");
     }
 };
+
+const createConstSSI = (domain, constString, vn, hint, callback) => {
+    const constSSI = keySSIFactory.createType(SSITypes.CONST_SSI);
+    constSSI.initialize(domain, constString, vn, hint);
+    return constSSI;
+};
+
 const createArraySSI = (domain, arr, vn, hint, callback) => {
     const arraySSI = keySSIFactory.createType(SSITypes.ARRAY_SSI);
     arraySSI.initialize(domain, arr, vn, hint);
@@ -153,13 +160,13 @@ const createToken = (domain, amountOrSerialNumber, vn, hint, callback) => {
                     if (err) {
                         return callback(createOpenDSUErrorWrapper("Failed to anchor transferSSI", err));
                     }
-    
+
                     const result = {
                         tokenSSI: tokenSSI,
                         ownershipSSI: ownershipSSI,
                         transferSSI: transferSSI
                     }
-    
+
                     callback(undefined, result);
                 });
             });
@@ -202,6 +209,7 @@ module.exports = {
     createTemplateWalletSSI,
     createTemplateKeySSI,
     createHashLinkSSI,
+    createConstSSI,
     createArraySSI,
     buildSymmetricalEncryptionSSI,
     createToken,

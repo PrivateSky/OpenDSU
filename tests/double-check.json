@@ -1,4 +1,4 @@
 {
   "confFileName": "double-check.json",
-  "ignore": ["sharedDBPerformanceTest.js"]
+  "ignore": ["sharedDBPerformanceTest.js", "w3cDIDStressTestChild.js"]
 }

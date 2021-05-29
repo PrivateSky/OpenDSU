@@ -89,32 +89,24 @@ function OpenDSUSafeCallback(callback){
     }
 }
 
-let errorObservers = [];
-let infoObservers = [];
-let warnObservers = [];
+let observable = require("./../utils/observable").createObservable();
 let devObservers = [];
 function reportUserRelevantError(message, err, showIntermediateErrors){
-    errorObservers.forEach( c=> {
-        c(message, err);
-    })
+    observable.dispatchEvent("error", {message, err});
     console.log(message);
     if(err && typeof err.debug_message != "undefined"){
-        printErrorWrapper(err, showIntermediateErrors)
+        printErrorWrapper(err, showIntermediateErrors);
     }
 }
 
 function reportUserRelevantWarning(message){
-    warnObservers.forEach( c=> {
-        c(message);
-    })
+    observable.dispatchEvent("warn", message);
     console.log(">>>",message);
 }
 
 
 function reportUserRelevantInfo(message){
-    infoObservers.forEach( c=> {
-        c(message);
-    })
+    observable.dispatchEvent("info", message);
     console.log(">>>",message);
 }
 
@@ -125,11 +117,24 @@ function reportDevRelevantInfo(message){
     console.log(">>>",message);
 }
 
+function unobserveUserRelevantMessages(type, callback){
+    switch(type){
+        case "error": observable.off(type, callback);break;
+        case "info": observable.off(type, callback);break;
+        case "warn": observable.off(type, callback);break;
+        default:
+            let index = devObservers.indexOf(callback);
+            if(index !==-1){
+                devObservers.splice(index, 1);
+            }
+    }
+}
+
 function observeUserRelevantMessages(type, callback){
     switch(type){
-        case "error": errorObservers.push(callback);break;
-        case "info": infoObservers.push(callback);break;
-        case "warn": warnObservers.push(callback);break;
+        case "error": observable.on(type, callback);break;
+        case "info": observable.on(type, callback);break;
+        case "warn": observable.on(type, callback);break;
         case "dev": devObservers.push(callback);break;
         default: devObservers.push(callback);break;
     }
@@ -168,6 +173,7 @@ module.exports = {
     reportUserRelevantInfo,
     reportDevRelevantInfo,
     observeUserRelevantMessages,
+    unobserveUserRelevantMessages,
     OpenDSUSafeCallback,
     registerMandatoryCallback,
     printOpenDSUError

@@ -1,8 +1,7 @@
-
-
-function GroupPKDocument(identifier) {
-    const DOMAIN = "default";
-    const teamDID = `did:group:${identifier}`;
+function GroupDIDDocument(domain, groupName) {
+    if (typeof domain === "undefined" || typeof groupName === "undefined") {
+        throw Error(`Invalid number of arguments. Expected blockchain domain and group name.`);
+    }
 
     let mixin = require("../W3CDID_Mixin");
     mixin(this);
@@ -15,52 +14,73 @@ function GroupPKDocument(identifier) {
 
     let dsu;
     const MEMBERS_FILE = "members";
+    const WRITABLE_DSU_PATH = "writableDSU";
 
-    const __createDSU = () => {
-        resolver.createDSU(keySSISpace.createTemplateSeedSSI(DOMAIN), (err, dsuInstance) => {
-            if (err) {
-                return error.reportUserRelevantError(`Failed to create DSU instance`, err);
-            }
+    const createDSU = async () => {
+        // const createDSU = () => {
+        let constDSU;
+        try {
+            constDSU = await $$.promisify(resolver.createConstDSU)(domain, groupName);
+        } catch (e) {
+            return error.reportUserRelevantError(`Failed to create constDSU`, e);
+        }
 
-            dsu = dsuInstance;
-            dsuInstance.getKeySSIAsString((err, keySSI) => {
-                if (err) {
-                    return error.reportUserRelevantError(`Failed to get keySSI`, err);
-                }
+        // resolver.createConstDSU(domain, groupName, async (err, constDSU) => {
+        //     if (err) {
+        //             return error.reportUserRelevantError(`Failed to create constDSU`, err);
+        //     }
 
-                sc.addDID(teamDID, keySSI, (err) => {
-                    if (err) {
-                        return error.reportUserRelevantError(`Failed to add DID`, teamDID);
-                    }
+        let seedSSI;
+        try {
+            dsu = await $$.promisify(resolver.createSeedDSU)(domain);
+        } catch (e) {
+            return error.reportUserRelevantError(`Failed to create writableDSU`, e);
+        }
 
-                    this.finishInitialisation();
-                });
-            });
-        });
+        try {
+            seedSSI = await $$.promisify(dsu.getKeySSIAsString)();
+        } catch (e) {
+            return error.reportUserRelevantError(`Failed to get seedSSI`, e);
+        }
+
+        await $$.promisify(constDSU.mount)(WRITABLE_DSU_PATH, seedSSI);
+        await $$.promisify(sc.addDID)(this.getIdentifier(), seedSSI);
+        this.finishInitialisation();
+        // });
     };
 
-    const __loadDSU = (keySSI) => {
-        resolver.loadDSU(keySSI, (err, dsuInstance) => {
-            if (err) {
-                return error.reportUserRelevantError(`Failed to load DSU instance`, err);
-            }
+    const loadDSU = async () => {
+        let constDSU;
+        try {
+            constDSU = await $$.promisify(resolver.loadDSU)(keySSISpace.createConstSSI(domain, groupName));
+        } catch (e) {
+            return error.reportUserRelevantError(`Failed to load ConstDSU`, e);
+        }
 
-            dsu = dsuInstance;
-            this.finishInitialisation();
-        });
+        try {
+            dsu = await $$.promisify(constDSU.loadArchiveForPath)(WRITABLE_DSU_PATH);
+        } catch (e) {
+            return error.reportUserRelevantError(`Failed to load writableDSU`, e);
+        }
+
+        this.finishInitialisation();
     };
 
     const init = () => {
-        sc.getKeySSIForDID(teamDID, (err, keySSI) => {
+        sc.getKeySSIForDIDAsObject(this.getIdentifier(), async (err, keySSI) => {
             if (err) {
-                __createDSU();
+                await createDSU();
             } else {
-                __loadDSU(keySSI);
+                await loadDSU();
             }
         });
     };
 
     this.addMember = (identity, alias, callback) => {
+        if (typeof alias === "function") {
+            callback = alias;
+            alias = identity;
+        }
         updateMembers("add", [identity], [alias], callback);
     };
 
@@ -125,18 +145,21 @@ function GroupPKDocument(identifier) {
     };
 
     this.getIdentifier = () => {
-        return teamDID;
+        return `did:ssi:group:${domain}:${groupName}`;
     };
 
-    this.sendMessage = (message, sender, callback) => {
+    this.getGroupName = () => {
+        return groupName;
+    };
+
+    this.sendMessage = (message, callback) => {
         const w3cDID = openDSU.loadAPI("w3cdid");
         readMembers((err, members) => {
             if (err) {
                 return callback(err);
             }
 
-            debugger;
-            w3cDID.resolveDID(sender, (err, senderDIDDocument) => {
+            w3cDID.resolveDID(message.getSender(), (err, senderDIDDocument) => {
                 if (err) {
                     return callback(err);
                 }
@@ -149,11 +172,10 @@ function GroupPKDocument(identifier) {
                 const membersIds = Object.keys(members);
                 const noMembers = membersIds.length;
                 tc.increment(noMembers - 1);
-
+                message.setGroup(this.getIdentifier());
                 for (let i = 0; i < noMembers; i++) {
-                    if (membersIds[i] !== sender) {
-                        const messageToSend = `${teamDID}|${sender}|${message}`;
-                        senderDIDDocument.sendMessage(messageToSend, membersIds[i], (err) => {
+                    if (membersIds[i] !== message.getSender()) {
+                        senderDIDDocument.sendMessage(message.getSerialisation(), membersIds[i], (err) => {
                             if (err) {
                                 return callback(err);
                             }
@@ -186,6 +208,7 @@ function GroupPKDocument(identifier) {
             callback = aliases;
             aliases = identities;
         }
+
         readMembers((err, members) => {
             if (err) {
                 return callback(err);
@@ -212,21 +235,17 @@ function GroupPKDocument(identifier) {
         });
     };
 
-    bindAutoPendingFunctions(this, ["getIdentifier"]);
+    bindAutoPendingFunctions(this, ["getIdentifier", "getGroupName"]);
     init();
     return this;
 }
 
-function GROUP_DIDMethod() {
-    this.create = function (identifier, callback) {
-        callback(null, new GroupPKDocument(identifier));
-    }
 
-    this.resolve = function (tokens, callback) {
-        callback(null, new GroupPKDocument(tokens[2]));
+module.exports = {
+    initiateDIDDocument: function (domain, groupName) {
+        return new GroupDIDDocument(domain, groupName)
+    },
+    createDIDDocument: function (tokens) {
+        return new GroupDIDDocument(tokens[3], tokens[4]);
     }
-}
-
-module.exports.create_group_DIDMethod = function () {
-    return new GROUP_DIDMethod();
-}
+};
