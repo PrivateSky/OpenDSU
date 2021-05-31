@@ -26,13 +26,13 @@ function createIdentities(callback) {
 }
 
 
-function Message(content) {
+function Message(serialisation) {
     let message = {};
-    if (typeof content !== "undefined") {
+    if (typeof serialisation !== "undefined") {
         try {
-            message = JSON.parse(content);
+            message = JSON.parse(serialisation);
         } catch (e) {
-            throw createOpenDSUErrorWrapper(`Invalid message serialisation ${content}`, e);
+            throw createOpenDSUErrorWrapper(`Invalid message serialisation ${serialisation}`, e);
         }
     }
 
