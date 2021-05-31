@@ -1,8 +1,7 @@
-
-
-function GroupPKDocument(identifier) {
-    const DOMAIN = "default";
-    const teamDID = `did:group:${identifier}`;
+function GroupDIDDocument(domain, groupName) {
+    if (typeof domain === "undefined" || typeof groupName === "undefined") {
+        throw Error(`Invalid number of arguments. Expected blockchain domain and group name.`);
+    }
 
     let mixin = require("../W3CDID_Mixin");
     mixin(this);
@@ -15,50 +14,59 @@ function GroupPKDocument(identifier) {
 
     let dsu;
     const MEMBERS_FILE = "members";
+    const WRITABLE_DSU_PATH = "writableDSU";
 
-    const __createDSU = () => {
-        resolver.createDSU(keySSISpace.createTemplateSeedSSI(DOMAIN), (err, dsuInstance) => {
-            if (err) {
-                return error.reportUserRelevantError(`Failed to create DSU instance`, err);
-            }
+    const createDSU = async () => {
+        let constDSU;
+        try {
+            constDSU = await $$.promisify(resolver.createConstDSU)(domain, groupName);
+        } catch (e) {
+            return error.reportUserRelevantError(`Failed to create constDSU`, e);
+        }
 
-            dsu = dsuInstance;
-            dsuInstance.getKeySSIAsString((err, keySSI) => {
-                if (err) {
-                    return error.reportUserRelevantError(`Failed to get keySSI`, err);
-                }
+        let seedSSI;
+        try {
+            dsu = await $$.promisify(resolver.createSeedDSU)(domain);
+        } catch (e) {
+            return error.reportUserRelevantError(`Failed to create writableDSU`, e);
+        }
 
-                sc.addDID(teamDID, keySSI, (err) => {
-                    if (err) {
-                        return error.reportUserRelevantError(`Failed to add DID`, teamDID);
-                    }
+        try {
+            seedSSI = await $$.promisify(dsu.getKeySSIAsString)();
+        } catch (e) {
+            return error.reportUserRelevantError(`Failed to get seedSSI`, e);
+        }
 
-                    this.finishInitialisation();
-                });
-            });
-        });
-    };
+        try {
+            await $$.promisify(constDSU.mount)(WRITABLE_DSU_PATH, seedSSI);
+        } catch (e) {
+            return error.reportUserRelevantError(`Failed to mount writable DSU`, e);
+        }
 
-    const __loadDSU = (keySSI) => {
-        resolver.loadDSU(keySSI, (err, dsuInstance) => {
-            if (err) {
-                return error.reportUserRelevantError(`Failed to load DSU instance`, err);
-            }
-
-            dsu = dsuInstance;
-            this.finishInitialisation();
-        });
+        this.finishInitialisation();
     };
 
     const init = () => {
-        sc.getKeySSIForDIDAsObject(teamDID, (err, keySSI) => {
+        resolver.loadDSU(keySSISpace.createConstSSI(domain, groupName), async (err, constDSUInstance) => {
             if (err) {
-                __createDSU();
-            } else {
-                __loadDSU(keySSI);
+                try {
+                    await createDSU();
+                } catch (e) {
+                    return error.reportUserRelevantError(`Failed to create const DSU`, e);
+                }
+                return;
             }
+
+            try {
+                const dsuContext = await $$.promisify(constDSUInstance.getArchiveForPath)(WRITABLE_DSU_PATH);
+                dsu = dsuContext.archive;
+            } catch (e) {
+                return error.reportUserRelevantError(`Failed to load writableDSU`, e);
+            }
+
+            this.finishInitialisation();
         });
-    };
+    }
 
     this.addMember = (identity, alias, callback) => {
         if (typeof alias === "function") {
@@ -129,49 +137,48 @@ function GroupPKDocument(identifier) {
     };
 
     this.getIdentifier = () => {
-        return teamDID;
+        return `did:ssi:group:${domain}:${groupName}`;
     };
 
-    this.getName = () => {
-        return identifier;
+    this.getGroupName = () => {
+        return groupName;
     };
 
-    this.sendMessage = (message, sender, callback) => {
+    this.sendMessage = (message, callback) => {
         const w3cDID = openDSU.loadAPI("w3cdid");
-        readMembers((err, members) => {
+        readMembers(async (err, members) => {
             if (err) {
                 return callback(err);
             }
 
-            w3cDID.resolveDID(sender, (err, senderDIDDocument) => {
-                if (err) {
-                    return callback(err);
-                }
+            let senderDIDDocument;
+            try {
+                senderDIDDocument = await $$.promisify(w3cDID.resolveDID)(message.getSender());
+            } catch (e) {
+                return callback(e);
+            }
 
-                const TaskCounter = require("swarmutils").TaskCounter;
-                const tc = new TaskCounter(() => {
-                    return callback();
-                });
+            const membersIds = Object.keys(members);
+            const noMembers = membersIds.length;
 
-                const membersIds = Object.keys(members);
-                const noMembers = membersIds.length;
-                tc.increment(noMembers - 1);
+            let counter = noMembers - 1;
+            for (let i = 0; i < noMembers; i++) {
+                if (membersIds[i] !== message.getSender()) {
+                    try {
+                        await $$.promisify(senderDIDDocument.sendMessage)(message.getSerialisation(), membersIds[i])
+                    } catch (e) {
+                        return callback(e);
+                    }
 
-                for (let i = 0; i < noMembers; i++) {
-                    if (membersIds[i] !== sender) {
-                        const messageToSend = `${teamDID}|${sender}|${message}`;
-                        senderDIDDocument.sendMessage(messageToSend, membersIds[i], (err) => {
-                            if (err) {
-                                return callback(err);
-                            }
-
-                            tc.decrement();
-                        });
+                    counter--;
+                    if (counter === 0) {
+                        return callback();
                     }
                 }
-            });
+            }
         });
     };
+
     const readMembers = (callback) => {
         dsu.readFile(MEMBERS_FILE, (err, members) => {
             if (err || typeof members === "undefined") {
@@ -220,21 +227,17 @@ function GroupPKDocument(identifier) {
         });
     };
 
-    bindAutoPendingFunctions(this, ["getIdentifier", "getName"]);
+    bindAutoPendingFunctions(this, ["getIdentifier", "getGroupName"]);
     init();
     return this;
 }
 
-function GROUP_DIDMethod() {
-    this.create = function (identifier, callback) {
-        callback(null, new GroupPKDocument(identifier));
-    }
 
-    this.resolve = function (tokens, callback) {
-        callback(null, new GroupPKDocument(tokens[2]));
+module.exports = {
+    initiateDIDDocument: function (domain, groupName) {
+        return new GroupDIDDocument(domain, groupName)
+    },
+    createDIDDocument: function (tokens) {
+        return new GroupDIDDocument(tokens[3], tokens[4]);
     }
-}
-
-module.exports.create_group_DIDMethod = function () {
-    return new GROUP_DIDMethod();
-}
+};

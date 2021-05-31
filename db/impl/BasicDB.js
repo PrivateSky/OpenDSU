@@ -80,7 +80,7 @@ function BasicDB(storageStrategy) {
         self.getRecord(tableName, key, function (err, res) {
             if (!err || res) {
                 //newRecord = Object.assign(newRecord, {__version:-1});
-                return callback(createOpenDSUErrorWrapper("Failed to insert over an existing record", err));
+                return callback(createOpenDSUErrorWrapper("Failed to insert over an existing record", new Error("Trying to insert into existing record")));
             }
             const sharedDSUMetadata = {}
             sharedDSUMetadata.__version = 0;

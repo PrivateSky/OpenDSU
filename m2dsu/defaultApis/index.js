@@ -6,8 +6,14 @@ const registry = require("../apisRegistry");
 * */
 registry.defineApi("loadJSONS", async function (dsu, jsonIndications) {
 	for (let prop in jsonIndications) {
-		let data = await dsu.readFile(jsonIndications[prop]);
-		this[prop] = JSON.parse(data);
+		try {
+			let data;
+			data = await dsu.readFile(jsonIndications[prop]);
+			this[prop] = JSON.parse(data);
+		}
+		catch (e){
+			console.log("Failed to load JSON due to ",e.message);
+		}
 	}
 });
 
@@ -90,17 +96,24 @@ registry.defineApi("registerDSU", function (dsu) {
 });
 
 registry.defineApi("loadConstSSIDSU", async function (constSSI,options) {
-	const opendsu = require("opendsu");
 	const resolver = this.getResolver();
-	const keySSISpace = opendsu.loadApi("keyssi");
 
-	let dsu = await resolver.loadDSU(constSSI);
+	let dsu;
+	try {
+		dsu= await resolver.loadDSU(constSSI);
+	}
+	catch (e){
+		//TODO check error type
+		//on purpose if DSU does not exists an error gets throw
+	}
+
 	if (dsu) {
 		//take note that this.registerDSU returns a Proxy Object over the DSU and this Proxy we need to return also
 		return {dsu: this.registerDSU(dsu), alreadyExists: true};
 	}
 
 	dsu = await resolver.createDSUForExistingSSI(constSSI, options);
+
 	//take note that this.registerDSU returns a Proxy Object over the DSU and this Proxy we need to return also
 	return {dsu: this.registerDSU(dsu), alreadyExists: false};
 });
@@ -133,6 +146,7 @@ registry.defineApi("loadDSU", async function (keySSI, options) {
 	//take note that this.registerDSU returns a Proxy Object over the DSU and this Proxy we need to return also
 	return this.registerDSU(dsu);
 });
+
 
 //an api that returns an OpenDSU Resolver instance that has promisified methods
 // to be used in mappings easier
