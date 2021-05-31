@@ -1,4 +1,4 @@
-function getPublicCommandBody(domain, contract, method, params) {
+function getSafeCommandBody(domain, contract, method, params) {
     if (!domain || typeof domain !== "string") {
         throw `Invalid domain specified: ${domain}!`;
     }
@@ -22,7 +22,7 @@ function getPublicCommandBody(domain, contract, method, params) {
     };
 }
 
-function getRequireNonceCommandBody(domain, contract, method, params, nonce, signerDID) {
+function getNoncedCommandBody(domain, contract, method, params, nonce, signerDID) {
     if (!signerDID) {
         // params field is optional
         signerDID = nonce;
@@ -30,7 +30,7 @@ function getRequireNonceCommandBody(domain, contract, method, params, nonce, sig
         params = null;
     }
 
-    const commandBody = getPublicCommandBody(domain, contract, method, params);
+    const commandBody = getSafeCommandBody(domain, contract, method, params);
     const paramsString = params ? JSON.stringify(params) : null;
     const fieldsToHash = [domain, contract, method, paramsString, nonce].filter((x) => x != null);
     const hash = fieldsToHash.join(".");
@@ -44,6 +44,6 @@ function getRequireNonceCommandBody(domain, contract, method, params, nonce, sig
 }
 
 module.exports = {
-    getPublicCommandBody,
-    getRequireNonceCommandBody,
+    getSafeCommandBody,
+    getNoncedCommandBody,
 };

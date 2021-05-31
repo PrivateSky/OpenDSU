@@ -11,20 +11,20 @@ const w3cDID = require("../../../w3cdid");
 const { launchApiHubTestNodeWithTestDomain } = require("../utils");
 
 assert.callback(
-    "CallTestContractRequireNonceMethodWithReplayAttackTest",
+    "Simulate a reply attack after calling a nonced method using the opendsu contract's generateNoncedCommand",
     async (testFinished) => {
         try {
             const domain = "contract";
             const contract = "test";
-            const method = "requireNonce";
+            const method = "nonced";
             await $$.promisify(launchApiHubTestNodeWithTestDomain)();
 
             const signerDID = await $$.promisify(w3cDID.createIdentity)("demo", "id");
 
-            const generateRequireNonceCommand = $$.promisify(contracts.generateRequireNonceCommand);
+            const generateNoncedCommand = $$.promisify(contracts.generateNoncedCommand);
 
-            const result = await generateRequireNonceCommand(domain, contract, method, signerDID);
-            assert.equal(result, "requireNonce");
+            const result = await generateNoncedCommand(domain, contract, method, signerDID);
+            assert.equal(result, "nonced");
 
             // call contracts endpoint with the same command
             try {
@@ -32,7 +32,7 @@ assert.callback(
                 const nonce = 1;
 
                 const baseUrl = process.env[moduleConstants.BDNS_ROOT_HOSTS];
-                const originalRequireNonceCommandUrl = `${baseUrl}/contracts/${domain}/require-nonce-command`;
+                const originalNoncedCommandUrl = `${baseUrl}/contracts/${domain}/nonced-command`;
 
                 const fieldsToHash = [domain, contract, method, nonce];
                 const hash = fieldsToHash.join(".");
@@ -46,7 +46,7 @@ assert.callback(
                     signature,
                 };
 
-                await $$.promisify(http.doPost)(originalRequireNonceCommandUrl, commandBody);
+                await $$.promisify(http.doPost)(originalNoncedCommandUrl, commandBody);
                 assert.true(false, "shouldn't be able to call the same contract method using the same nonce");
             } catch (error) {
                 console.log(error);

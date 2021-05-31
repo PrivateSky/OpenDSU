@@ -8,20 +8,20 @@ const contracts = require("../../../contracts");
 const { launchApiHubTestNodeWithTestDomain } = require("../utils");
 
 assert.callback(
-    "CallTestContractRequireNonceMethodIncompleteRequestTest",
+    "Call a nonced method using the opendsu contract's generateSafeCommand without specifying a nonce nor signature",
     async (testFinished) => {
         try {
             const domain = "contract";
             const contract = "test";
-            const method = "requireNonce";
+            const method = "nonced";
 
             await $$.promisify(launchApiHubTestNodeWithTestDomain)();
 
-            const generateRequireNonceCommand = $$.promisify(contracts.generateRequireNonceCommand);
+            const generateNoncedCommand = $$.promisify(contracts.generateNoncedCommand);
 
             try {
-                await generateRequireNonceCommand(domain, contract, method);
-                assert.true(false, "shouldn't be able to call requireNonce method without nonce/signature");
+                await generateNoncedCommand(domain, contract, method);
+                assert.true(false, "shouldn't be able to call nonced method without nonce/signature");
             } catch (error) {
                 console.log(error);
                 assert.notNull(error);

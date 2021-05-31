@@ -1,7 +1,7 @@
 const promiseRunner = require("../utils/promise-runner");
 const { doPost } = require("../http");
 
-const { getPublicCommandBody, getRequireNonceCommandBody } = require("./utils");
+const { getSafeCommandBody, getNoncedCommandBody } = require("./utils");
 
 async function sendCommand(contractEndpointPrefix, domain, commandBody, callback) {
     try {
@@ -46,21 +46,21 @@ async function sendCommand(contractEndpointPrefix, domain, commandBody, callback
     }
 }
 
-function generatePublicCommand(domain, contract, method, params, callback) {
+function generateSafeCommand(domain, contract, method, params, callback) {
     if (typeof params === "function") {
         callback = params;
         params = null;
     }
 
     try {
-        const commandBody = getPublicCommandBody(domain, contract, method, params);
-        sendCommand("public-command", domain, commandBody, callback);
+        const commandBody = getSafeCommandBody(domain, contract, method, params);
+        sendCommand("safe-command", domain, commandBody, callback);
     } catch (error) {
         callback(error);
     }
 }
 
-async function generateRequireNonceCommand(domain, contract, method, params, signerDID, callback) {
+async function generateNoncedCommand(domain, contract, method, params, signerDID, callback) {
     if (typeof signerDID === "function") {
         callback = signerDID;
         signerDID = params;
@@ -85,24 +85,24 @@ async function generateRequireNonceCommand(domain, contract, method, params, sig
         }
 
         let nonce;
-        const nonceCommandBody = getPublicCommandBody(domain, "consensus", "getNonce", [signerDID.getIdentifier()]);
+        const nonceCommandBody = getSafeCommandBody(domain, "consensus", "getNonce", [signerDID.getIdentifier()]);
         try {
-            nonce = await $$.promisify(sendCommand)("public-command", domain, nonceCommandBody);
+            nonce = await $$.promisify(sendCommand)("safe-command", domain, nonceCommandBody);
         } catch (error) {
             return OpenDSUSafeCallback(callback)(
                 createOpenDSUErrorWrapper(`Failed to get nonce for command: ${JSON.stringify(nonceCommandBody)}`, error)
             );
         }
 
-        const commandBody = getRequireNonceCommandBody(domain, contract, method, params, nonce, signerDID);
+        const commandBody = getNoncedCommandBody(domain, contract, method, params, nonce, signerDID);
 
-        sendCommand("require-nonce-command", domain, commandBody, callback);
+        sendCommand("nonced-command", domain, commandBody, callback);
     } catch (error) {
         callback(error);
     }
 }
 
 module.exports = {
-    generatePublicCommand,
-    generateRequireNonceCommand,
+    generateSafeCommand,
+    generateNoncedCommand,
 };

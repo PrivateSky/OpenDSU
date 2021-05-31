@@ -8,19 +8,24 @@ const contracts = require("../../../contracts");
 const { launchApiHubTestNodeWithTestDomain } = require("../utils");
 
 assert.callback(
-    "CallTestContractPublicMethodTest",
+    "Call a nonced method using the opendsu contract's generateSafeCommand",
     async (testFinished) => {
         try {
             const domain = "contract";
             const contract = "test";
-            const method = "public";
+            const method = "nonced";
 
             await $$.promisify(launchApiHubTestNodeWithTestDomain)();
 
-            const generatePublicCommand = $$.promisify(contracts.generatePublicCommand);
+            const generateSafeCommand = $$.promisify(contracts.generateSafeCommand);
 
-            const commandResult = await generatePublicCommand(domain, contract, method);
-            assert.equal(commandResult, "public");
+            try {
+                await generateSafeCommand(domain, contract, method);
+                assert.true(false, "shouldn't be able to call nonced method via safe endpoint");
+            } catch (error) {
+                console.log(error);
+                assert.notNull(error);
+            }
 
             testFinished();
         } catch (error) {
