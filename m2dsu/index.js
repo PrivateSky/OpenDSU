@@ -135,37 +135,6 @@ function MappingEngine(storageService, options) {
 						throw Error(`Message is not an Object is :${typeof message} and has the value: ${message}`);
 					}
 
-					function digestConfirmation(results) {
-						let failedMessages = [];
-						for (let index = 0; index < results.length; index++) {
-							let result = results[index];
-							switch (result.status) {
-								case "fulfilled" :
-									if (result.value === false) {
-										// message digest failed
-										failedMessages.push({
-											message: messages[index],
-											reason: `Not able to digest message due to missing suitable mapping`
-										});
-									}
-									break;
-								case "rejected" :
-									failedMessages.push({
-										message: messages[index],
-										reason: result.reason
-									});
-									break;
-							}
-						}
-
-						finish().then(()=>{
-							resolve(failedMessages);
-						}).catch(async (err)=>{
-							await rollback();
-							reject(err);
-						});
-					}
-
 					function handleErrorsDuringPromiseResolving(err) {
 						reject(err);
 					}
@@ -176,10 +145,43 @@ function MappingEngine(storageService, options) {
 						errorHandler.reportUserRelevantError("Caught error during message digest", err);
 					}
 
-					Promise.allSettled(digests)
-						.then(digestConfirmation)
-						.catch(handleErrorsDuringPromiseResolving);
 				}
+
+			function digestConfirmation(results) {
+				let failedMessages = [];
+				for (let index = 0; index < results.length; index++) {
+					let result = results[index];
+					switch (result.status) {
+						case "fulfilled" :
+							if (result.value === false) {
+								// message digest failed
+								failedMessages.push({
+									message: messages[index],
+									reason: `Not able to digest message due to missing suitable mapping`
+								});
+							}
+							break;
+						case "rejected" :
+							failedMessages.push({
+								message: messages[index],
+								reason: result.reason
+							});
+							break;
+					}
+				}
+
+				finish().then(()=>{
+					resolve(failedMessages);
+				}).catch(async (err)=>{
+					await rollback();
+					reject(err);
+				});
+			}
+
+
+				Promise.allSettled(digests)
+				.then(digestConfirmation)
+				.catch(handleErrorsDuringPromiseResolving);
 
 			}
 		);
