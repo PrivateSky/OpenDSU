@@ -1,48 +1,16 @@
 const promiseRunner = require("../utils/promise-runner");
-const { fetch } = require("../http");
+const { doPost } = require("../http");
 
-async function callContractMethod(domain, contract, method, params, callback) {
-    // use bdns service
-    // use promise runner - at least one request to succeed
+const { getPublicCommandBody, getRequireNonceCommandBody } = require("./utils");
 
-    if (!domain || typeof domain !== "string") {
-        return callback(`Invalid domain specified: ${domain}!`);
-    }
-    if (!contract || typeof contract !== "string") {
-        return callback(`Invalid contract specified: ${contract}!`);
-    }
-    if (!method || typeof method !== "string") {
-        return callback(`Invalid method specified: ${method}!`);
-    }
-
-    if (typeof params === "function") {
-        callback = params;
-        params = null;
-    }
-
-    if (params) {
-        if (!Array.isArray(params)) {
-            return callback(`Invalid params specified (must be a list): ${params}!`);
-        }
-
-        const crypto = require("opendsu").loadAPI("crypto");
-        params = crypto.encodeBase58(JSON.stringify(params));
-    }
-
-    const contractMethodPath = [domain, contract, method, params]
-        .filter((param) => param)
-        .map((param) => encodeURIComponent(param))
-        .join("/");
-
+async function sendCommand(contractEndpointPrefix, domain, commandBody, callback) {
     try {
         let contractServicesArray = [];
         try {
             const bdns = require("opendsu").loadApi("bdns");
             contractServicesArray = await $$.promisify(bdns.getContractServices)(domain);
         } catch (error) {
-            return OpenDSUSafeCallback(callback)(
-                createOpenDSUErrorWrapper(`Failed to get contract services from bdns'`, error)
-            );
+            return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to get contract services from bdns'`, error));
         }
 
         if (!contractServicesArray.length) {
@@ -50,46 +18,91 @@ async function callContractMethod(domain, contract, method, params, callback) {
         }
 
         const runContractMethod = async (service) => {
-            const url = `${service}/contracts/${contractMethodPath}`;
-            const response = await fetch(url);
-            if (!response.ok) {
-                throw new Error(`An error occurred while calling: ${url}`);
+            const url = `${service}/contracts/${domain}/${contractEndpointPrefix}`;
+            let response = await $$.promisify(doPost)(url, commandBody);
+
+            if (response) {
+                try {
+                    response = JSON.parse(response);
+                } catch (error) {
+                    // the response isn't a JSON so we keep it as it is
+                }
+
+                if (Object.keys(response).length === 1 && response.message) {
+                    // if the contract returns a string, apihub will put it inside an object with a single property name message
+                    // so we extract it
+                    return response.message;
+                }
             }
 
-            let result;
-            try {
-                result = await response.json();
-                if (result && result.message) {
-                    result = result.message;
-                    try {
-                        result = JSON.parse(result);
-                    } catch (error) {
-                        // the message field from the result is not a valid JSON
-                    }
-                }
-            } catch (error) {
-                // the response is not a valid JSON
-            }
-            return result;
+            return response;
         };
 
-        promiseRunner.runOneSuccessful(
-            contractServicesArray,
-            runContractMethod,
-            callback,
-            new Error("get Contract Service")
-        );
+        promiseRunner.runOneSuccessful(contractServicesArray, runContractMethod, callback, new Error("get Contract Service"));
     } catch (error) {
-        console.log("eeeeee", error);
         OpenDSUSafeCallback(callback)(
-            createOpenDSUErrorWrapper(
-                `Failed to call method '${method}' from '${contract}' contract from domain '${domain}'`,
-                error
-            )
+            createOpenDSUErrorWrapper(`Failed to execute domain contract method: ${JSON.stringify(commandBody)}`, error)
         );
     }
 }
 
+function generatePublicCommand(domain, contract, method, params, callback) {
+    if (typeof params === "function") {
+        callback = params;
+        params = null;
+    }
+
+    try {
+        const commandBody = getPublicCommandBody(domain, contract, method, params);
+        sendCommand("public-command", domain, commandBody, callback);
+    } catch (error) {
+        callback(error);
+    }
+}
+
+async function generateRequireNonceCommand(domain, contract, method, params, signerDID, callback) {
+    if (typeof signerDID === "function") {
+        callback = signerDID;
+        signerDID = params;
+        params = null;
+    }
+
+    if (typeof params === "function") {
+        callback = params;
+        signerDID = null;
+        params = null;
+    }
+
+    if (!signerDID) {
+        return callback("signerDID not provided");
+    }
+
+    try {
+        if (typeof signerDID === "string") {
+            // signerDID contains the identifier, so we need to load the DID
+            const w3cDID = require("opendsu").loadAPI("w3cDID");
+            signerDID = await $$.promisify(w3cDID.resolveDID)(signerDID);
+        }
+
+        let nonce;
+        const nonceCommandBody = getPublicCommandBody(domain, "consensus", "getNonce", [signerDID.getIdentifier()]);
+        try {
+            nonce = await $$.promisify(sendCommand)("public-command", domain, nonceCommandBody);
+        } catch (error) {
+            return OpenDSUSafeCallback(callback)(
+                createOpenDSUErrorWrapper(`Failed to get nonce for command: ${JSON.stringify(nonceCommandBody)}`, error)
+            );
+        }
+
+        const commandBody = getRequireNonceCommandBody(domain, contract, method, params, nonce, signerDID);
+
+        sendCommand("require-nonce-command", domain, commandBody, callback);
+    } catch (error) {
+        callback(error);
+    }
+}
+
 module.exports = {
-    callContractMethod,
+    generatePublicCommand,
+    generateRequireNonceCommand,
 };

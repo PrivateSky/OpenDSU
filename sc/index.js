@@ -26,7 +26,6 @@ function SecurityContext(keySSI) {
     const DIDS_TABLE = "dids";
 
     let isInitialized = false;
-    const SECURITY_CONTEXT_PERSISTENCE_PATH = "/security_context.json";
 
     const bindAutoPendingFunctions = require("../utils/BindAutoPendingFunctions").bindAutoPendingFunctions;
 
@@ -34,13 +33,13 @@ function SecurityContext(keySSI) {
         keySSI = keySSISpace.parse(keySSI);
     }
     let storageDB;
+
     setTimeout(() => {
         storageDB = db.getWalletDB(keySSI, DB_NAME);
         storageDB.on("initialised", () => {
             this.finishInitialisation();
         });
     }, 0);
-
 
 
     this.addDID = (did, keySSI, callback) => {
@@ -71,42 +70,78 @@ function SecurityContext(keySSI) {
         });
     };
 
-    const keySSIs = {};
     this.registerKeySSI = (keySSI, callback) => {
         if (typeof keySSI === "undefined") {
             return callback(Error(`A SeedSSI should be specified.`));
         }
 
         if (typeof keySSI === "string") {
-            keySSI = keySSISpace.parse(keySSI);
+            try {
+                keySSI = keySSISpace.parse(keySSI);
+            } catch (e) {
+                return callback(createOpenDSUErrorWrapper(`Failed to parse keySSI ${keySSI}`, e))
+            }
         }
 
-        let derivedKeySSI = keySSI;
         const keySSIIdentifier = keySSI.getIdentifier();
+        // storageDB.insertRecord(KEY_SSIS_TABLE, keySSIIdentifier, {capableOfSigningKeySSI: keySSIIdentifier}, (err) => {
+        //     if (err) {
+        //         return callback(createOpenDSUErrorWrapper(`Failed to add keySSI ${keySSI}`, err));
+        //     }
+        //
+        //     registerDerivedKeySSIs(keySSI, callback);
+        // });
+        // registerDerivedKeySSIs(keySSI);
 
         function registerDerivedKeySSIs(derivedKeySSI) {
-            try {
-                derivedKeySSI = derivedKeySSI.derive();
-                keySSIs[derivedKeySSI.getIdentifier()] = keySSIIdentifier;
-            } catch (e) {
-                if (storageDB) {
-                    storageDB.setItem(SECURITY_CONTEXT_PERSISTENCE_PATH, (JSON.stringify(keySSIs)), callback);
+            storageDB.insertRecord(KEY_SSIS_TABLE, derivedKeySSI.getIdentifier(), {capableOfSigningKeySSI: keySSIIdentifier}, (err) => {
+                if (err) {
+                    return callback(err);
                 }
-                return;
-            }
-            registerDerivedKeySSIs(derivedKeySSI);
-        }
 
-        return registerDerivedKeySSIs(derivedKeySSI);
-    };
+                try {
+                    derivedKeySSI = derivedKeySSI.derive();
+                } catch (e) {
+                    return callback();
+                }
 
-    this.getKeySSI = (keySSI) => {
-        if (!isInitialized) {
-            return this.addPendingCall(() => {
-                this.getKeySSI(keySSI);
+                registerDerivedKeySSIs(derivedKeySSI);
             });
         }
 
+        return registerDerivedKeySSIs(keySSI);
+    };
+
+    this.getCapableOfSigningKeySSI = (keySSI, callback) => {
+        if (typeof keySSI === "undefined") {
+            return callback(Error(`A SeedSSI should be specified.`));
+        }
+
+        if (typeof keySSI === "string") {
+            try {
+                keySSI = keySSISpace.parse(keySSI);
+            } catch (e) {
+                return callback(createOpenDSUErrorWrapper(`Failed to parse keySSI ${keySSI}`, e))
+            }
+        }
+
+        storageDB.getRecord(KEY_SSIS_TABLE, keySSI.getIdentifier(), (err, record) => {
+            if (err) {
+                return callback(createOpenDSUErrorWrapper(`No capable of signing keySSI found for keySSI ${keySSI.getIdentifier()}`, err));
+            }
+
+            let keySSI;
+            try {
+                keySSI = keySSISpace.parse(record.capableOfSigningKeySSI);
+            } catch (e) {
+                return callback(createOpenDSUErrorWrapper(`Failed to parse keySSI ${record.capableOfSigningKeySSI}`, e))
+            }
+
+            callback(undefined, keySSI);
+        });
+    };
+
+    this.getKeySSI = (keySSI) => {
         if (typeof keySSI === "undefined") {
             throw Error(`A KeySSI should be specified.`)
         }
@@ -151,10 +186,18 @@ const getSecurityContext = (keySSI) => {
     if (typeof $$.sc === "undefined") {
         const keySSISpace = require("opendsu").loadAPI("keyssi");
         if (typeof keySSI === "undefined") {
-          keySSI = keySSISpace.createSeedSSI("default");
-        } else if (typeof keySSI === "string") {
-            keySSI = keySSISpace.parse(keySSI);
+            // throw Error(`A keySSI should be provided.`)
+            keySSI = keySSISpace.createSeedSSI("default");
         }
+
+        if (typeof keySSI === "string") {
+            try {
+                keySSI = keySSISpace.parse(keySSI);
+            } catch (e) {
+                throw createOpenDSUErrorWrapper(`Failed to parse keySSI ${keySSI}`, e);
+            }
+        }
+
         $$.sc = new SecurityContext(keySSI);
     }
 
