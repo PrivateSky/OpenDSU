@@ -1,12 +1,12 @@
-function getSafeCommandBody(domain, contract, method, params) {
+function getSafeCommandBody(domain, contractName, methodName, params) {
     if (!domain || typeof domain !== "string") {
         throw `Invalid domain specified: ${domain}!`;
     }
-    if (!contract || typeof contract !== "string") {
-        throw `Invalid contract specified: ${contract}!`;
+    if (!contractName || typeof contractName !== "string") {
+        throw `Invalid contractName specified: ${contractName}!`;
     }
-    if (!method || typeof method !== "string") {
-        throw `Invalid method specified: ${method}!`;
+    if (!methodName || typeof methodName !== "string") {
+        throw `Invalid methodName specified: ${methodName}!`;
     }
 
     if (params) {
@@ -16,8 +16,9 @@ function getSafeCommandBody(domain, contract, method, params) {
     }
 
     return {
-        contract,
-        method,
+        domain,
+        contractName,
+        methodName,
         params,
     };
 }
@@ -38,7 +39,7 @@ function getNoncedCommandBody(domain, contract, method, params, nonce, signerDID
 
     commandBody.nonce = nonce;
     commandBody.signerDID = signerDID.getIdentifier();
-    commandBody.signature = signature;
+    commandBody.requesterSignature = signature;
 
     return commandBody;
 }

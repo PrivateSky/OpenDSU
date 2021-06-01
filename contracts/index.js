@@ -3,8 +3,9 @@ const { doPost } = require("../http");
 
 const { getSafeCommandBody, getNoncedCommandBody } = require("./utils");
 
-async function sendCommand(contractEndpointPrefix, domain, commandBody, callback) {
+async function sendCommand(contractEndpointPrefix, commandBody, callback) {
     try {
+        const { domain } = commandBody;
         let contractServicesArray = [];
         try {
             const bdns = require("opendsu").loadApi("bdns");
@@ -46,21 +47,21 @@ async function sendCommand(contractEndpointPrefix, domain, commandBody, callback
     }
 }
 
-function generateSafeCommand(domain, contract, method, params, callback) {
+function generateSafeCommand(domain, contractName, methodName, params, callback) {
     if (typeof params === "function") {
         callback = params;
         params = null;
     }
 
     try {
-        const commandBody = getSafeCommandBody(domain, contract, method, params);
-        sendCommand("safe-command", domain, commandBody, callback);
+        const commandBody = getSafeCommandBody(domain, contractName, methodName, params);
+        sendCommand("safe-command", commandBody, callback);
     } catch (error) {
         callback(error);
     }
 }
 
-async function generateNoncedCommand(domain, contract, method, params, signerDID, callback) {
+async function generateNoncedCommand(domain, contractName, methodName, params, signerDID, callback) {
     if (typeof signerDID === "function") {
         callback = signerDID;
         signerDID = params;
@@ -94,9 +95,9 @@ async function generateNoncedCommand(domain, contract, method, params, signerDID
             );
         }
 
-        const commandBody = getNoncedCommandBody(domain, contract, method, params, nonce, signerDID);
+        const commandBody = getNoncedCommandBody(domain, contractName, methodName, params, nonce, signerDID);
 
-        sendCommand("nonced-command", domain, commandBody, callback);
+        sendCommand("nonced-command", commandBody, callback);
     } catch (error) {
         callback(error);
     }
