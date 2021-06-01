@@ -2,8 +2,8 @@
 KeySSI Notification API space
 */
 
-let http = require("../index").loadApi("http");
-let bdns = require("../index").loadApi("bdns");
+let http = require("../http");
+let bdns = require("../bdns");
 
 function publish(keySSI, message, timeout, callback){
 	if (typeof timeout === 'function') {
