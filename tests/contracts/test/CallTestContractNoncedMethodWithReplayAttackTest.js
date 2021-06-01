@@ -15,15 +15,15 @@ assert.callback(
     async (testFinished) => {
         try {
             const domain = "contract";
-            const contract = "test";
-            const method = "nonced";
+            const contractName = "test";
+            const methodName = "nonced";
             await $$.promisify(launchApiHubTestNodeWithTestDomain)();
 
             const signerDID = await $$.promisify(w3cDID.createIdentity)("demo", "id");
 
             const generateNoncedCommand = $$.promisify(contracts.generateNoncedCommand);
 
-            const result = await generateNoncedCommand(domain, contract, method, signerDID);
+            const result = await generateNoncedCommand(domain, contractName, methodName, signerDID);
             assert.equal(result, "nonced");
 
             // call contracts endpoint with the same command
@@ -34,16 +34,17 @@ assert.callback(
                 const baseUrl = process.env[moduleConstants.BDNS_ROOT_HOSTS];
                 const originalNoncedCommandUrl = `${baseUrl}/contracts/${domain}/nonced-command`;
 
-                const fieldsToHash = [domain, contract, method, nonce];
+                const fieldsToHash = [domain, contractName, methodName, nonce];
                 const hash = fieldsToHash.join(".");
                 const signature = signerDID.sign(hash);
 
                 const commandBody = {
-                    contract,
-                    method,
+                    domain,
+                    contractName,
+                    methodName,
                     nonce,
                     signerDID: signerDID.getIdentifier(),
-                    signature,
+                    requesterSignature: signature,
                 };
 
                 await $$.promisify(http.doPost)(originalNoncedCommandUrl, commandBody);

@@ -88,7 +88,7 @@ async function generateNoncedCommand(domain, contractName, methodName, params, s
         let nonce;
         const nonceCommandBody = getSafeCommandBody(domain, "consensus", "getNonce", [signerDID.getIdentifier()]);
         try {
-            nonce = await $$.promisify(sendCommand)("safe-command", domain, nonceCommandBody);
+            nonce = await $$.promisify(sendCommand)("safe-command", nonceCommandBody);
         } catch (error) {
             return OpenDSUSafeCallback(callback)(
                 createOpenDSUErrorWrapper(`Failed to get nonce for command: ${JSON.stringify(nonceCommandBody)}`, error)
