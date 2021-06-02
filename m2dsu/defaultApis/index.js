@@ -143,6 +143,9 @@ registry.defineApi("createDSU", async function (domain, ssiType, options) {
 
 registry.defineApi("loadDSU", async function (keySSI, options) {
 	let dsu = await this.getResolver().loadDSU(keySSI, options);
+	if (!dsu) {
+		throw new Error("No DSU found for " + keySSI);
+	}
 	//take note that this.registerDSU returns a Proxy Object over the DSU and this Proxy we need to return also
 	return this.registerDSU(dsu);
 });
