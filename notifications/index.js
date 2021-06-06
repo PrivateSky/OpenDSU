@@ -20,6 +20,11 @@ function publish(keySSI, message, timeout, callback){
 		}
 
 		let url = endpoints[0]+`/notifications/publish/${keySSI.getAnchorId()}`;
+
+		if (typeof message !== 'string' && !$$.Buffer.isBuffer(message) && !ArrayBuffer.isView(message)) {
+			message = JSON.stringify(message);
+		}
+
         let options = {body: message, method: 'PUT'};
 
 		let request = http.poll(url, options, timeout);
