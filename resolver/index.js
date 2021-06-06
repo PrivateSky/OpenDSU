@@ -58,7 +58,7 @@ const createDSU = (templateKeySSI, options, callback) => {
 
             // const sc = require("../sc").getSecurityContext();
             // sc.registerKeySSI(keySSI);
-            if (options.addLog && keySSI.getTypeName() !== KEY_SSIS.CONST_SSI) {
+            if (typeof options === "object" && options.addLog && keySSI.getTypeName() !== KEY_SSIS.CONST_SSI) {
                 dsuInstance.dsuLog("DSU created on " + Date.now(), addInCache);
             } else {
                 addInCache(undefined, dsuInstance);

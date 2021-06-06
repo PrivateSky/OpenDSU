@@ -9,7 +9,7 @@ const { createTemplateKeySSI } = require("../../../keyssi");
 const { launchApiHubTestNodeWithTestDomain } = require("../utils");
 
 assert.callback(
-    "CreateDSUUsingContractAnchoringTest",
+    "Create DSU with anchoring configuration set to use anchoring contract",
     async (testFinished) => {
         try {
             await $$.promisify(launchApiHubTestNodeWithTestDomain)();

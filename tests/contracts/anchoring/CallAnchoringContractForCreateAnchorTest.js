@@ -9,7 +9,7 @@ const { createHashLinkSSI, createTemplateKeySSI } = require("../../../keyssi");
 const { launchApiHubTestNodeWithTestDomain } = require("../utils");
 
 assert.callback(
-    "CallAnchoringContractForCreateAnchorTest",
+    "Call anchoring contract methods createAnchor and appendToAnchor and checking getAllVersions for results",
     async (testFinished) => {
         try {
             const domain = "contract";
@@ -17,16 +17,16 @@ assert.callback(
 
             await $$.promisify(launchApiHubTestNodeWithTestDomain)();
 
-            const generatePublicCommand = $$.promisify(contracts.generatePublicCommand);
+            const generateSafeCommand = $$.promisify(contracts.generateSafeCommand);
 
             // create a token SSI since it doesn't required digital signing for anchoring
             const tokenSSI = createTemplateKeySSI("token", "contract");
             tokenSSI.initialize("contract", undefined, undefined, "vn0", "hint");
 
             const anchorId = tokenSSI.getAnchorId();
-            await generatePublicCommand(domain, contract, "createAnchor", [anchorId]);
+            await generateSafeCommand(domain, contract, "createAnchor", [anchorId]);
 
-            const versionsAfterCreateAnchor = await generatePublicCommand(domain, contract, "getAllVersions", [anchorId]);
+            const versionsAfterCreateAnchor = await generateSafeCommand(domain, contract, "getAllVersions", [anchorId]);
             assert.true(versionsAfterCreateAnchor.length === 0);
 
             const hl = createHashLinkSSI("contract", "HASH");
@@ -34,11 +34,11 @@ assert.callback(
                 last: null,
                 new: hl.getIdentifier(),
             };
-            const digitalProof = { signature: "", publicKey: "" };
+            const digitalProof = { signature: "", safeKey: "" };
             const zkp = "";
-            await generatePublicCommand(domain, contract, "appendToAnchor", [anchorId, hashLinkIds, digitalProof, zkp]);
+            await generateSafeCommand(domain, contract, "appendToAnchor", [anchorId, hashLinkIds, digitalProof, zkp]);
 
-            const versionsAfterAppendAnchor = await generatePublicCommand(domain, contract, "getAllVersions", [anchorId]);
+            const versionsAfterAppendAnchor = await generateSafeCommand(domain, contract, "getAllVersions", [anchorId]);
             assert.true(versionsAfterAppendAnchor.length === 1);
 
             testFinished();

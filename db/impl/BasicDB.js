@@ -80,14 +80,21 @@ function BasicDB(storageStrategy) {
         self.getRecord(tableName, key, function (err, res) {
             if (!err || res) {
                 //newRecord = Object.assign(newRecord, {__version:-1});
-                return callback(createOpenDSUErrorWrapper("Failed to insert over an existing record", err));
+                return callback(createOpenDSUErrorWrapper("Failed to insert over an existing record", new Error("Trying to insert into existing record")));
             }
             const sharedDSUMetadata = {}
             sharedDSUMetadata.__version = 0;
             sharedDSUMetadata.pk = key;
             //sharedDSUMetadata.__changeId = uid();
             sharedDSUMetadata.__timestamp = Date.now();
-            storageStrategy.insertRecord(tableName, key, Object.assign(sharedDSUMetadata, record), callback);
+            storageStrategy.insertRecord(tableName, key, Object.assign(sharedDSUMetadata, record), (err) => {
+                if (err) {
+                    return callback(createOpenDSUErrorWrapper(`Failed to insert record with key ${key} in table ${tableName} `, err));
+                }
+
+                self.dispatchEvent("change", JSON.stringify({table:tableName, pk: key}));
+                callback();
+            });
         });
     };
 
@@ -99,7 +106,7 @@ function BasicDB(storageStrategy) {
         callback = callback ? callback : getDefaultCallback("Updating a record", tableName, key);
         let currentRecord;
 
-        function doVersionIncAndUpdate(currentRecord) {
+        function doVersionIncAndUpdate(currentRecord, callback) {
             newRecord.__version++;
             newRecord.__timestamp = Date.now();
             //newRecord.__changeId = uid();
@@ -120,7 +127,14 @@ function BasicDB(storageStrategy) {
                 currentRecord = res;
                 newRecord.__version = currentRecord.__version;
             }
-            doVersionIncAndUpdate(currentRecord);
+            doVersionIncAndUpdate(currentRecord, (err) => {
+                if (err) {
+                    return callback(createOpenDSUErrorWrapper(`Failed to update record with key ${key} in table ${tableName} `, err));
+                }
+
+                self.dispatchEvent("change", JSON.stringify({table:tableName, pk: key}));
+                callback();
+            });
         });
     }
 
@@ -161,7 +175,14 @@ function BasicDB(storageStrategy) {
             record.__version++;
             record.__timestamp = Date.now();
             record.__deleted = true;
-            storageStrategy.updateRecord(tableName, key, record, currentRecord, callback);
+            storageStrategy.updateRecord(tableName, key, record, currentRecord, (err) => {
+                if (err) {
+                    return callback(createOpenDSUErrorWrapper(`Failed to update with key ${key} in table ${tableName} `, err));
+                }
+
+                self.dispatchEvent("change", JSON.stringify({table:tableName, pk: key}));
+                callback();
+            });
         })
     };
 
@@ -174,7 +195,7 @@ function BasicDB(storageStrategy) {
         return arrRes;
     }
 
-    this.getIndexedFields = function (tableName, callback){
+    this.getIndexedFields = function (tableName, callback) {
         storageStrategy.getIndexedFields(tableName, callback);
     }
 

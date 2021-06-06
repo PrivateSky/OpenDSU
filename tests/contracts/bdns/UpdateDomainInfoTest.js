@@ -9,7 +9,7 @@ const w3cDID = require("../../../w3cdid");
 const { launchApiHubTestNodeWithTestDomain } = require("../utils");
 
 assert.callback(
-    "UpdateDomainInfoTest",
+    "Use BDNS contract to update domain info and read it back",
     async (testFinished) => {
         try {
             const domain = "contract";
@@ -26,12 +26,12 @@ assert.callback(
 
             const signerDID = await $$.promisify(w3cDID.createIdentity)("demo", "id");
 
-            const generatePublicCommand = $$.promisify(contracts.generatePublicCommand);
-            const generateRequireNonceCommand = $$.promisify(contracts.generateRequireNonceCommand);
+            const generateSafeCommand = $$.promisify(contracts.generateSafeCommand);
+            const generateNoncedCommand = $$.promisify(contracts.generateNoncedCommand);
 
-            await generateRequireNonceCommand(domain, contract, "updateDomainInfo", [domainConfigToUpdate], signerDID);
+            await generateNoncedCommand(domain, contract, "updateDomainInfo", [domainConfigToUpdate], signerDID);
 
-            const domainInfo = await generatePublicCommand(domain, contract, "getDomainInfo");
+            const domainInfo = await generateSafeCommand(domain, contract, "getDomainInfo");
 
             // since the property values are arrays, neiter assert.objectHasFields nor assert.arraysMatch does a deep comparison
             assert.equal(JSON.stringify(domainInfo), JSON.stringify(domainConfigToUpdate));
