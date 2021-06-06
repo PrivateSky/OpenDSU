@@ -40,7 +40,7 @@ function PollRequestManager(fetchFunction, pollingTimeout = 1000){
 			promiseHandlers.reject = reject;
 		}
 
-		this.resolve = async function(...args) {
+		this.resolve = function(...args) {
 			promiseHandlers.resolve(...args);
 			this.destroy();
 		}

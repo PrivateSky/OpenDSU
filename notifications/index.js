@@ -2,8 +2,8 @@
 KeySSI Notification API space
 */
 
-let http = require("../index").loadApi("http");
-let bdns = require("../index").loadApi("bdns");
+let http = require("../http");
+let bdns = require("../bdns");
 
 function publish(keySSI, message, timeout, callback){
 	if (typeof timeout === 'function') {
@@ -16,10 +16,15 @@ function publish(keySSI, message, timeout, callback){
 		}
 
 		if (!endpoints.length) {
-			throw new Error("Not available!");
+			throw new Error("No notification endpoints are available!");
 		}
 
 		let url = endpoints[0]+`/notifications/publish/${keySSI.getAnchorId()}`;
+
+		if (typeof message !== 'string' && !$$.Buffer.isBuffer(message) && !ArrayBuffer.isView(message)) {
+			message = JSON.stringify(message);
+		}
+
         let options = {body: message, method: 'PUT'};
 
 		let request = http.poll(url, options, timeout);
@@ -43,7 +48,7 @@ function getObservableHandler(keySSI, timeout){
 		}
 
 		if (!endpoints.length) {
-			throw new Error("Not available!");
+			throw new Error("No notification endpoints are available!");
 		}
 
 		function makeRequest(){
