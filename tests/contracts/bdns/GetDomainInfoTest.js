@@ -9,7 +9,7 @@ const moduleConstants = require("../../../moduleConstants");
 const { launchApiHubTestNodeWithTestDomain } = require("../utils");
 
 assert.callback(
-    "GetDomainInfoTest",
+    "Use BDNS contract to read domain info",
     async (testFinished) => {
         try {
             const domain = "contract";
@@ -17,9 +17,9 @@ assert.callback(
 
             await $$.promisify(launchApiHubTestNodeWithTestDomain)();
 
-            const generatePublicCommand = $$.promisify(contracts.generatePublicCommand);
+            const generateSafeCommand = $$.promisify(contracts.generateSafeCommand);
 
-            const domainInfo = await generatePublicCommand(domain, contract, "getDomainInfo");
+            const domainInfo = await generateSafeCommand(domain, contract, "getDomainInfo");
 
             const baseUrl = process.env[moduleConstants.BDNS_ROOT_HOSTS];
             const hasContractServicesDefined =

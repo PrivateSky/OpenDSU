@@ -9,7 +9,7 @@ const w3cDID = require("../../../w3cdid");
 const { launchApiHubTestNodeWithTestDomain } = require("../utils");
 
 assert.callback(
-    "GetSubdomainsTest",
+    "Use BDNS contract to add subdomains and get the list of added subdomains",
     async (testFinished) => {
         try {
             const domain = "contract";
@@ -20,14 +20,14 @@ assert.callback(
 
             const signerDID = await $$.promisify(w3cDID.createIdentity)("demo", "id");
 
-            const generatePublicCommand = $$.promisify(contracts.generatePublicCommand);
-            const generateRequireNonceCommand = $$.promisify(contracts.generateRequireNonceCommand);
+            const generateSafeCommand = $$.promisify(contracts.generateSafeCommand);
+            const generateNoncedCommand = $$.promisify(contracts.generateNoncedCommand);
 
-            await generateRequireNonceCommand(domain, contract, "addSubdomain", [subdomains[0]], signerDID);
-            await generateRequireNonceCommand(domain, contract, "addSubdomain", [subdomains[1]], signerDID);
-            await generateRequireNonceCommand(domain, contract, "addSubdomain", [subdomains[2]], signerDID);
+            await generateNoncedCommand(domain, contract, "addSubdomain", [subdomains[0]], signerDID);
+            await generateNoncedCommand(domain, contract, "addSubdomain", [subdomains[1]], signerDID);
+            await generateNoncedCommand(domain, contract, "addSubdomain", [subdomains[2]], signerDID);
 
-            const loadedSubdomains = await generatePublicCommand(domain, contract, "getSubdomains");
+            const loadedSubdomains = await generateSafeCommand(domain, contract, "getSubdomains");
 
             assert.arraysMatch(loadedSubdomains, ["subdomain1", "subdomain2", "subdomain3"]);
 

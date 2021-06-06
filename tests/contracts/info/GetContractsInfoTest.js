@@ -8,7 +8,7 @@ const contracts = require("../../../contracts");
 const { launchApiHubTestNodeWithTestDomain } = require("../utils");
 
 assert.callback(
-    "GetContractsInfoTest",
+    "Use info contract to get the list of available contracts and their methods",
     async (testFinished) => {
         try {
             const domain = "contract";
@@ -16,9 +16,9 @@ assert.callback(
 
             await $$.promisify(launchApiHubTestNodeWithTestDomain)();
 
-            const generatePublicCommand = $$.promisify(contracts.generatePublicCommand);
+            const generateSafeCommand = $$.promisify(contracts.generateSafeCommand);
 
-            const contractsInfo = await generatePublicCommand(domain, contract, "getContracts");
+            const contractsInfo = await generateSafeCommand(domain, contract, "getContracts");
 
             const hasContractNameAndMethods = contractsInfo.every(
                 (contractInfo) => contractInfo.name && contractInfo.methods && Array.isArray(contractInfo.methods)

@@ -1,12 +1,12 @@
-function getPublicCommandBody(domain, contract, method, params) {
+function getSafeCommandBody(domain, contractName, methodName, params) {
     if (!domain || typeof domain !== "string") {
         throw `Invalid domain specified: ${domain}!`;
     }
-    if (!contract || typeof contract !== "string") {
-        throw `Invalid contract specified: ${contract}!`;
+    if (!contractName || typeof contractName !== "string") {
+        throw `Invalid contractName specified: ${contractName}!`;
     }
-    if (!method || typeof method !== "string") {
-        throw `Invalid method specified: ${method}!`;
+    if (!methodName || typeof methodName !== "string") {
+        throw `Invalid methodName specified: ${methodName}!`;
     }
 
     if (params) {
@@ -16,13 +16,14 @@ function getPublicCommandBody(domain, contract, method, params) {
     }
 
     return {
-        contract,
-        method,
+        domain,
+        contractName,
+        methodName,
         params,
     };
 }
 
-function getRequireNonceCommandBody(domain, contract, method, params, nonce, signerDID) {
+function getNoncedCommandBody(domain, contract, method, params, nonce, signerDID) {
     if (!signerDID) {
         // params field is optional
         signerDID = nonce;
@@ -30,7 +31,7 @@ function getRequireNonceCommandBody(domain, contract, method, params, nonce, sig
         params = null;
     }
 
-    const commandBody = getPublicCommandBody(domain, contract, method, params);
+    const commandBody = getSafeCommandBody(domain, contract, method, params);
     const paramsString = params ? JSON.stringify(params) : null;
     const fieldsToHash = [domain, contract, method, paramsString, nonce].filter((x) => x != null);
     const hash = fieldsToHash.join(".");
@@ -38,12 +39,12 @@ function getRequireNonceCommandBody(domain, contract, method, params, nonce, sig
 
     commandBody.nonce = nonce;
     commandBody.signerDID = signerDID.getIdentifier();
-    commandBody.signature = signature;
+    commandBody.requesterSignature = signature;
 
     return commandBody;
 }
 
 module.exports = {
-    getPublicCommandBody,
-    getRequireNonceCommandBody,
+    getSafeCommandBody,
+    getNoncedCommandBody,
 };

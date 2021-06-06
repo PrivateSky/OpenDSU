@@ -16,13 +16,13 @@ function ObservableMixin(target) {
             reportDevRelevantInfo("Off-ing an unknown observer");
             return;
         }
-        let index = handlers[eventName].indexOf(callback);
+        let index = observers[eventType].indexOf(callback);
         if(index === -1){
             reportDevRelevantInfo("Observer not found into the list of known observers.");
             return;
         }
 
-        handlers[eventName].splice(index, 1);
+        observers[eventType].splice(index, 1);
     }
 
     target.dispatchEvent = function(eventType, message){
@@ -42,6 +42,14 @@ function ObservableMixin(target) {
             }
 
         });
+    }
+
+    target.removeAllObservers = function (eventType){
+        if(observers[eventType]){
+            delete observers[eventType];
+        } else {
+            reportDevRelevantInfo("No observers found in the list of known observers.");
+        }
     }
 }
 

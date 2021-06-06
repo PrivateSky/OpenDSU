@@ -4,18 +4,20 @@ const dc = require("double-check");
 const assert = dc.assert;
 
 const contracts = require("../../contracts");
-const {  createTemplateKeySSI } = require("../../keyssi");
+const { createTemplateKeySSI } = require("../../keyssi");
 
 const { launchApiHubTestNodeWithTestDomain } = require("./utils");
 
 assert.callback(
-    "Call contract method with the an existing domain config file that contains all relevant configuration",
+    "Call contract method with the an existing domain config file that contains only 'contracts' configuration, while the rest are in server.json",
     async (testFinished) => {
         try {
             const domain = "contract";
             const contract = "anchoring";
 
-            await $$.promisify(launchApiHubTestNodeWithTestDomain)();
+            await $$.promisify(launchApiHubTestNodeWithTestDomain)({
+                keepOnlyContractsConfigInsideDomainConfig: true,
+            });
 
             const generateSafeCommand = $$.promisify(contracts.generateSafeCommand);
 

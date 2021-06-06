@@ -9,7 +9,7 @@ const w3cDID = require("../../../w3cdid");
 const { launchApiHubTestNodeWithTestDomain } = require("../utils");
 
 assert.callback(
-    "AddSubdomainTest",
+    "Use BDNS contract to add subdomain and read it back",
     async (testFinished) => {
         try {
             const domain = "contract";
@@ -19,12 +19,12 @@ assert.callback(
 
             const signerDID = await $$.promisify(w3cDID.createIdentity)("demo", "id");
 
-            const generatePublicCommand = $$.promisify(contracts.generatePublicCommand);
-            const generateRequireNonceCommand = $$.promisify(contracts.generateRequireNonceCommand);
+            const generateSafeCommand = $$.promisify(contracts.generateSafeCommand);
+            const generateNoncedCommand = $$.promisify(contracts.generateNoncedCommand);
 
-            await generateRequireNonceCommand(domain, contract, "addSubdomain", ["subdomain1"], signerDID);
+            await generateNoncedCommand(domain, contract, "addSubdomain", ["subdomain1"], signerDID);
 
-            const loadedSubdomainContent = await generatePublicCommand(domain, contract, "getSubdomainInfo", ["subdomain1"]);
+            const loadedSubdomainContent = await generateSafeCommand(domain, contract, "getSubdomainInfo", ["subdomain1"]);
 
             assert.objectHasFields(loadedSubdomainContent, {});
 
