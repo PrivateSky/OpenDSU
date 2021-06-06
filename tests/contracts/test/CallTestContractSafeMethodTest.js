@@ -19,7 +19,7 @@ assert.callback(
 
             const generateSafeCommand = $$.promisify(contracts.generateSafeCommand);
 
-            const commandResult = await generateSafeCommand(domain, contract, method);
+            const { optimisticResult: commandResult } = await generateSafeCommand(domain, contract, method);
             assert.equal(commandResult, "safe");
 
             testFinished();

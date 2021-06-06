@@ -38,8 +38,6 @@ async function sendCommand(contractEndpointPrefix, commandBody, callback) {
                 }
             }
 
-            console.log("received response final", typeof response, response);
-
             return response;
         };
 
