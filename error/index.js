@@ -14,7 +14,9 @@ function ErrorWrapper(message, err, otherErrors){
                     otherErrors.forEach(e => newErr.originalMessage += `[${e.message}]`);
                 }
             }
-            newErr.originalMessage = newErr.originalMessage.replace(/\n/g, " ");
+            if(typeof newErr.originalMessage === "string") {
+                newErr.originalMessage = newErr.originalMessage.replace(/\n/g, " ");
+            }
         }
     }
 

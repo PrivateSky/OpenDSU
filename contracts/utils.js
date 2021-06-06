@@ -20,25 +20,29 @@ function getSafeCommandBody(domain, contractName, methodName, params) {
         contractName,
         methodName,
         params,
+        type: "safe",
     };
 }
 
-function getNoncedCommandBody(domain, contract, method, params, nonce, signerDID) {
+function getNoncedCommandBody(domain, contract, method, params, timestamp, signerDID) {
     if (!signerDID) {
         // params field is optional
-        signerDID = nonce;
-        nonce = params;
+        signerDID = timestamp;
+        timestamp = params;
         params = null;
     }
 
     const commandBody = getSafeCommandBody(domain, contract, method, params);
-    const paramsString = params ? JSON.stringify(params) : null;
-    const fieldsToHash = [domain, contract, method, paramsString, nonce].filter((x) => x != null);
-    const hash = fieldsToHash.join(".");
+    commandBody.type = "nonced";
+    commandBody.timestamp = timestamp;
+    commandBody.signerDID = signerDID.getIdentifier();
+
+    const bricksledger = require("bricksledger");
+    const command = bricksledger.createCommand(commandBody);
+
+    const hash = command.getHash();
     const signature = signerDID.sign(hash);
 
-    commandBody.nonce = nonce;
-    commandBody.signerDID = signerDID.getIdentifier();
     commandBody.requesterSignature = signature;
 
     return commandBody;

@@ -3,9 +3,7 @@ require("../../../../../psknode/bundles/testsRuntime");
 const dc = require("double-check");
 const assert = dc.assert;
 
-const moduleConstants = require("../../../moduleConstants");
 const contracts = require("../../../contracts");
-const http = require("../../../http");
 const w3cDID = require("../../../w3cdid");
 
 const { launchApiHubTestNodeWithTestDomain } = require("../utils");
@@ -23,31 +21,19 @@ assert.callback(
 
             const generateNoncedCommand = $$.promisify(contracts.generateNoncedCommand);
 
-            const result = await generateNoncedCommand(domain, contractName, methodName, signerDID);
+            const timestamp = Date.now();
+            const { optimisticResult: result } = await generateNoncedCommand(
+                signerDID,
+                domain,
+                contractName,
+                methodName,
+                timestamp
+            );
             assert.equal(result, "nonced");
 
             // call contracts endpoint with the same command
             try {
-                // use the same nonce as the previous contract call
-                const nonce = 1;
-
-                const baseUrl = process.env[moduleConstants.BDNS_ROOT_HOSTS];
-                const originalNoncedCommandUrl = `${baseUrl}/contracts/${domain}/nonced-command`;
-
-                const fieldsToHash = [domain, contractName, methodName, nonce];
-                const hash = fieldsToHash.join(".");
-                const signature = signerDID.sign(hash);
-
-                const commandBody = {
-                    domain,
-                    contractName,
-                    methodName,
-                    nonce,
-                    signerDID: signerDID.getIdentifier(),
-                    requesterSignature: signature,
-                };
-
-                await $$.promisify(http.doPost)(originalNoncedCommandUrl, commandBody);
+                await generateNoncedCommand(signerDID, domain, contractName, methodName, timestamp);
                 assert.true(false, "shouldn't be able to call the same contract method using the same nonce");
             } catch (error) {
                 console.log(error);

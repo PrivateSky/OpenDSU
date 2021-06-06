@@ -26,7 +26,12 @@ assert.callback(
             const anchorId = tokenSSI.getAnchorId();
             await generateSafeCommand(domain, contract, "createAnchor", [anchorId]);
 
-            const versionsAfterCreateAnchor = await generateSafeCommand(domain, contract, "getAllVersions", [anchorId]);
+            const { optimisticResult: versionsAfterCreateAnchor } = await generateSafeCommand(
+                domain,
+                contract,
+                "getAllVersions",
+                [anchorId]
+            );
             assert.true(versionsAfterCreateAnchor.length === 0);
 
             const hl = createHashLinkSSI("contract", "HASH");
@@ -38,7 +43,12 @@ assert.callback(
             const zkp = "";
             await generateSafeCommand(domain, contract, "appendToAnchor", [anchorId, hashLinkIds, digitalProof, zkp]);
 
-            const versionsAfterAppendAnchor = await generateSafeCommand(domain, contract, "getAllVersions", [anchorId]);
+            const { optimisticResult: versionsAfterAppendAnchor } = await generateSafeCommand(
+                domain,
+                contract,
+                "getAllVersions",
+                [anchorId]
+            );
             assert.true(versionsAfterAppendAnchor.length === 1);
 
             testFinished();

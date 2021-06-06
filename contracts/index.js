@@ -29,12 +29,16 @@ async function sendCommand(contractEndpointPrefix, commandBody, callback) {
                     // the response isn't a JSON so we keep it as it is
                 }
 
-                if (Object.keys(response).length === 1 && response.message) {
-                    // if the contract returns a string, apihub will put it inside an object with a single property name message
-                    // so we extract it
-                    return response.message;
+                if (response.optimisticResult) {
+                    try {
+                        response.optimisticResult = JSON.parse(response.optimisticResult);
+                    } catch (error) {
+                        // the response isn't a JSON so we keep it as it is
+                    }
                 }
             }
+
+            console.log("received response final", typeof response, response);
 
             return response;
         };
@@ -61,21 +65,30 @@ function generateSafeCommand(domain, contractName, methodName, params, callback)
     }
 }
 
-async function generateNoncedCommand(domain, contractName, methodName, params, signerDID, callback) {
-    if (typeof signerDID === "function") {
-        callback = signerDID;
-        signerDID = params;
-        params = null;
+async function generateNoncedCommand(signerDID, domain, contractName, methodName, params, timestamp, callback) {
+    if (typeof timestamp === "function") {
+        callback = timestamp;
+
+        // check if the param before provided callback is either the timestamp or the params, since both are optional
+        if (typeof params === "number") {
+            timestamp = params;
+            params = null;
+        } else {
+            timestamp = null;
+        }
     }
 
     if (typeof params === "function") {
         callback = params;
-        signerDID = null;
         params = null;
+        timestamp = null;
     }
-
     if (!signerDID) {
         return callback("signerDID not provided");
+    }
+
+    if (!timestamp) {
+        timestamp = Date.now();
     }
 
     try {
@@ -85,18 +98,7 @@ async function generateNoncedCommand(domain, contractName, methodName, params, s
             signerDID = await $$.promisify(w3cDID.resolveDID)(signerDID);
         }
 
-        let nonce;
-        const nonceCommandBody = getSafeCommandBody(domain, "consensus", "getNonce", [signerDID.getIdentifier()]);
-        try {
-            nonce = await $$.promisify(sendCommand)("safe-command", nonceCommandBody);
-        } catch (error) {
-            return OpenDSUSafeCallback(callback)(
-                createOpenDSUErrorWrapper(`Failed to get nonce for command: ${JSON.stringify(nonceCommandBody)}`, error)
-            );
-        }
-
-        const commandBody = getNoncedCommandBody(domain, contractName, methodName, params, nonce, signerDID);
-
+        const commandBody = getNoncedCommandBody(domain, contractName, methodName, params, timestamp, signerDID);
         sendCommand("nonced-command", commandBody, callback);
     } catch (error) {
         callback(error);

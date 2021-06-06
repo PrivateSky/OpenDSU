@@ -22,9 +22,11 @@ assert.callback(
             const generateSafeCommand = $$.promisify(contracts.generateSafeCommand);
             const generateNoncedCommand = $$.promisify(contracts.generateNoncedCommand);
 
-            await generateNoncedCommand(domain, contract, "addSubdomain", ["subdomain1"], signerDID);
+            await generateNoncedCommand(signerDID, domain, contract, "addSubdomain", ["subdomain1"]);
 
-            const loadedSubdomainContent = await generateSafeCommand(domain, contract, "getSubdomainInfo", ["subdomain1"]);
+            const { optimisticResult: loadedSubdomainContent } = await generateSafeCommand(domain, contract, "getSubdomainInfo", [
+                "subdomain1",
+            ]);
 
             assert.objectHasFields(loadedSubdomainContent, {});
 

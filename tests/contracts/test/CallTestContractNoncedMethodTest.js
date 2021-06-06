@@ -22,10 +22,10 @@ assert.callback(
 
             const generateNoncedCommand = $$.promisify(contracts.generateNoncedCommand);
 
-            const result = await generateNoncedCommand(domain, contract, method, signerDID);
+            const result = await generateNoncedCommand(signerDID, domain, contract, method);
             assert.equal(result, "nonced");
 
-            const result2 = await generateNoncedCommand(domain, contract, method, signerDID);
+            const result2 = await generateNoncedCommand(signerDID, domain, contract, method);
             assert.equal(result2, "nonced");
 
             testFinished();

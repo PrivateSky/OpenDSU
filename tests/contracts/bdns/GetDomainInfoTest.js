@@ -19,7 +19,7 @@ assert.callback(
 
             const generateSafeCommand = $$.promisify(contracts.generateSafeCommand);
 
-            const domainInfo = await generateSafeCommand(domain, contract, "getDomainInfo");
+            const { optimisticResult: domainInfo } = await generateSafeCommand(domain, contract, "getDomainInfo");
 
             const baseUrl = process.env[moduleConstants.BDNS_ROOT_HOSTS];
             const hasContractServicesDefined =

@@ -18,7 +18,8 @@ assert.callback(
 
             const generateSafeCommand = $$.promisify(contracts.generateSafeCommand);
 
-            const contractsInfo = await generateSafeCommand(domain, contract, "getContracts");
+            const { optimisticResult: contractsInfo } = await generateSafeCommand(domain, contract, "getContracts");
+            console.log("contractsInfo", contractsInfo);
 
             const hasContractNameAndMethods = contractsInfo.every(
                 (contractInfo) => contractInfo.name && contractInfo.methods && Array.isArray(contractInfo.methods)

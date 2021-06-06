@@ -23,11 +23,11 @@ assert.callback(
             const generateSafeCommand = $$.promisify(contracts.generateSafeCommand);
             const generateNoncedCommand = $$.promisify(contracts.generateNoncedCommand);
 
-            await generateNoncedCommand(domain, contract, "addSubdomain", [subdomains[0]], signerDID);
-            await generateNoncedCommand(domain, contract, "addSubdomain", [subdomains[1]], signerDID);
-            await generateNoncedCommand(domain, contract, "addSubdomain", [subdomains[2]], signerDID);
+            await generateNoncedCommand(signerDID, domain, contract, "addSubdomain", [subdomains[0]]);
+            await generateNoncedCommand(signerDID, domain, contract, "addSubdomain", [subdomains[1]]);
+            await generateNoncedCommand(signerDID, domain, contract, "addSubdomain", [subdomains[2]]);
 
-            const loadedSubdomains = await generateSafeCommand(domain, contract, "getSubdomains");
+            const { optimisticResult: loadedSubdomains } = await generateSafeCommand(domain, contract, "getSubdomains");
 
             assert.arraysMatch(loadedSubdomains, ["subdomain1", "subdomain2", "subdomain3"]);
 

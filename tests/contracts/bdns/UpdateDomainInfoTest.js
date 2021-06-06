@@ -29,9 +29,9 @@ assert.callback(
             const generateSafeCommand = $$.promisify(contracts.generateSafeCommand);
             const generateNoncedCommand = $$.promisify(contracts.generateNoncedCommand);
 
-            await generateNoncedCommand(domain, contract, "updateDomainInfo", [domainConfigToUpdate], signerDID);
+            await generateNoncedCommand(signerDID, domain, contract, "updateDomainInfo", [domainConfigToUpdate]);
 
-            const domainInfo = await generateSafeCommand(domain, contract, "getDomainInfo");
+            const { optimisticResult: domainInfo } = await generateSafeCommand(domain, contract, "getDomainInfo");
 
             // since the property values are arrays, neiter assert.objectHasFields nor assert.arraysMatch does a deep comparison
             assert.equal(JSON.stringify(domainInfo), JSON.stringify(domainConfigToUpdate));

@@ -25,7 +25,7 @@ assert.callback(
             const tokenSSI = createTemplateKeySSI("token", "contract");
             const anchorId = tokenSSI.getAnchorId();
 
-            const result = await generateSafeCommand(domain, contract, "getAllVersions", [anchorId]);
+            const { optimisticResult: result } = await generateSafeCommand(domain, contract, "getAllVersions", [anchorId]);
             assert.true(result.length === 0, "Expected to have 0 versions since SSI is not anchored");
 
             testFinished();
