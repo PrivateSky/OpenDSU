@@ -62,7 +62,9 @@ function MappingEngine(storageService, options) {
 
 					if (applyMapping) {
 						const instance = buildMappingInstance();
-						await mappingFunction.call(instance, message);
+						try{
+							await mappingFunction.call(instance, message);
+
 
 						//if all good until this point, we need to commit any registeredDSU during the message mapping
 						const commitPromises = [];
@@ -86,6 +88,10 @@ function MappingEngine(storageService, options) {
 							).catch(err => {
 							return reject(errorHandler.createOpenDSUErrorWrapper(`Caught error during commit batch on registered DSUs`, err));
 						});
+						}
+						catch(err){
+							reject(errorHandler.createOpenDSUErrorWrapper(`Caught error during mapping`, err));
+						}
 						messageDigested = true;
 						//we apply only the first mapping found to be suited for the message that we try to digest
 						break;
