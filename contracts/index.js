@@ -1,9 +1,9 @@
 const promiseRunner = require("../utils/promise-runner");
-const { doPost } = require("../http");
+const { fetch, doPost } = require("../http");
 
 const { getSafeCommandBody, getNoncedCommandBody } = require("./utils");
 
-async function sendCommand(contractEndpointPrefix, commandBody, callback) {
+async function sendCommand(method, contractEndpointPrefix, commandBody, callback) {
     try {
         const { domain } = commandBody;
         let contractServicesArray = [];
@@ -20,7 +20,13 @@ async function sendCommand(contractEndpointPrefix, commandBody, callback) {
 
         const runContractMethod = async (service) => {
             const url = `${service}/contracts/${domain}/${contractEndpointPrefix}`;
-            let response = await $$.promisify(doPost)(url, commandBody);
+            let response;
+            if (method === "GET") {
+                response = await fetch(url);
+                response = await response.json();
+            } else {
+                response = await $$.promisify(doPost)(url, commandBody);
+            }
 
             if (response) {
                 try {
@@ -57,7 +63,7 @@ function generateSafeCommand(domain, contractName, methodName, params, callback)
 
     try {
         const commandBody = getSafeCommandBody(domain, contractName, methodName, params);
-        sendCommand("safe-command", commandBody, callback);
+        sendCommand("POST", "safe-command", commandBody, callback);
     } catch (error) {
         callback(error);
     }
@@ -96,8 +102,11 @@ async function generateNoncedCommand(signerDID, domain, contractName, methodName
             signerDID = await $$.promisify(w3cDID.resolveDID)(signerDID);
         }
 
-        const commandBody = getNoncedCommandBody(domain, contractName, methodName, params, timestamp, signerDID);
-        sendCommand("nonced-command", commandBody, callback);
+        const latestBlockInfo = await $$.promisify(sendCommand)("GET", "latest-block-info", { domain });
+        const { number: blockNumber } = latestBlockInfo;
+
+        const commandBody = getNoncedCommandBody(domain, contractName, methodName, params, blockNumber, timestamp, signerDID);
+        sendCommand("POST", "nonced-command", commandBody, callback);
     } catch (error) {
         callback(error);
     }

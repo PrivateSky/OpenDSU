@@ -1,5 +1,5 @@
 function getCommandHash(command) {
-    const { domain, contractName, methodName, params, type, timestamp } = command;
+    const { domain, contractName, methodName, params, type, blockNumber, timestamp } = command;
 
     const objectToHash = {
         domain,
@@ -9,6 +9,7 @@ function getCommandHash(command) {
     };
 
     if (type === "nonced") {
+        objectToHash.blockNumber = blockNumber;
         objectToHash.timestamp = timestamp;
     }
 
@@ -44,16 +45,18 @@ function getSafeCommandBody(domain, contractName, methodName, params) {
     };
 }
 
-function getNoncedCommandBody(domain, contract, method, params, timestamp, signerDID) {
+function getNoncedCommandBody(domain, contract, method, params, blockNumber, timestamp, signerDID) {
     if (!signerDID) {
         // params field is optional
         signerDID = timestamp;
-        timestamp = params;
+        timestamp = blockNumber;
+        blockNumber = params;
         params = null;
     }
 
     const commandBody = getSafeCommandBody(domain, contract, method, params);
     commandBody.type = "nonced";
+    commandBody.blockNumber = blockNumber;
     commandBody.timestamp = timestamp;
     commandBody.signerDID = signerDID.getIdentifier();
 
