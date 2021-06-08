@@ -1,3 +1,23 @@
+function getCommandHash(command) {
+    const { domain, contractName, methodName, params, type, timestamp } = command;
+
+    const objectToHash = {
+        domain,
+        contractName,
+        methodName,
+        params,
+    };
+
+    if (type === "nonced") {
+        objectToHash.timestamp = timestamp;
+    }
+
+    const crypto = require("opendsu").loadApi("crypto");
+    const hash = crypto.sha256(objectToHash);
+
+    return hash;
+}
+
 function getSafeCommandBody(domain, contractName, methodName, params) {
     if (!domain || typeof domain !== "string") {
         throw `Invalid domain specified: ${domain}!`;
@@ -37,10 +57,7 @@ function getNoncedCommandBody(domain, contract, method, params, timestamp, signe
     commandBody.timestamp = timestamp;
     commandBody.signerDID = signerDID.getIdentifier();
 
-    const bricksledger = require("bricksledger");
-    const command = bricksledger.createCommand(commandBody);
-
-    const hash = command.getHash();
+    const hash = getCommandHash(commandBody);
     const signature = signerDID.sign(hash);
 
     commandBody.requesterSignature = signature;

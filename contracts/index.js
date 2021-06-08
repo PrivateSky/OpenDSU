@@ -92,7 +92,7 @@ async function generateNoncedCommand(signerDID, domain, contractName, methodName
     try {
         if (typeof signerDID === "string") {
             // signerDID contains the identifier, so we need to load the DID
-            const w3cDID = require("opendsu").loadAPI("w3cDID");
+            const w3cDID = require("opendsu").loadAPI("w3cdid");
             signerDID = await $$.promisify(w3cDID.resolveDID)(signerDID);
         }
 
