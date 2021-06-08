@@ -126,6 +126,7 @@ function BasicDB(storageStrategy) {
             if (res) {
                 currentRecord = res;
                 newRecord.__version = currentRecord.__version;
+                newRecord.pk = key;
             }
             doVersionIncAndUpdate(currentRecord, (err) => {
                 if (err) {
