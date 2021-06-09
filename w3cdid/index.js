@@ -2,31 +2,33 @@
     OpenDSU W3C compatible  ID pluginisable resolver  that can resolve arbitrary DID methods.
 
         1. SeedSSI compatible DID method that does not need anchoring or external DSUs
-            did:ssi:sReadPK:blockchain_domain::publicKey:v2:
+            did:ssi:key:blockchain_domain::publicKey:v2:
 
         2.  DID method storing the public key in an anchored DSU. It is a SeedSSI compatible DID method.
-            did:ssi:sRead:blockchain_domain::hash_publicKey::
+            did:ssi:sread:blockchain_domain:hash_privateKey:hash_publicKey:
 
         3.  DID method storing the public key in an immutable DSU that is mounting another mutable DSU to store the keys
-            did:ssi:const:blockchain_domain:const_string:::
+            did:ssi:name:blockchain_domain:public-name:::
 
         4. Group DID
             did:ssi:group:blockchain_domain:const_string
 
-        5. Other possibilities could be  DID Web Method, or a did:alias, etc
+        5. DID Web Method
             did:web:internet_domain.
 
+        6. SSI DID_KEY
+            did:key:public_key
 
-
-
+        7. DID DEMO
+            did:demo:const_string
         TODO: analise the implementation of resolvers  masquerading as DSUs anchored in the BDNS central root:  did:ethereum:whatever
 
  */
 
 const OPENDSU_METHOD_NAME = "ssi";
-const S_READ_PK_SUBTYPE = "sReadPK";
+const KEY_SUBTYPE = "key";
 const S_READ_SUBTYPE = "sRead";
-const CONST_SUBTYPE = "const";
+const NAME_SUBTYPE = "name";
 const DEMO_METHOD_NAME = "demo";
 const GROUP_METHOD_NAME = "group";
 
@@ -62,8 +64,8 @@ function registerDIDMethod(method, implementation) {
 
 
 registerDIDMethod(S_READ_SUBTYPE, require("./didssi/ssiMethods").create_sRead_DIDMethod());
-registerDIDMethod(S_READ_PK_SUBTYPE, require("./didssi/ssiMethods").create_sReadPK_DIDMethod());
-registerDIDMethod(CONST_SUBTYPE, require("./didssi/ssiMethods").create_const_DIDMethod());
+registerDIDMethod(KEY_SUBTYPE, require("./didssi/ssiMethods").create_key_DIDMethod());
+registerDIDMethod(NAME_SUBTYPE, require("./didssi/ssiMethods").create_name_DIDMethod());
 
 registerDIDMethod(DEMO_METHOD_NAME, require("./demo/diddemo").create_demo_DIDMethod());
 registerDIDMethod(GROUP_METHOD_NAME, require("./didssi/ssiMethods").create_group_DIDMethod());

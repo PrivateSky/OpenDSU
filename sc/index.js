@@ -4,7 +4,6 @@
  */
 
 const getMainDSU = () => {
-
     if (!globalVariableExists("rawDossier")) {
         throw Error("Main DSU does not exist in the current context.");
     }
@@ -32,41 +31,22 @@ function SecurityContext(keySSI) {
     if (typeof keySSI === "string") {
         keySSI = keySSISpace.parse(keySSI);
     }
-    let storageDB;
 
-    setTimeout(() => {
-        storageDB = db.getWalletDB(keySSI, DB_NAME);
-        storageDB.on("initialised", () => {
-            this.finishInitialisation();
-        });
-    }, 0);
+    let storageDB = db.getWalletDB(keySSI, DB_NAME);
 
 
-    this.addDID = (did, keySSI, callback) => {
-        if (typeof keySSI === "object") {
-            keySSI = keySSI.getIdentifier();
-        }
-
-        storageDB.insertRecord(DIDS_TABLE, did, {keySSI}, callback);
+    this.registerDID = (didDocument, callback) => {
+        //TODO insert or update
+        storageDB.insertRecord(DIDS_TABLE, didDocument.getIdentifier(), didDocument.getPrivateKeys(), callback);
     };
 
-    this.getKeySSIForDIDAsString = (did, callback) => {
+    this.getPrivateInfoForDID = (did, callback) => {
         storageDB.getRecord(DIDS_TABLE, did, (err, record) => {
             if (err) {
                 return callback(err);
             }
 
-            callback(undefined, record.keySSI);
-        });
-    };
-
-    this.getKeySSIForDIDAsObject = (did, callback) => {
-        this.getKeySSIForDIDAsString(did, (err, keySSIString) => {
-            if (err) {
-                return callback(err);
-            }
-
-            callback(undefined, keySSISpace.parse(keySSIString));
+            callback(undefined, $$.Buffer.from(record.privateKey));
         });
     };
 
@@ -166,19 +146,31 @@ function SecurityContext(keySSI) {
         crypto.sign(powerfulKeySSI, data, callback);
     }
 
-    this.verify = (keySSI, data, signature, callback) => {
-
+    this.signAsDID = (didDocument, data, callback) => {
+        didDocument.signImpl(data, callback);
+    }
+    //Get SSI for DID
+    this.verifyForDID = (didDocument, data, signature, callback) => {
+        didDocument.verifyImpl(data, signature, callback);
     }
 
-    this.encrypt = (keySSI, data, callback) => {
+
+    this.encryptForDID = (did, data, callback) => {
 
     };
 
-    this.decrypt = (keySSI, data, callback) => {
+    this.decryptAsDID = (did, data, callback) => {
 
     };
 
-    bindAutoPendingFunctions(this);
+    // bindAutoPendingFunctions(this, ["on", "off"]);
+    // setTimeout(() => {
+    //     storageDB = db.getWalletDB(keySSI, DB_NAME);
+    //     storageDB.on("initialised", () => {
+    //         console.log("Finished initialization #############################################", this);
+    //         this.finishInitialisation();
+    //     });
+    // }, 0);
     return this;
 }
 
@@ -186,6 +178,7 @@ const getSecurityContext = (keySSI) => {
     if (typeof $$.sc === "undefined") {
         const keySSISpace = require("opendsu").loadAPI("keyssi");
         if (typeof keySSI === "undefined") {
+            //TODO get sc from main dsu
             // throw Error(`A keySSI should be provided.`)
             keySSI = keySSISpace.createSeedSSI("default");
         }

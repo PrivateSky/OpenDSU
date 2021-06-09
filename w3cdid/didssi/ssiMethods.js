@@ -1,7 +1,7 @@
 function sRead_DIDMethod() {
     let pkDocument = require("./sReadDID");
-    this.create = function (SeedSSI, callback) {
-        callback(null, pkDocument.initiateDIDDocument(SeedSSI));
+    this.create = function (seedSSI, callback) {
+        callback(null, pkDocument.initiateDIDDocument(seedSSI));
     }
 
     this.resolve = function (tokens, callback) {
@@ -9,38 +9,35 @@ function sRead_DIDMethod() {
     }
 }
 
-function sReadPK_DIDMethod() {
-    let pkDocument = require("./sReadPKDID");
-    this.create = function (SeedSSI, callback) {
-        callback(null, pkDocument.initiateDIDDocument(SeedSSI));
+function Key_DIDMethod() {
+    let KeyDIDDocument = require("./KeyDidDocument");
+    this.create = function (seedSSI, callback) {
+        const keyDIDDocument = KeyDIDDocument.initiateDIDDocument(seedSSI);
+        const securityContext = require("opendsu").loadAPI("sc").getSecurityContext();
+
+        securityContext.registerDID(keyDIDDocument, (err) => {
+            if (err) {
+                return callback(createOpenDSUErrorWrapper(`failed to register did ${keyDIDDocument.getIdentifier()} in security context`, err));
+            }
+
+            callback(null, keyDIDDocument);
+        })
     }
 
     this.resolve = function (tokens, callback) {
-        callback(null, pkDocument.createDIDDocument(tokens))
+        callback(null, KeyDIDDocument.createDIDDocument(tokens))
     }
 }
 
+function Name_DIDMethod() {
+    const NameDIDDocument = require("./GroupDIDDocument");
 
-function Alias_DIDMethod() {
-    let aliasDocument = require("../proposals/aliasDocument");
-    this.create = function (alias, SeedSSI, callback) {
-        callback(null, aliasDocument.initiateDIDDocument(alias, SeedSSI));
-    }
-
-    this.resolve = function (tokens, callback) {
-        callback(null, aliasDocument.createDIDDocument(tokens))
-    }
-}
-
-function Const_DIDMethod() {
-    const GroupDIDDocument = require("./GroupDIDDocument");
-
-    this.create = (domain, constString, callback) => {
-        callback(null, GroupDIDDocument.initiateDIDDocument(domain, constString));
+    this.create = (domain, publicName, callback) => {
+        callback(null, NameDIDDocument.initiateDIDDocument(domain, publicName));
     }
 
     this.resolve = (tokens, callback) => {
-        callback(null, GroupDIDDocument.createDIDDocument(tokens))
+        callback(null, NameDIDDocument.createDIDDocument(tokens))
     }
 }
 
@@ -56,30 +53,26 @@ function Group_DIDMethod() {
     }
 }
 
-function create_sReadPK_DIDMethod() {
-    return new sReadPK_DIDMethod();
+function create_key_DIDMethod() {
+    return new Key_DIDMethod();
 }
 
 function create_sRead_DIDMethod() {
     return new sRead_DIDMethod();
 }
 
-function create_alias_DIDMethod() {
-    return new Alias_DIDMethod();
+function create_name_DIDMethod() {
+    return new Name_DIDMethod();
 }
 
-function create_const_DIDMethod(domain, constString) {
-    return new Const_DIDMethod();
-}
-
-function create_group_DIDMethod(domain, groupName) {
-    return new Group_DIDMethod(domain, groupName);
+function create_group_DIDMethod() {
+    return new Group_DIDMethod();
 }
 
 
 module.exports = {
-    create_sReadPK_DIDMethod,
+    create_key_DIDMethod,
     create_sRead_DIDMethod,
-    create_const_DIDMethod,
+    create_name_DIDMethod,
     create_group_DIDMethod
 }

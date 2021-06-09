@@ -9,19 +9,19 @@
 
  */
 
-function W3CDID_Mixin(){
+function W3CDID_Mixin(target) {
 
-
-    this.findPrivateKeysInSecurityContext = function(callback){
-
-    };
-
-    this.sign = function(hash, callback){
+    const securityContext = require("../index").loadAPI("sc").getSecurityContext();
+    target.findPrivateKeysInSecurityContext = function (callback) {
 
     };
 
-    this.verify = function(hash, signature, callback){
+    target.sign = function (hash, callback) {
+        securityContext.signAsDID(target, hash, callback);
+    };
 
+    target.verify = function (hash, signature, callback) {
+        securityContext.verifyForDID(target, hash, signature, callback);
     };
 
 
@@ -39,38 +39,38 @@ function W3CDID_Mixin(){
     * A -> B   sign(enc( ASYM_PK_B, M), PK_A)
     * */
 
-    this.encrypt = function(message, forDID, callback){
+    target.encrypt = function (message, forDID, callback) {
 
     };
 
-    this.decrypt = function(callback){
+    target.decrypt = function (callback) {
 
     };
 
     /* messages to the APiHUb MQ compatible APIs
 
     * */
-    this.sendMessage = function(message, toOtherDID, callback){
+    target.sendMessage = function (message, toOtherDID, callback) {
 
     };
 
-    this.on = function(callback){
+    target.on = function (callback) {
 
     };
 
-    this.revokeDID = function(callback){
+    target.revokeDID = function (callback) {
 
     };
 
-    this.revokeKey = function(key, callback){
+    target.revokeKey = function (key, callback) {
 
     };
 
-    this.getControllerKey = function(callback){
+    target.getControllerKey = function (callback) {
 
     };
 
-    this.getPublicKeys = function(callback){
+    target.getPublicKeys = function (callback) {
 
     };
 
