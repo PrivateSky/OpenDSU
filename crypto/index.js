@@ -43,7 +43,6 @@ const deriveEncryptionKey = (password) => {
 
 const convertDerSignatureToASN1 = (derSignature) => {
     return require('pskcrypto').decodeDerToASN1ETH(derSignature);
-
 };
 
 const convertASN1SignatureToDer = (ans1Signature) => {
@@ -106,6 +105,27 @@ const decodeBase58 = (data) => {
     const decodeFn = getCryptoFunctionForKeySSI(templateSeedSSI, "decoding");
     return decodeFn(data);
 };
+
+
+/**
+ *
+ * @param rawPublicKey
+ * @param outputFormat - pem or der
+ */
+const convertPublicKey = (rawPublicKey, outputFormat, curveName) => {
+    const ecGenerator = crypto.createKeyPairGenerator();
+    return ecGenerator.convertPublicKey(rawPublicKey, {format: outputFormat, namedCurve: curveName});
+};
+
+/**
+ *
+ * @param rawPrivateKey
+ * @param outputFormat - pem or der
+ */
+const convertPrivateKey = (rawPrivateKey, outputFormat)=>{
+    const ecGenerator = crypto.createKeyPairGenerator();
+    return ecGenerator.convertPrivateKey(rawPrivateKey, {format: outputFormat});
+}
 
 const createJWT = (seedSSI, scope, credentials, options, callback) => {
     jwtUtils.createJWT(
@@ -234,5 +254,7 @@ module.exports = {
     parseJWTSegments: jwtUtils.parseJWTSegments,
     createBloomFilter,
     JWT_ERRORS,
-    deriveEncryptionKey
+    deriveEncryptionKey,
+    convertPrivateKey,
+    convertPublicKey
 };
