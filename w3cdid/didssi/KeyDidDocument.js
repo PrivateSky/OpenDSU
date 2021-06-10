@@ -1,5 +1,4 @@
 function KeyDIDDocument(isInitialisation, seedSSI) {
-
     let mixin = require("../W3CDID_Mixin");
     mixin(this);
     let tokens;
@@ -7,11 +6,10 @@ function KeyDIDDocument(isInitialisation, seedSSI) {
         tokens = seedSSI;
         seedSSI = undefined;
     }
-    const openDSU = require("../../index");
+    const openDSU = require("opendsu");
     const keySSISpace = openDSU.loadAPI("keyssi");
     const crypto = openDSU.loadAPI("crypto");
     const sc = openDSU.loadAPI("sc").getSecurityContext();
-    console.log("============================================== Got sc ================================================ ");
     if (typeof seedSSI === "string") {
         try {
             seedSSI = keySSISpace.parse(seedSSI);
@@ -19,7 +17,6 @@ function KeyDIDDocument(isInitialisation, seedSSI) {
             throw createOpenDSUErrorWrapper(`Failed to parse ssi ${seedSSI}`);
         }
     }
-
 
     const getDomain = () => {
         let domain;
@@ -35,11 +32,10 @@ function KeyDIDDocument(isInitialisation, seedSSI) {
     const getPublicKey = (format) => {
         let publicKey;
         if (!isInitialisation) {
-            publicKey = tokens[1];
+            publicKey = crypto.decodeBase58(tokens[1])
         } else {
             publicKey = seedSSI.getPublicKey("raw");
         }
-
         if (format) {
             publicKey = crypto.convertPublicKey(publicKey, format);
         }
@@ -49,8 +45,8 @@ function KeyDIDDocument(isInitialisation, seedSSI) {
 
     this.getIdentifier = () => {
         const domain = getDomain();
-        const publicKey = getPublicKey();
-
+        let publicKey = getPublicKey();
+        publicKey = crypto.encodeBase58(publicKey);
         return `did:ssi:key:${domain}:${publicKey}`;
     };
 
@@ -87,6 +83,6 @@ module.exports = {
         return new KeyDIDDocument(true, seedSSI)
     },
     createDIDDocument: function (tokens) {
-        return new KeyDIDDocument(false, [tokens[2], tokens[3]]);
+        return new KeyDIDDocument(false, [tokens[3], tokens[4]]);
     }
 };
