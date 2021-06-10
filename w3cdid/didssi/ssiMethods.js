@@ -30,10 +30,21 @@ function Key_DIDMethod() {
 }
 
 function Name_DIDMethod() {
-    const NameDIDDocument = require("./GroupDIDDocument");
+    const NameDIDDocument = require("./NameDIDDocument");
 
     this.create = (domain, publicName, callback) => {
-        callback(null, NameDIDDocument.initiateDIDDocument(domain, publicName));
+        const nameDIDDocument = NameDIDDocument.initiateDIDDocument(domain, publicName);
+        nameDIDDocument.on("initialised", () => {
+            const securityContext = require("opendsu").loadAPI("sc").getSecurityContext();
+
+            securityContext.registerDID(nameDIDDocument, (err) => {
+                if (err) {
+                    return callback(createOpenDSUErrorWrapper(`failed to register did ${nameDIDDocument.getIdentifier()} in security context`, err));
+                }
+
+                callback(null, nameDIDDocument);
+            })
+        });
     }
 
     this.resolve = (tokens, callback) => {

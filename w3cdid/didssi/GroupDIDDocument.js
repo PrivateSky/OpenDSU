@@ -3,70 +3,11 @@ function GroupDIDDocument(domain, groupName) {
         throw Error(`Invalid number of arguments. Expected blockchain domain and group name.`);
     }
 
-    let mixin = require("../W3CDID_Mixin");
-    mixin(this);
+    let mixin = require("./ConstDID_Mixin");
+    mixin(this, domain, groupName);
     const bindAutoPendingFunctions = require("../../utils/BindAutoPendingFunctions").bindAutoPendingFunctions;
     const openDSU = require("opendsu");
-    const sc = openDSU.loadAPI("sc").getSecurityContext();
-    const error = openDSU.loadAPI("error");
-    const keySSISpace = openDSU.loadAPI("keyssi");
-    const resolver = openDSU.loadAPI("resolver");
-
-    let dsu;
     const MEMBERS_FILE = "members";
-    const WRITABLE_DSU_PATH = "writableDSU";
-
-    const createDSU = async () => {
-        let constDSU;
-        try {
-            constDSU = await $$.promisify(resolver.createConstDSU)(domain, groupName);
-        } catch (e) {
-            return error.reportUserRelevantError(`Failed to create constDSU`, e);
-        }
-
-        let seedSSI;
-        try {
-            dsu = await $$.promisify(resolver.createSeedDSU)(domain);
-        } catch (e) {
-            return error.reportUserRelevantError(`Failed to create writableDSU`, e);
-        }
-
-        try {
-            seedSSI = await $$.promisify(dsu.getKeySSIAsString)();
-        } catch (e) {
-            return error.reportUserRelevantError(`Failed to get seedSSI`, e);
-        }
-
-        try {
-            await $$.promisify(constDSU.mount)(WRITABLE_DSU_PATH, seedSSI);
-        } catch (e) {
-            return error.reportUserRelevantError(`Failed to mount writable DSU`, e);
-        }
-
-        this.finishInitialisation();
-    };
-
-    const init = () => {
-        resolver.loadDSU(keySSISpace.createConstSSI(domain, groupName), async (err, constDSUInstance) => {
-            if (err) {
-                try {
-                    await createDSU();
-                } catch (e) {
-                    return error.reportUserRelevantError(`Failed to create const DSU`, e);
-                }
-                return;
-            }
-
-            try {
-                const dsuContext = await $$.promisify(constDSUInstance.getArchiveForPath)(WRITABLE_DSU_PATH);
-                dsu = dsuContext.archive;
-            } catch (e) {
-                return error.reportUserRelevantError(`Failed to load writableDSU`, e);
-            }
-
-            this.finishInitialisation();
-        });
-    }
 
     this.addMember = (identity, alias, callback) => {
         if (typeof alias === "function") {
@@ -180,7 +121,7 @@ function GroupDIDDocument(domain, groupName) {
     };
 
     const readMembers = (callback) => {
-        dsu.readFile(MEMBERS_FILE, (err, members) => {
+        this.dsu.readFile(MEMBERS_FILE, (err, members) => {
             if (err || typeof members === "undefined") {
                 members = {};
             } else {
@@ -213,22 +154,22 @@ function GroupDIDDocument(domain, groupName) {
                     }
                 });
 
-                return dsu.writeFile(MEMBERS_FILE, JSON.stringify(members), callback);
+                return this.dsu.writeFile(MEMBERS_FILE, JSON.stringify(members), callback);
             } else if (operation === "add") {
                 identities.forEach((id, index) => {
                     if (typeof members[id] === "undefined") {
                         members[id] = aliases[index]
                     }
                 });
-                return dsu.writeFile(MEMBERS_FILE, JSON.stringify(members), callback);
+                return this.dsu.writeFile(MEMBERS_FILE, JSON.stringify(members), callback);
             } else {
                 callback(Error(`Invalid operation ${operation}`));
             }
         });
     };
 
-    bindAutoPendingFunctions(this, ["getIdentifier", "getGroupName"]);
-    init();
+    bindAutoPendingFunctions(this, ["init", "getIdentifier", "getGroupName"]);
+    this.init();
     return this;
 }
 

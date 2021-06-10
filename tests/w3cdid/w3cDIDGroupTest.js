@@ -4,7 +4,9 @@ const tir = require("../../../../psknode/tests/util/tir");
 const dc = require("double-check");
 const assert = dc.assert;
 
-const w3cDID = require('../../index').loadAPI("w3cdid");
+const openDSU = require('../../index');
+$$.__registerModule("opendsu", openDSU);
+const w3cDID = openDSU.loadAPI("w3cdid");
 const TaskCounter = require("swarmutils").TaskCounter;
 
 function createIdentities(callback) {
@@ -75,10 +77,12 @@ assert.callback('w3cDID Group test', (testFinished) => {
         }
 
         const domain = "default";
-        const keySSISpace = require("opendsu").loadAPI("keyssi");
-        const sc = require("opendsu").loadAPI("sc");
+        const resolver = openDSU.loadAPI("resolver");
+        const sc = openDSU.loadAPI("sc");
 
-        const seedSSI = await $$.promisify(keySSISpace.createSeedSSI)(domain);
+        const seedDSU = await $$.promisify(resolver.createSeedDSU)(domain);
+        const seedSSI = await $$.promisify(seedDSU.getKeySSIAsObject)();
+
         await sc.getSecurityContext(seedSSI);
         createIdentities((err, didDocuments) => {
             if (err) {
@@ -131,5 +135,5 @@ assert.callback('w3cDID Group test', (testFinished) => {
         });
     });
 
-}, 15000);
+}, 1500000000);
 
