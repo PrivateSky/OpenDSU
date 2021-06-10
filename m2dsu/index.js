@@ -200,6 +200,9 @@ module.exports = {
 	getMappingEngine: function (persistenceDSU, options) {
 		return new MappingEngine(persistenceDSU, options);
 	},
+	getMessagesPipe:function (){
+		return require("./messagesPipe");
+	},
 	defineMapping: mappingRegistry.defineMapping,
 	defineApi: apisRegistry.defineApi
 }
