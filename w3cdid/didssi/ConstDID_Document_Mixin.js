@@ -14,8 +14,6 @@ function ConstDID_Document_Mixin(target, domain, name) {
     const WRITABLE_DSU_PATH = "writableDSU";
     const PUB_KEY_PATH = "publicKey";
 
-    let privateKey;
-
     const generatePublicKey = async () => {
         let seedSSI;
         try {
@@ -24,7 +22,7 @@ function ConstDID_Document_Mixin(target, domain, name) {
             return error.reportUserRelevantError(`Failed to create SeedSSI`, e);
         }
 
-        privateKey = seedSSI.getPrivateKey();
+        target.privateKey = seedSSI.getPrivateKey();
         return seedSSI.getPublicKey("raw");
     };
 
@@ -92,7 +90,7 @@ function ConstDID_Document_Mixin(target, domain, name) {
 
     target.getPrivateKeys = () => {
         const res = {};
-        res.privateKey = privateKey;
+        res.privateKey = target.privateKey;
         return res;
     };
 

@@ -27,7 +27,7 @@
 
 const OPENDSU_METHOD_NAME = "ssi";
 const KEY_SUBTYPE = "key";
-const S_READ_SUBTYPE = "sRead";
+const S_READ_SUBTYPE = "sread";
 const NAME_SUBTYPE = "name";
 const DEMO_METHOD_NAME = "demo";
 const GROUP_METHOD_NAME = "group";

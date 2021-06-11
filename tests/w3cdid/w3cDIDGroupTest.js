@@ -135,5 +135,5 @@ assert.callback('w3cDID Group test', (testFinished) => {
         });
     });
 
-}, 1500000000);
+}, 15000);
 

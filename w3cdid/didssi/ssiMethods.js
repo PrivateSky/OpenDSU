@@ -1,11 +1,24 @@
 function SReadDID_Method() {
     let SReadDID_Document = require("./SReadDID_Document");
-    this.create = function (seedSSI, callback) {
-        callback(null, SReadDID_Document.initiateDIDDocument(seedSSI));
-    }
+    this.create = (seedSSI, callback) => {
+        const sReadDIDDocument = SReadDID_Document.initiateDIDDocument(seedSSI);
+        sReadDIDDocument.on("initialised", () => {
+            const securityContext = require("opendsu").loadAPI("sc").getSecurityContext();
 
+            securityContext.registerDID(sReadDIDDocument, (err) => {
+                if (err) {
+                    return callback(createOpenDSUErrorWrapper(`failed to register did ${sReadDIDDocument.getIdentifier()} in security context`, err));
+                }
+
+                callback(null, sReadDIDDocument);
+            })
+        });
+    }
     this.resolve = function (tokens, callback) {
-        callback(null, SReadDID_Document.createDIDDocument(tokens))
+        const sReadDIDDocument = SReadDID_Document.createDIDDocument(tokens);
+        sReadDIDDocument.on("initialised", () => {
+            callback(null, sReadDIDDocument);
+        });
     }
 }
 
