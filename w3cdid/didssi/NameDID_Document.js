@@ -3,7 +3,7 @@ function NameDID_Document(domain, name) {
         throw Error(`Invalid number of arguments. Expected blockchain domain and group name.`);
     }
 
-    let mixin = require("./ConstDID_Mixin");
+    let mixin = require("./ConstDID_Document_Mixin");
     mixin(this, domain, name);
     const bindAutoPendingFunctions = require("../../utils/BindAutoPendingFunctions").bindAutoPendingFunctions;
 
