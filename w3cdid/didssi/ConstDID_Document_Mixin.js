@@ -1,4 +1,4 @@
-function ConstDID_Mixin(target, domain, name) {
+function ConstDID_Document_Mixin(target, domain, name) {
     let mixin = require("../W3CDID_Mixin");
     const observableMixin = require("../../utils/ObservableMixin")
     mixin(target);
@@ -121,4 +121,4 @@ function ConstDID_Mixin(target, domain, name) {
     };
 }
 
-module.exports = ConstDID_Mixin;
+module.exports = ConstDID_Document_Mixin;

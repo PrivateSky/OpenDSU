@@ -1,16 +1,16 @@
-function sRead_DIDMethod() {
-    let pkDocument = require("./sReadDID");
+function SReadDID_Method() {
+    let SReadDID_Document = require("./SReadDID_Document");
     this.create = function (seedSSI, callback) {
-        callback(null, pkDocument.initiateDIDDocument(seedSSI));
+        callback(null, SReadDID_Document.initiateDIDDocument(seedSSI));
     }
 
     this.resolve = function (tokens, callback) {
-        callback(null, pkDocument.createDIDDocument(tokens))
+        callback(null, SReadDID_Document.createDIDDocument(tokens))
     }
 }
 
-function Key_DIDMethod() {
-    let KeyDIDDocument = require("./KeyDidDocument");
+function KeyDID_Method() {
+    let KeyDIDDocument = require("./KeyDID_Document");
     this.create = function (seedSSI, callback) {
         const keyDIDDocument = KeyDIDDocument.initiateDIDDocument(seedSSI);
         const securityContext = require("opendsu").loadAPI("sc").getSecurityContext();
@@ -29,8 +29,8 @@ function Key_DIDMethod() {
     }
 }
 
-function Name_DIDMethod() {
-    const NameDIDDocument = require("./NameDIDDocument");
+function NameDID_Method() {
+    const NameDIDDocument = require("./NameDID_Document");
 
     this.create = (domain, publicName, callback) => {
         const nameDIDDocument = NameDIDDocument.initiateDIDDocument(domain, publicName);
@@ -52,8 +52,8 @@ function Name_DIDMethod() {
     }
 }
 
-function Group_DIDMethod() {
-    const GroupDIDDocument = require("./GroupDIDDocument");
+function GroupDID_Method() {
+    const GroupDIDDocument = require("./GroupDID_Document");
 
     this.create = (domain, groupName, callback) => {
         callback(null, GroupDIDDocument.initiateDIDDocument(domain, groupName));
@@ -64,26 +64,26 @@ function Group_DIDMethod() {
     }
 }
 
-function create_key_DIDMethod() {
-    return new Key_DIDMethod();
+function create_KeyDID_Method() {
+    return new KeyDID_Method();
 }
 
-function create_sRead_DIDMethod() {
-    return new sRead_DIDMethod();
+function create_SReadDID_Method() {
+    return new SReadDID_Method();
 }
 
-function create_name_DIDMethod() {
-    return new Name_DIDMethod();
+function create_NameDID_Method() {
+    return new NameDID_Method();
 }
 
-function create_group_DIDMethod() {
-    return new Group_DIDMethod();
+function create_GroupDID_Method() {
+    return new GroupDID_Method();
 }
 
 
 module.exports = {
-    create_key_DIDMethod,
-    create_sRead_DIDMethod,
-    create_name_DIDMethod,
-    create_group_DIDMethod
+    create_KeyDID_Method,
+    create_SReadDID_Method,
+    create_NameDID_Method,
+    create_GroupDID_Method
 }

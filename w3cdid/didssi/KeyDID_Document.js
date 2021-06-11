@@ -1,4 +1,4 @@
-function KeyDIDDocument(isInitialisation, seedSSI) {
+function KeyDID_Document(isInitialisation, seedSSI) {
     let mixin = require("../W3CDID_Mixin");
     mixin(this);
     let tokens;
@@ -69,9 +69,9 @@ function KeyDIDDocument(isInitialisation, seedSSI) {
 
 module.exports = {
     initiateDIDDocument: function (seedSSI) {
-        return new KeyDIDDocument(true, seedSSI)
+        return new KeyDID_Document(true, seedSSI)
     },
     createDIDDocument: function (tokens) {
-        return new KeyDIDDocument(false, [tokens[3], tokens[4]]);
+        return new KeyDID_Document(false, [tokens[3], tokens[4]]);
     }
 };

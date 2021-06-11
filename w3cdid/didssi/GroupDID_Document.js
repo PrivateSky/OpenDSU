@@ -1,4 +1,4 @@
-function GroupDIDDocument(domain, groupName) {
+function GroupDID_Document(domain, groupName) {
     if (typeof domain === "undefined" || typeof groupName === "undefined") {
         throw Error(`Invalid number of arguments. Expected blockchain domain and group name.`);
     }
@@ -176,9 +176,9 @@ function GroupDIDDocument(domain, groupName) {
 
 module.exports = {
     initiateDIDDocument: function (domain, groupName) {
-        return new GroupDIDDocument(domain, groupName)
+        return new GroupDID_Document(domain, groupName)
     },
     createDIDDocument: function (tokens) {
-        return new GroupDIDDocument(tokens[3], tokens[4]);
+        return new GroupDID_Document(tokens[3], tokens[4]);
     }
 };

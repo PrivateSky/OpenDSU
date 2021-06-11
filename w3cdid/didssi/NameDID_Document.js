@@ -1,4 +1,4 @@
-function NameDIDDocument(domain, name) {
+function NameDID_Document(domain, name) {
     if (typeof domain === "undefined" || typeof name === "undefined") {
         throw Error(`Invalid number of arguments. Expected blockchain domain and group name.`);
     }
@@ -23,9 +23,9 @@ function NameDIDDocument(domain, name) {
 
 module.exports = {
     initiateDIDDocument: function (domain, name) {
-        return new NameDIDDocument(domain, name)
+        return new NameDID_Document(domain, name)
     },
     createDIDDocument: function (tokens) {
-        return new NameDIDDocument(tokens[3], tokens[4]);
+        return new NameDID_Document(tokens[3], tokens[4]);
     }
 };

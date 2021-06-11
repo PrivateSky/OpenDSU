@@ -63,12 +63,12 @@ function registerDIDMethod(method, implementation) {
 }
 
 
-registerDIDMethod(S_READ_SUBTYPE, require("./didssi/ssiMethods").create_sRead_DIDMethod());
-registerDIDMethod(KEY_SUBTYPE, require("./didssi/ssiMethods").create_key_DIDMethod());
-registerDIDMethod(NAME_SUBTYPE, require("./didssi/ssiMethods").create_name_DIDMethod());
+registerDIDMethod(S_READ_SUBTYPE, require("./didssi/ssiMethods").create_SReadDID_Method());
+registerDIDMethod(KEY_SUBTYPE, require("./didssi/ssiMethods").create_KeyDID_Method());
+registerDIDMethod(NAME_SUBTYPE, require("./didssi/ssiMethods").create_NameDID_Method());
 
 registerDIDMethod(DEMO_METHOD_NAME, require("./demo/diddemo").create_demo_DIDMethod());
-registerDIDMethod(GROUP_METHOD_NAME, require("./didssi/ssiMethods").create_group_DIDMethod());
+registerDIDMethod(GROUP_METHOD_NAME, require("./didssi/ssiMethods").create_GroupDID_Method());
 
 
 module.exports = {
