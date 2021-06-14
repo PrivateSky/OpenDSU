@@ -9,6 +9,11 @@ function runSyncFunction({ apiSpaceName, functionName, params }) {
     return api[functionName].apply(undefined, params);
 }
 
+function runSyncFunctionOnlyFromWorker({ apiSpaceName, functionName, params }) {
+    return runSyncFunction({ apiSpaceName, functionName, params })
+}
+
 module.exports = {
-    runSyncFunction
+    runSyncFunction,
+    runSyncFunctionOnlyFromWorker
 }

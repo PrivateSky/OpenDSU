@@ -66,17 +66,8 @@ function createPoolOfNodeWorkers(options = {}) {
     });
 }
 
-function run(functionName, payload, callback) {
-    if (!this.workerPool) {
-        try {
-            const result = require("opendsu").loadAPI("workers").getFunctionsRegistry()[functionName](payload);
-            return callback(undefined, result);
-        } catch (error) {
-            return callback(error);
-        }
-    }
-
-    this.workerPool.addTask({ functionName, payload }, (error, result) => {
+function callbackForWorker(callback) {
+    return (error, result) => {
         if (error) {
             return callback(error);
         }
@@ -94,7 +85,26 @@ function run(functionName, payload, callback) {
         }
 
         return callback(undefined, taskResult);
-    });
+    }
+}
+
+function runTask(functionName, payload, callback) {
+    // task is executed if there is a worker available
+    const isExecuted = this.workerPool.runTaskImmediately({ functionName, payload }, callbackForWorker(callback));
+
+    if (!isExecuted) {
+        try {
+            const result = require("opendsu").loadAPI("workers").getFunctionsRegistry()[functionName](payload);
+            return callback(undefined, result);
+        } catch (error) {
+            return callback(error);
+        }
+    }
+}
+
+function addTask(functionName, payload, callback) {
+    // task is queued if there is no worker available
+    this.workerPool.addTask({ functionName, payload }, callbackForWorker(callback));
 }
 
 
@@ -105,13 +115,16 @@ class CrossEnvironmentWorkerPool {
     constructor(options) {
         const { ENVIRONMENT_TYPES } = require("../moduleConstants.js");
         this.workerPool = undefined;
+        this.environmentType = undefined;
 
         switch ($$.environmentType) {
             case ENVIRONMENT_TYPES.BROWSER_ENVIRONMENT_TYPE:
                 this.workerPool = createPoolOfWebWorkers(options);
+                this.environmentType = ENVIRONMENT_TYPES.BROWSER_ENVIRONMENT_TYPE;
                 break;
             case ENVIRONMENT_TYPES.NODEJS_ENVIRONMENT_TYPE:
                 this.workerPool = createPoolOfNodeWorkers(options);
+                this.environmentType = ENVIRONMENT_TYPES.NODEJS_ENVIRONMENT_TYPE;
                 break;
         }
     }
@@ -126,12 +139,30 @@ class CrossEnvironmentWorkerPool {
             return;
         }
 
-        run.call(this, currentFunctionName, payload, callback);
+        runTask.call(this, currentFunctionName, payload, callback);
+    }
+
+    runSyncFunctionOnlyByWorker(apiSpaceName, functionName, ...params) {
+        const currentFunctionName = "runSyncFunctionOnlyFromWorker";
+        const callback = params.pop();
+        const payload = { apiSpaceName, functionName, params };
+
+        if (typeof callback !== 'function') {
+            console.error(`[workers] function ${currentFunctionName} must receive a callback!`);
+            return;
+        }
+
+        addTask.call(this, "runSyncFunctionOnlyFromWorker", payload, callback);
+    }
+
+    get environment() {
+        return this.environmentType;
     }
 }
 
 function createPool(options) {
-    return new CrossEnvironmentWorkerPool(options);
+    const pool = new CrossEnvironmentWorkerPool(options);
+    return pool.environment ? pool : undefined;
 }
 
 function getFunctionsRegistry() {
