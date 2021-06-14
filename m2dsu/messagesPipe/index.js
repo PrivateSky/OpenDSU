@@ -47,9 +47,10 @@ module.exports = function (maxGroupSize, maxQueuingTime, groupingFunction) {
 
         if (messageGroup.length < this.queue.length || maxGroupSize <= this.queue.length || forceFlush) {
             messageGroup = [...messageGroup];
+            //TODO we are loosing messages that are not properly digested
             this.queue.splice(0,messageGroup.length);
             stopWaitingMessages();
-            newGroupCallback(messageGroup);
+            await newGroupCallback(messageGroup);
         }
         startWaitingMessages();
     }
