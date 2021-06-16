@@ -72,5 +72,5 @@ assert.callback('w3cDID Group remove member test', (testFinished) => {
         });
     });
 
-}, 1500000);
+}, 15000);
 
