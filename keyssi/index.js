@@ -198,6 +198,12 @@ const createSignedHashLinkSSI = (domain, hashLink, timestamp, signature, vn, hin
     return signedHashLink;
 };
 
+const createPublicKeySSI = (domain, publicKey, vn, hint) => {
+    let publicKeySSI = keySSIFactory.createType(SSITypes.PUBLIC_KEY_SSI);
+    publicKeySSI.initialize(domain, publicKey, vn, hint);
+    return publicKeySSI;
+};
+
 module.exports = {
     parse,
     createSeedSSI,
@@ -216,5 +222,6 @@ module.exports = {
     createOwnershipSSI,
     createTransferSSI,
     createTemplateTransferSSI,
-    createSignedHashLinkSSI
+    createSignedHashLinkSSI,
+    createPublicKeySSI
 };
