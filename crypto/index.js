@@ -3,6 +3,7 @@ const crypto = require("pskcrypto");
 const cryptoRegistry = keySSIResolver.CryptoAlgorithmsRegistry;
 const keySSIFactory = keySSIResolver.KeySSIFactory;
 const SSITypes = keySSIResolver.SSITypes;
+const CryptoFunctionTypes = keySSIResolver.CryptoFunctionTypes;
 const jwtUtils = require("./jwt");
 
 const templateSeedSSI = keySSIFactory.createType(SSITypes.SEED_SSI);
@@ -35,6 +36,16 @@ const encrypt = (data, encryptionKey) => {
 const decrypt = (data, encryptionKey) => {
     const pskEncryption = crypto.createPskEncryption("aes-256-gcm");
     return pskEncryption.decrypt(data, encryptionKey);
+};
+
+const ecies_encrypt_ds = (senderKeySSI, receiverKeySSI, data) => {
+    const ecies_encrypt_ds = getCryptoFunctionForKeySSI(senderKeySSI, CryptoFunctionTypes.ECIES_ENCRYPTION_DS);
+    return ecies_encrypt_ds(senderKeySSI.getKeyPair(), receiverKeySSI.getPublicKey("raw"), data);
+};
+
+const ecies_decrypt_ds = (receiverKeySSI, data) => {
+    const ecies_decrypt_ds = getCryptoFunctionForKeySSI(receiverKeySSI, CryptoFunctionTypes.ECIES_DECRYPTION_DS);
+    return ecies_decrypt_ds(receiverKeySSI.getPrivateKey(), data);
 };
 
 const deriveEncryptionKey = (password) => {
@@ -114,7 +125,7 @@ const decodeBase58 = (data) => {
  */
 const convertPublicKey = (rawPublicKey, outputFormat, curveName) => {
     const ecGenerator = crypto.createKeyPairGenerator();
-    return ecGenerator.convertPublicKey(rawPublicKey, {format: outputFormat, namedCurve: curveName});
+    return ecGenerator.convertPublicKey(rawPublicKey, {outputFormat, namedCurve: curveName});
 };
 
 /**
@@ -122,9 +133,9 @@ const convertPublicKey = (rawPublicKey, outputFormat, curveName) => {
  * @param rawPrivateKey
  * @param outputFormat - pem or der
  */
-const convertPrivateKey = (rawPrivateKey, outputFormat)=>{
+const convertPrivateKey = (rawPrivateKey, outputFormat) => {
     const ecGenerator = crypto.createKeyPairGenerator();
-    return ecGenerator.convertPrivateKey(rawPrivateKey, {format: outputFormat});
+    return ecGenerator.convertPrivateKey(rawPrivateKey, {outputFormat});
 }
 
 const createJWT = (seedSSI, scope, credentials, options, callback) => {
@@ -256,5 +267,7 @@ module.exports = {
     JWT_ERRORS,
     deriveEncryptionKey,
     convertPrivateKey,
-    convertPublicKey
+    convertPublicKey,
+    ecies_encrypt_ds,
+    ecies_decrypt_ds
 };
