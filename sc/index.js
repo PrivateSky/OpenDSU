@@ -26,8 +26,6 @@ function SecurityContext(keySSI) {
 
     let isInitialized = false;
 
-    const bindAutoPendingFunctions = require("../utils/BindAutoPendingFunctions").bindAutoPendingFunctions;
-
     if (typeof keySSI === "string") {
         keySSI = keySSISpace.parse(keySSI);
     }
@@ -36,8 +34,13 @@ function SecurityContext(keySSI) {
 
 
     this.registerDID = (didDocument, callback) => {
-        //TODO insert or update
-        storageDB.insertRecord(DIDS_TABLE, didDocument.getIdentifier(), didDocument.getPrivateKeys(), callback);
+        storageDB.insertRecord(DIDS_TABLE, didDocument.getIdentifier(), didDocument.getPrivateKeys(), (err) => {
+            if (err) {
+                return storageDB.updateRecord(DIDS_TABLE, didDocument.getIdentifier(), didDocument.getPrivateKeys(), callback);
+            }
+
+            callback();
+        });
     };
 
     this.getPrivateInfoForDID = (did, callback) => {
@@ -64,14 +67,6 @@ function SecurityContext(keySSI) {
         }
 
         const keySSIIdentifier = keySSI.getIdentifier();
-        // storageDB.insertRecord(KEY_SSIS_TABLE, keySSIIdentifier, {capableOfSigningKeySSI: keySSIIdentifier}, (err) => {
-        //     if (err) {
-        //         return callback(createOpenDSUErrorWrapper(`Failed to add keySSI ${keySSI}`, err));
-        //     }
-        //
-        //     registerDerivedKeySSIs(keySSI, callback);
-        // });
-        // registerDerivedKeySSIs(keySSI);
 
         function registerDerivedKeySSIs(derivedKeySSI) {
             storageDB.insertRecord(KEY_SSIS_TABLE, derivedKeySSI.getIdentifier(), {capableOfSigningKeySSI: keySSIIdentifier}, (err) => {
@@ -147,30 +142,39 @@ function SecurityContext(keySSI) {
     }
 
     this.signAsDID = (didDocument, data, callback) => {
-        didDocument.signImpl(data, callback);
+        this.getPrivateInfoForDID(didDocument.getIdentifier(), (err, privateKey) => {
+            if (err) {
+                return callback(createOpenDSUErrorWrapper(`Failed to get private info for did ${didDocument.getIdentifier()}`, err));
+            }
+            didDocument.signImpl(privateKey, data, callback);
+        });
     }
-    //Get SSI for DID
+
     this.verifyForDID = (didDocument, data, signature, callback) => {
         didDocument.verifyImpl(data, signature, callback);
     }
 
 
-    this.encryptForDID = (did, data, callback) => {
+    this.encryptForDID = (senderDIDDocument, receiverDIDDocument, message, callback) => {
+        this.getPrivateInfoForDID(senderDIDDocument.getIdentifier(), (err, privateKey) => {
+            if (err) {
+                return callback(createOpenDSUErrorWrapper(`Failed to get private info for did ${senderDIDDocument.getIdentifier()}`, err));
+            }
 
+            senderDIDDocument.encryptMessageImpl(privateKey, receiverDIDDocument, message, callback);
+        });
     };
 
-    this.decryptAsDID = (did, data, callback) => {
+    this.decryptAsDID = (didDocument, encryptedMessage, callback) => {
+        this.getPrivateInfoForDID(didDocument.getIdentifier(), (err, privateKey) => {
+            if (err) {
+                return callback(createOpenDSUErrorWrapper(`Failed to get private info for did ${didDocument.getIdentifier()}`, err));
+            }
 
+            didDocument.decryptMessageImpl(privateKey, encryptedMessage, callback);
+        });
     };
 
-    // bindAutoPendingFunctions(this, ["on", "off"]);
-    // setTimeout(() => {
-    //     storageDB = db.getWalletDB(keySSI, DB_NAME);
-    //     storageDB.on("initialised", () => {
-    //         console.log("Finished initialization #############################################", this);
-    //         this.finishInitialisation();
-    //     });
-    // }, 0);
     return this;
 }
 
