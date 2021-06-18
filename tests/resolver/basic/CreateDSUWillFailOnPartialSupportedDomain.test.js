@@ -48,5 +48,4 @@ function prepareBDNSContext(folder) {
     }
 
     require('fs').writeFileSync(folder + '/external-volume/config/bdns.hosts', JSON.stringify(bdns));
-
 }
