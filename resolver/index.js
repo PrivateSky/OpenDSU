@@ -30,6 +30,14 @@ const createDSU = (templateKeySSI, options, callback) => {
         options = {addLog: true};
     }
 
+    if(typeof options === "undefined"){
+        options = {};
+    }
+
+    if(typeof options.addLog === "undefined"){
+        options.addLog = true;
+    }
+
     if (typeof templateKeySSI === "string") {
         try {
             templateKeySSI = keySSISpace.parse(templateKeySSI);

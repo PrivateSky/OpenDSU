@@ -87,13 +87,13 @@ function BasicDB(storageStrategy) {
             sharedDSUMetadata.pk = key;
             //sharedDSUMetadata.__changeId = uid();
             sharedDSUMetadata.__timestamp = Date.now();
-            storageStrategy.insertRecord(tableName, key, Object.assign(sharedDSUMetadata, record), (err) => {
+            storageStrategy.insertRecord(tableName, key, Object.assign(sharedDSUMetadata, record), (err, res) => {
                 if (err) {
                     return callback(createOpenDSUErrorWrapper(`Failed to insert record with key ${key} in table ${tableName} `, err));
                 }
 
-                self.dispatchEvent("change", JSON.stringify({table:tableName, pk: key}));
-                callback();
+                self.dispatchEvent("change", JSON.stringify({table: tableName, pk: key}));
+                callback(undefined, res);
             });
         });
     };
@@ -133,8 +133,8 @@ function BasicDB(storageStrategy) {
                     return callback(createOpenDSUErrorWrapper(`Failed to update record with key ${key} in table ${tableName} `, err));
                 }
 
-                self.dispatchEvent("change", JSON.stringify({table:tableName, pk: key}));
-                callback();
+                self.dispatchEvent("change", JSON.stringify({table: tableName, pk: key}));
+                callback(undefined, newRecord);
             });
         });
     }
@@ -181,7 +181,7 @@ function BasicDB(storageStrategy) {
                     return callback(createOpenDSUErrorWrapper(`Failed to update with key ${key} in table ${tableName} `, err));
                 }
 
-                self.dispatchEvent("change", JSON.stringify({table:tableName, pk: key}));
+                self.dispatchEvent("change", JSON.stringify({table: tableName, pk: key}));
                 callback();
             });
         })
