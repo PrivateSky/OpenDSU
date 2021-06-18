@@ -64,6 +64,30 @@ function W3CDID_Mixin(target) {
         securityContext.decryptAsDID(target, encryptedMessage, callback);
     };
 
+    const createCompatibleSeedSSI = async () => {
+        let newSeedSSI;
+        try {
+            newSeedSSI = await $$.promisify(keySSISpace.createSeedSSI)(receiverDIDDocument.getDomain());
+        } catch (e) {
+            throw createOpenDSUErrorWrapper(`Failed to create seed SSI`, e);
+        }
+
+        try {
+            await $$.promisify(securityContext.addPrivateKeyForDID)(receiverDIDDocument, newSeedSSI.getPrivateKey("raw"));
+            await $$.promisify(securityContext.addPublicKeyForDID)(receiverDIDDocument, newSeedSSI.getPublicKey("raw"));
+        } catch (e) {
+            throw createOpenDSUErrorWrapper(`Failed to save new private key and public key in security context`, e);
+        }
+
+        try {
+            await $$.promisify(receiverDIDDocument.addPublicKey)(newSeedSSI.getPublicKey("raw"));
+        } catch (e) {
+            throw createOpenDSUErrorWrapper(`Failed to save new private key and public key in security context`, e);
+        }
+
+        return newSeedSSI;
+    };
+
     target.encryptMessageImpl = function (privateKey, receiverDIDDocument, message, callback) {
         const senderSeedSSI = keySSISpace.createTemplateSeedSSI(target.getDomain());
         senderSeedSSI.initialize(target.getDomain(), privateKey);
@@ -74,14 +98,30 @@ function W3CDID_Mixin(target) {
             }
 
             const publicKeySSI = keySSISpace.createPublicKeySSI(receiverDIDDocument.getDomain(), receiverPublicKey);
-            let encryptedMessage;
-            try {
-                encryptedMessage = crypto.ecies_encrypt_ds(senderSeedSSI, publicKeySSI, message);
-            } catch (e) {
-                return callback(createOpenDSUErrorWrapper(`Failed to encrypt message`, e));
+
+            const encryptMessage = (receiverKeySSI) => {
+                let encryptedMessage;
+                try {
+                    encryptedMessage = crypto.ecies_encrypt_ds(senderSeedSSI, receiverKeySSI, message);
+                } catch (e) {
+                    return callback(createOpenDSUErrorWrapper(`Failed to encrypt message`, e));
+                }
+
+                callback(undefined, encryptedMessage);
             }
 
-            callback(undefined, encryptedMessage);
+            if (!senderSeedSSI.isCompatibleWith(publicKeySSI)) {
+                let compatibleSSI;
+                try {
+                    compatibleSSI = await createCompatibleSeedSSI();
+                } catch (e) {
+                    return callback(createOpenDSUErrorWrapper(`Failed to create compatible seed ssi`, err));
+                }
+
+                encryptMessage(compatibleSSI);
+            } else {
+                encryptMessage(publicKeySSI);
+            }
         });
     };
 

@@ -15,7 +15,7 @@ function NameDID_Document(domain, name) {
         return name;
     };
 
-    bindAutoPendingFunctions(this, ["init", "getIdentifier", "getName", "on", "off"]);
+    bindAutoPendingFunctions(this, ["init", "getIdentifier", "getName", "on", "off", "addPublicKey"]);
     this.init();
     return this;
 }

@@ -3,7 +3,7 @@ function SReadDID_Document(isInitialisation, seedSSI) {
     let tokens;
     let sReadSSI;
 
-    const PUB_KEY_PATH = "publicKey";
+    const PUB_KEYS_PATH = "publicKeys";
     DID_mixin(this);
 
     const openDSU = require("opendsu");
@@ -25,10 +25,9 @@ function SReadDID_Document(isInitialisation, seedSSI) {
         }
 
         this.privateKey = ssi.getPrivateKey();
-        this.dispatchEvent("privateKey");
         const publicKey = ssi.getPublicKey("raw");
         try {
-            await $$.promisify(this.dsu.writeFile)(PUB_KEY_PATH, publicKey);
+            await $$.promisify(this.dsu.writeFile)(`${PUB_KEYS_PATH}/${publicKey.toString("hex")}`);
         } catch (e) {
             throw createOpenDSUErrorWrapper(`Failed to write public key in dsu`, e);
         }
@@ -81,7 +80,7 @@ function SReadDID_Document(isInitialisation, seedSSI) {
     };
 
     const bindAutoPendingFunctions = require("../../utils/BindAutoPendingFunctions").bindAutoPendingFunctions;
-    bindAutoPendingFunctions(this, ["init", "getIdentifier", "getDomain", "on", "off"]);
+    bindAutoPendingFunctions(this, ["init", "getIdentifier", "getDomain", "on", "off", "addPublicKey"]);
 
     this.init();
     return this;

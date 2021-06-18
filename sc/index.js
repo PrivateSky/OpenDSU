@@ -22,7 +22,8 @@ function SecurityContext(keySSI) {
 
     const DB_NAME = "security_context";
     const KEY_SSIS_TABLE = "keyssis";
-    const DIDS_TABLE = "dids";
+    const DIDS_PRIVATE_KEYS = "dids_private";
+    const DIDS_PUBLIC_KEYS = "dids_public";
 
     let isInitialized = false;
 
@@ -34,17 +35,31 @@ function SecurityContext(keySSI) {
 
 
     this.registerDID = (didDocument, callback) => {
-        storageDB.insertRecord(DIDS_TABLE, didDocument.getIdentifier(), didDocument.getPrivateKeys(), (err) => {
+        storageDB.insertRecord(DIDS_PRIVATE_KEYS, didDocument.getIdentifier(), didDocument.getPrivateKeys(), (err) => {
             if (err) {
-                return storageDB.updateRecord(DIDS_TABLE, didDocument.getIdentifier(), didDocument.getPrivateKeys(), callback);
+                return storageDB.updateRecord(DIDS_PRIVATE_KEYS, didDocument.getIdentifier(), didDocument.getPrivateKeys(), callback);
             }
 
             callback();
         });
     };
 
+    this.addPrivateKeyForDID = (didDocument, privateKey, callback)=>{
+        return storageDB.updateRecord(DIDS_PRIVATE_KEYS, didDocument.getIdentifier(), privateKey, callback);
+    }
+
+    this.addPublicKeyForDID = (didDocument, publicKey, callback)=>{
+        storageDB.insertRecord(DIDS_PUBLIC_KEYS, didDocument.getIdentifier(), publicKey, (err) => {
+            if (err) {
+                return storageDB.updateRecord(DIDS_PUBLIC_KEYS, didDocument.getIdentifier(), publicKey, callback);
+            }
+
+            callback();
+        });
+    }
+
     this.getPrivateInfoForDID = (did, callback) => {
-        storageDB.getRecord(DIDS_TABLE, did, (err, record) => {
+        storageDB.getRecord(DIDS_PRIVATE_KEYS, did, (err, record) => {
             if (err) {
                 return callback(err);
             }

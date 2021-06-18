@@ -12,7 +12,7 @@ function ConstDID_Document_Mixin(target, domain, name) {
     const resolver = openDSU.loadAPI("resolver");
 
     const WRITABLE_DSU_PATH = "writableDSU";
-    const PUB_KEY_PATH = "publicKey";
+    const PUB_KEYS_PATH = "publicKeys";
 
     const generatePublicKey = async () => {
         let seedSSI;
@@ -42,12 +42,10 @@ function ConstDID_Document_Mixin(target, domain, name) {
 
         let publicKey = await generatePublicKey();
         try {
-            await $$.promisify(target.dsu.writeFile)(PUB_KEY_PATH, publicKey);
+            await $$.promisify(target.addPublicKey)(publicKey);
         } catch (e) {
-            return error.reportUserRelevantError(`Failed to create writableDSU`, e);
+            return error.reportUserRelevantError(`Failed to save public key`, e);
         }
-
-
         let seedSSI;
         try {
             seedSSI = await $$.promisify(target.dsu.getKeySSIAsString)();
@@ -95,12 +93,13 @@ function ConstDID_Document_Mixin(target, domain, name) {
     };
 
     target.getPublicKey = (format, callback) => {
-        target.dsu.readFile(PUB_KEY_PATH, (err, pubKey) => {
+        target.dsu.listFiles(PUB_KEYS_PATH, (err, pubKeys) => {
             if (err) {
                 return callback(createOpenDSUErrorWrapper(`Failed to read public key for did ${target.getIdentifier()}`, err));
             }
 
-            if(format === "raw") {
+            let pubKey = Buffer.from(pubKeys[pubKeys.length - 1], "hex");
+            if (format === "raw") {
                 return callback(undefined, pubKey);
             }
 
@@ -117,6 +116,10 @@ function ConstDID_Document_Mixin(target, domain, name) {
     target.getDomain = () => {
         return domain;
     };
+
+    target.addPublicKey = (publicKey, callback) => {
+        target.dsu.writeFile(`${PUB_KEYS_PATH}/${publicKey.toString("hex")}`, callback);
+    }
 }
 
 module.exports = ConstDID_Document_Mixin;

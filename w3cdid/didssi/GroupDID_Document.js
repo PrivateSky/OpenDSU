@@ -168,7 +168,7 @@ function GroupDID_Document(domain, groupName) {
         });
     };
 
-    bindAutoPendingFunctions(this, ["init", "getIdentifier", "getGroupName", "on", "off"]);
+    bindAutoPendingFunctions(this, ["init", "getIdentifier", "getGroupName", "on", "off", "addPublicKey"]);
     this.init();
     return this;
 }
