@@ -30,7 +30,7 @@ assert.callback("DB query test that returns more than one result", (testFinishCa
             });
         }
 
-        tir.launchApiHubTestNode(no_retries, folder, function (err, port) {
+        tir.launchApiHubTestNode(no_retries, folder,  async (err, port) => {
             if (err) {
                 throw err;
             }

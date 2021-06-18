@@ -3,9 +3,10 @@ const testIntegration = require("../../../../../psknode/tests/util/tir");
 
 const dc = require("double-check");
 const assert = dc.assert;
-
-const resolver = require('../../../resolver');
-const keyssispace = require("../../../index").loadApi("keyssi");
+const openDSU = require("../../../index");
+$$.__registerModule("opendsu", openDSU);
+const resolver = openDSU.loadAPI("resolver");
+const keyssispace = openDSU.loadApi("keyssi");
 
 
 assert.callback('Create DSU with existing SSI on configured domain', (testfinished) => {

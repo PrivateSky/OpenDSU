@@ -3,9 +3,10 @@ const testIntegration = require("../../../../../psknode/tests/util/tir");
 
 const dc = require("double-check");
 const assert = dc.assert;
-
-const resolver = require('../../../resolver');
-const keySSI = require("../../../keyssi")
+const openDSU = require("../../../index");
+$$.__registerModule("opendsu", openDSU);
+const resolver = openDSU.loadAPI("resolver");
+const keyssispace = openDSU.loadApi("keyssi");
 
 
 assert.callback('Create DSU on partial supported domain will fail', (testfinished) => {
@@ -15,8 +16,6 @@ assert.callback('Create DSU on partial supported domain will fail', (testfinishe
             const domain = 'testdomain';
             prepareBDNSContext(folder);
             createDSU(domain, (err, dus) => {
-
-                printOpenDSUError(err);
                 assert.notEqual(typeof err, 'undefined');
 
                 testfinished();
@@ -27,7 +26,7 @@ assert.callback('Create DSU on partial supported domain will fail', (testfinishe
 
 
 function createDSU(domain, callback) {
-    const keyssitemplate = keySSI.createTemplateKeySSI('seed', domain);
+    const keyssitemplate = keyssispace.createTemplateKeySSI('seed', domain);
     resolver.createDSU(keyssitemplate, {bricksDomain: domain}, (err, dsu) => {
         callback(err, dsu);
     });

@@ -40,19 +40,25 @@ function createdsu(domain, keySSICallback) {
             return console.log(err);
         }
 
-        dsu.getLastHashLinkSSI((err, hashlink) => {
+        dsu.writeFile("somePath", "someText", (err)=>{
             if (err) {
                 throw err;
             }
-            assert.equal(hashlink.getDLDomain(), domain);
 
-            dsu.getKeySSIAsString((err, key) => {
+            dsu.getLastHashLinkSSI((err, hashlink) => {
                 if (err) {
                     throw err;
                 }
-                keySSICallback(undefined, key, hashlink.getIdentifier(true));
-            })
-        });
+                assert.equal(hashlink.getDLDomain(), domain);
+
+                dsu.getKeySSIAsString((err, key) => {
+                    if (err) {
+                        throw err;
+                    }
+                    keySSICallback(undefined, key, hashlink.getIdentifier(true));
+                })
+            });
+        })
     });
 }
 
