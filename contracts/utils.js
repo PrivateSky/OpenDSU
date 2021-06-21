@@ -1,3 +1,13 @@
+const { fetch, doPost } = require("../http");
+const promiseRunner = require("../utils/promise-runner");
+
+class DomainNotSupportedError extends Error {
+    constructor(domain, url) {
+        super(`Domain '${domain}' not supported for calling URL ${url}`);
+        this.name = "DomainNotSupportedError";
+    }
+}
+
 function getCommandHash(command) {
     const { domain, contractName, methodName, params, type, blockNumber, timestamp } = command;
 
@@ -68,7 +78,75 @@ function getNoncedCommandBody(domain, contract, method, params, blockNumber, tim
     return commandBody;
 }
 
+function getContractEndpointUrl(baseUrl, domain, contractEndpointPrefix) {
+    return `${baseUrl}/contracts/${domain}/${contractEndpointPrefix}`;
+}
+
+async function callContractEndpoint(url, method, domain, body) {
+    let response;
+    if (method === "GET") {
+        response = await fetch(url);
+        if (response.statusCode === 404) {
+            throw new DomainNotSupportedError(domain, url);
+        }
+
+        response = await response.json();
+    } else {
+        try {
+            response = await $$.promisify(doPost)(url, body);
+        } catch (error) {
+            if (error.statusCode === 404) {
+                throw new DomainNotSupportedError(domain, url);
+            }
+            throw error;
+        }
+    }
+
+    if (response) {
+        try {
+            response = JSON.parse(response);
+        } catch (error) {
+            // the response isn't a JSON so we keep it as it is
+        }
+
+        if (response.optimisticResult) {
+            try {
+                response.optimisticResult = JSON.parse(response.optimisticResult);
+            } catch (error) {
+                // the response isn't a JSON so we keep it as it is
+            }
+        }
+    }
+
+    return response;
+}
+
+async function callContractEndpointUsingBdns(method, contractEndpointPrefix, domain, commandBody, callback) {
+    let contractServicesArray = [];
+    try {
+        const bdns = require("opendsu").loadApi("bdns");
+        contractServicesArray = await $$.promisify(bdns.getContractServices)(domain);
+    } catch (error) {
+        return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to get contract services from bdns'`, error));
+    }
+
+    if (!contractServicesArray.length) {
+        return callback("No contract service provided");
+    }
+    const runContractMethod = async (service) => {
+        const url = getContractEndpointUrl(service, domain, contractEndpointPrefix);
+        const response = await callContractEndpoint(url, method, domain, commandBody);
+        return response;
+    };
+
+    promiseRunner.runOneSuccessful(contractServicesArray, runContractMethod, callback, new Error("get Contract Service"));
+}
+
 module.exports = {
+    DomainNotSupportedError,
     getSafeCommandBody,
     getNoncedCommandBody,
+    getContractEndpointUrl,
+    callContractEndpoint,
+    callContractEndpointUsingBdns,
 };

@@ -1,53 +1,36 @@
-const promiseRunner = require("../utils/promise-runner");
-const { fetch, doPost } = require("../http");
+const getBaseURL = require("../utils/getBaseURL");
 
-const { getSafeCommandBody, getNoncedCommandBody } = require("./utils");
+const {
+    DomainNotSupportedError,
+    getSafeCommandBody,
+    getNoncedCommandBody,
+    getContractEndpointUrl,
+    callContractEndpoint,
+    callContractEndpointUsingBdns,
+} = require("./utils");
 
-async function sendCommand(method, contractEndpointPrefix, commandBody, callback) {
+async function sendCommand(method, contractEndpointPrefix, domain, commandBody, callback) {
+    if (typeof commandBody === "function") {
+        callback = commandBody;
+        commandBody = null;
+    }
+
+    callback = $$.makeSaneCallback(callback);
+
     try {
-        const { domain } = commandBody;
-        let contractServicesArray = [];
         try {
-            const bdns = require("opendsu").loadApi("bdns");
-            contractServicesArray = await $$.promisify(bdns.getContractServices)(domain);
+            // try to send the command to the current apihub endpoint
+            const currentApihubUrl = getContractEndpointUrl(getBaseURL(), domain, contractEndpointPrefix);
+            const response = await callContractEndpoint(currentApihubUrl, method, domain, commandBody);
+            callback(null, response);
         } catch (error) {
-            return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to get contract services from bdns'`, error));
-        }
-
-        if (!contractServicesArray.length) {
-            return callback("No contract service provided");
-        }
-
-        const runContractMethod = async (service) => {
-            const url = `${service}/contracts/${domain}/${contractEndpointPrefix}`;
-            let response;
-            if (method === "GET") {
-                response = await fetch(url);
-                response = await response.json();
-            } else {
-                response = await $$.promisify(doPost)(url, commandBody);
+            // if the current apihub endpoint doesn't handle the current domain, then send the command using BDNS
+            if (error instanceof DomainNotSupportedError) {
+                callContractEndpointUsingBdns(method, contractEndpointPrefix, domain, commandBody, callback);
+                return;
             }
-
-            if (response) {
-                try {
-                    response = JSON.parse(response);
-                } catch (error) {
-                    // the response isn't a JSON so we keep it as it is
-                }
-
-                if (response.optimisticResult) {
-                    try {
-                        response.optimisticResult = JSON.parse(response.optimisticResult);
-                    } catch (error) {
-                        // the response isn't a JSON so we keep it as it is
-                    }
-                }
-            }
-
-            return response;
-        };
-
-        promiseRunner.runOneSuccessful(contractServicesArray, runContractMethod, callback, new Error("get Contract Service"));
+            throw error;
+        }
     } catch (error) {
         OpenDSUSafeCallback(callback)(
             createOpenDSUErrorWrapper(`Failed to execute domain contract method: ${JSON.stringify(commandBody)}`, error)
@@ -63,7 +46,7 @@ function generateSafeCommand(domain, contractName, methodName, params, callback)
 
     try {
         const commandBody = getSafeCommandBody(domain, contractName, methodName, params);
-        sendCommand("POST", "safe-command", commandBody, callback);
+        sendCommand("POST", "safe-command", domain, commandBody, callback);
     } catch (error) {
         callback(error);
     }
@@ -102,11 +85,11 @@ async function generateNoncedCommand(signerDID, domain, contractName, methodName
             signerDID = await $$.promisify(w3cDID.resolveDID)(signerDID);
         }
 
-        const latestBlockInfo = await $$.promisify(sendCommand)("GET", "latest-block-info", { domain });
+        const latestBlockInfo = await $$.promisify(sendCommand)("GET", "latest-block-info", domain);
         const { number: blockNumber } = latestBlockInfo;
 
         const commandBody = getNoncedCommandBody(domain, contractName, methodName, params, blockNumber, timestamp, signerDID);
-        sendCommand("POST", "nonced-command", commandBody, callback);
+        sendCommand("POST", "nonced-command", domain, commandBody, callback);
     } catch (error) {
         callback(error);
     }
