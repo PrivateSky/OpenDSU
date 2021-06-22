@@ -11,11 +11,11 @@ assert.callback("ECIES Encryption and Decryption test", (callback) => {
 
         const data = "some data";
         keySSISpace.createSeedSSI("default", (err, newSeedSSI) => {
-            const publicKeySSI = keySSISpace.createPublicKeySSI("default", newSeedSSI.getPublicKey("raw"));
+            const publicKeySSI = keySSISpace.createPublicKeySSI("seed", newSeedSSI.getPublicKey("raw"));
             const encryptedData = crypto.ecies_encrypt_ds(seedSSI, publicKeySSI, Buffer.from(data));
             const plainData = crypto.ecies_decrypt_ds(newSeedSSI, encryptedData);
             assert.true(data === plainData.message.toString());
             callback();
         });
     });
-}, 5000);
+}, 5000000);
