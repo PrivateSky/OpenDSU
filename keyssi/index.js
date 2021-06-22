@@ -198,9 +198,9 @@ const createSignedHashLinkSSI = (domain, hashLink, timestamp, signature, vn, hin
     return signedHashLink;
 };
 
-const createPublicKeySSI = (domain, publicKey, vn, hint) => {
+const createPublicKeySSI = (compatibleFamilyName, publicKey, vn) => {
     let publicKeySSI = keySSIFactory.createType(SSITypes.PUBLIC_KEY_SSI);
-    publicKeySSI.initialize(domain, publicKey, vn, hint);
+    publicKeySSI.initialize(compatibleFamilyName, publicKey, vn);
     return publicKeySSI;
 };
 
