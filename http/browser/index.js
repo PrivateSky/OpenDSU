@@ -59,8 +59,13 @@ function generateMethodForRequestWithData(httpMethod) {
 	};
 }
 
-function doGet(url, callback){
-	fetch(url)
+function doGet(url, options, callback){
+	if (typeof options === "function") {
+		callback = options;
+		options = undefined;
+	}
+
+	fetch(url, options)
 		.then(response => response.text())
 		.then(data => callback(undefined, data))
 		.catch(err => callback(err));
