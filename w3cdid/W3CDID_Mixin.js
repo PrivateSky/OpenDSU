@@ -123,7 +123,7 @@ function W3CDID_Mixin(target) {
         const decryptMessageRecursively = (privateKeyIndex) => {
             const privateKey = privateKeys[privateKeyIndex];
             if (typeof privateKey === "undefined") {
-                return callback(createOpenDSUErrorWrapper(`Failed to decrypt message`));
+                return callback(createOpenDSUErrorWrapper(`Failed to decrypt message`, Error(`Private key is undefined`)));
             }
 
             const receiverSeedSSI = keySSISpace.createTemplateSeedSSI(target.getDomain());
@@ -143,8 +143,31 @@ function W3CDID_Mixin(target) {
     /* messages to the APiHUb MQ compatible APIs
 
     * */
-    target.sendMessage = function (message, toOtherDID, callback) {
 
+    target.getHash = () => {
+        return crypto.sha256(target.getIdentifier());
+    };
+
+    target.sendMessage = function (message, toOtherDID, callback) {
+        const mqHandler = require("opendsu").loadAPI("mq").getMQHandlerForDID(toOtherDID);
+        target.encryptMessage(toOtherDID, message, (err, encryptedMessage) => {
+            if (err) {
+                return callback(createOpenDSUErrorWrapper(`Failed to encrypt message`, err));
+            }
+
+            mqHandler.writeMessage(encryptedMessage, callback);
+        });
+    };
+
+    target.readMessage = function ( callback) {
+        const mqHandler = require("opendsu").loadAPI("mq").getMQHandlerForDID(target);
+        mqHandler.previewMessage((err, encryptedMessage) => {
+            if (err) {
+                return callback(createOpenDSUErrorWrapper(`Failed to read message`, err));
+            }
+
+            target.decryptMessage(encryptedMessage.message, callback);
+        });
     };
 
     target.on = function (callback) {
