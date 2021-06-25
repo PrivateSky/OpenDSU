@@ -63,12 +63,12 @@ assert.callback('key DID SSI test', (testFinished) => {
                 const resolvedDIDDocument = await $$.promisify(w3cDID.resolveDID)(receiverDIDDocument.getIdentifier());
                 decryptedMessage = await $$.promisify(resolvedDIDDocument.readMessage)();
             } catch (e) {
-                throw e;
+                return console.log(e);
             }
 
             assert.equal(decryptedMessage.message.toString(), dataToSend, "The received message is not the same as the message sent");
             testFinished();
         });
     });
-}, 5000);
+}, 10000);
 

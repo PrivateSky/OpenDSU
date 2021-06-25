@@ -37,11 +37,12 @@ assert.callback('key DID SSI test', (testFinished) => {
                 const encryptedMessage = await $$.promisify(senderDIDDocument.encryptMessage)(receiverDIDDocument, message);
                 const decryptedObj = await $$.promisify(receiverDIDDocument.decryptMessage)(encryptedMessage);
                 assert.equal(message, decryptedObj.message.toString(), `Decrypted message is not the same as the original message`);
-                testFinished();
             } catch (e) {
-                throw e;
+                return console.log(e);
             }
+
+            testFinished();
         });
     });
-}, 500000);
+}, 5000);
 
