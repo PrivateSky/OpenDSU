@@ -40,7 +40,7 @@ function BDNS() {
         if (!isInitialized) {
             return this.addPendingCall(() => {
                 if (dlDomain === undefined) {
-                    callback(new Error("The domain is not defined"));
+                    return callback(new Error("The domain is not defined"));
                 }
                 callback(undefined, load_or_default());
             })
