@@ -72,57 +72,75 @@ function unsubscribe(keySSI, observable) {
     http.unpoll(requests[observable]);
 }
 
-function MQHandler(domain, didDocument) {
+function MQHandler(didDocument, domain) {
     let token;
     let expiryTime;
     let queueName = didDocument.getHash();
+    domain = domain || didDocument.getDomain();
 
-    function getURL(queueName, action, signature, messageID) {
-        let url = `/mq/${domain}`;
-        switch (action) {
-            case "token":
-                url = `${url}/${queueName}/token`;
-                break;
-            case "get":
-                url = `${url}/get/${queueName}/${signature}`;
-                break;
-            case "put":
-                url = `${url}/put/${queueName}`;
-                break;
-            case "take":
-                url = `${url}/take/${queueName}/${signature}`;
-                break;
-            case "delete":
-                url = `${url}/delete/${queueName}/${messageID}/${signature}`;
-                break;
-            default:
-                throw Error(`Invalid action received ${action}`);
+    function getURL(queueName, action, signature, messageID, callback) {
+        let url
+        if (typeof signature === "function") {
+            callback = signature;
+            signature = undefined;
+            messageID = undefined;
         }
 
-        return url;
+        if (typeof messageID === "function") {
+            callback = messageID;
+            messageID = undefined;
+        }
+
+        bdns.getMQEndpoints(domain, (err, mqEndpoints) => {
+            if (err) {
+                return callback(err);
+            }
+
+            url = `${mqEndpoints[0]}/mq/${domain}`
+            switch (action) {
+                case "token":
+                    url = `${url}/${queueName}/token`;
+                    break;
+                case "get":
+                    url = `${url}/get/${queueName}/${signature}`;
+                    break;
+                case "put":
+                    url = `${url}/put/${queueName}`;
+                    break;
+                case "take":
+                    url = `${url}/take/${queueName}/${signature}`;
+                    break;
+                case "delete":
+                    url = `${url}/delete/${queueName}/${messageID}/${signature}`;
+                    break;
+                default:
+                    throw Error(`Invalid action received ${action}`);
+            }
+
+            callback(undefined, url);
+        })
     }
 
     function ensureAuth(callback) {
-        const url = getURL(queueName, "token");
-        if (!token || (expiryTime && Date.now() + 2000 > expiryTime)) {
-            return http.doGet(url, (err, response) => {
-                if (err) {
-                    return callback(createOpenDSUErrorWrapper(`Cannot initiate authorisation process`, err));
-                }
+        getURL(queueName, "token", (err, url) => {
+            if (err) {
+                return callback(err);
+            }
 
-                try {
-                    response = JSON.parse(response);
-                } catch (e) {
-                    return callback(createOpenDSUErrorWrapper(`Failed to parse authorisation result`, e));
-                }
+            if (!token || (expiryTime && Date.now() + 2000 > expiryTime)) {
+                callback = $$.makeSaneCallback(callback);
+                return http.fetch(url)
+                    .then(response => response.json())
+                    .then(data => {
+                        token = data.token;
+                        expiryTime = data.expires;
+                        callback(undefined, token);
+                    })
+                    .catch(err => callback(err));
+            }
 
-                token = response.token;
-                expiryTime = response.expires;
-                callback(undefined, token);
-            })
-        }
-
-        callback(undefined, token);
+            callback(undefined, token);
+        });
     }
 
     this.writeMessage = (message, callback) => {
@@ -131,8 +149,13 @@ function MQHandler(domain, didDocument) {
                 return callback(err);
             }
 
-            const url = getURL(queueName, "put");
-            http.doPut(url, message, {headers: {Authorization: token}}, callback);
+            getURL(queueName, "put", (err, url) => {
+                if (err) {
+                    return callback(err);
+                }
+
+                http.doPut(url, message, {headers: {"Authorization": token}}, callback);
+            });
         })
 
     }
@@ -148,21 +171,25 @@ function MQHandler(domain, didDocument) {
                     return callback(createOpenDSUErrorWrapper(`Failed to sign token`, err));
                 }
 
-                const url = getURL(queueName, action, signature);
-                callback = $$.makeSaneCallback(callback);
-                http.fetch(url, {headers: {Authorization: token}})
-                    .then(response => response.json())
-                    .then(data => callback(undefined, data))
-                    .catch(err => callback(err));
+                getURL(queueName, action, signature.toString("hex"), (err, url) => {
+                    if (err) {
+                        return callback(err);
+                    }
+                    callback = $$.makeSaneCallback(callback);
+                    http.fetch(url, {headers: {Authorization: token}})
+                        .then(response => response.json())
+                        .then(data => callback(undefined, data))
+                        .catch(err => callback(err));
+                })
             })
         })
     }
 
-    this.readMessage = (callback) => {
+    this.previewMessage = (callback) => {
         consumeMessage("get", callback);
     }
 
-    this.takeMessage = (callback) => {
+    this.readMessage = (callback) => {
         consumeMessage("take", callback);
     };
 
@@ -171,8 +198,8 @@ function MQHandler(domain, didDocument) {
     }
 }
 
-function getMQHandlerForDID(domain, didDocument) {
-    return new MQHandler(domain, didDocument);
+function getMQHandlerForDID(didDocument, domain) {
+    return new MQHandler(didDocument, domain);
 }
 
 module.exports = {
