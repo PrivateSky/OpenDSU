@@ -1,11 +1,13 @@
 const constants = require("../moduleConstants");
 const PendingCallMixin = require("../utils/PendingCallMixin");
 const getBaseURL = require("../utils/getBaseURL");
+
 function BDNS() {
     PendingCallMixin(this);
     let bdnsCache;
     const http = require("opendsu").loadApi("http");
     let isInitialized = false;
+
     let retrieveHosts = () => {
         const url = `${getBaseURL()}/bdns#x-blockchain-domain-request`;
         http.fetch(url)
@@ -13,9 +15,7 @@ function BDNS() {
                 return response.json()
             }).then((bdnsHosts) => {
             bdnsHosts = JSON.stringify(bdnsHosts);
-            let baseURL =  require("../utils/getBaseURL")
-
-            bdnsHosts = bdnsHosts.replace(/\$ORIGIN/g, baseURL);
+            bdnsHosts = bdnsHosts.replace(/\$ORIGIN/g, getBaseURL());
             bdnsCache = JSON.parse(bdnsHosts);
             isInitialized = true;
             this.executePendingCalls();
@@ -23,6 +23,33 @@ function BDNS() {
     };
 
     retrieveHosts();
+
+    const getSection = (dlDomain, section, callback) => {
+        function load_or_default() {
+            if (typeof dlDomain === "undefined") {
+                return callback(Error(`The provided domain is undefined`));
+            }
+
+            if(typeof bdnsCache[dlDomain] === "undefined"){
+                return callback(Error(`The provided domain ${dlDomain} is not configured`));
+            }
+
+            return bdnsCache[dlDomain][section] ? bdnsCache[dlDomain][section] : [getBaseURL()];
+        }
+
+        if (!isInitialized) {
+            return this.addPendingCall(() => {
+                if (dlDomain === undefined) {
+                    return callback(new Error("The domain is not defined"));
+                }
+                callback(undefined, load_or_default());
+            })
+        }
+        if (dlDomain === undefined) {
+            return callback(new Error("The domain is not defined"));
+        }
+        callback(undefined, load_or_default());
+    }
 
     this.getRawInfo = (dlDomain, callback) => {
         if (!isInitialized) {
@@ -34,65 +61,28 @@ function BDNS() {
     };
 
     this.getBrickStorages = (dlDomain, callback) => {
-        if (!isInitialized) {
-            return this.addPendingCall(() => {
-                if (dlDomain === undefined){
-                    callback(new Error("The domain is not defined"));
-                }
-                callback(undefined, bdnsCache[dlDomain].brickStorages);
-            })
-        }
-        if (dlDomain === undefined){
-            return callback(new Error("The domain is not defined"));
-        }
-        callback(undefined, bdnsCache[dlDomain].brickStorages);
+        getSection(dlDomain, "brickStorages", callback);
     };
 
     this.getAnchoringServices = (dlDomain, callback) => {
-        if (!isInitialized) {
-            return this.addPendingCall(() => {
-                callback(undefined, bdnsCache[dlDomain].anchoringServices);
-            })
-        }
-        if(dlDomain !== undefined){
-            callback(undefined, bdnsCache[dlDomain].anchoringServices);
-        } else {
-            callback(new Error("undefined domain does not exist"));
-        }
+        getSection(dlDomain, "anchoringServices", callback);
     };
 
     this.getContractServices = (dlDomain, callback) => {
-        if (!isInitialized) {
-            return this.addPendingCall(() => {
-                callback(undefined, bdnsCache[dlDomain].contractServices);
-            })
-        }
-        if(dlDomain !== undefined){
-            callback(undefined, bdnsCache[dlDomain].contractServices);
-        } else {
-            callback(new Error("undefined domain does not exist"));
-        }
+        getSection(dlDomain, "contractServices", callback);
     };
 
     this.getReplicas = (dlDomain, callback) => {
-        if (!isInitialized) {
-            return this.addPendingCall(() => {
-                callback(undefined, bdnsCache[dlDomain].replicas);
-            })
-        }
-        callback(undefined, bdnsCache[dlDomain].replicas);
+        getSection(dlDomain, "replicas", callback);
     };
 
-	this.getNotificationEndpoints = (dlDomain, callback) => {
-		this.getRawInfo(dlDomain, (err, domainInfo) => {
-			if (err) {
-				return callback(err);
-			}
+    this.getNotificationEndpoints = (dlDomain, callback) => {
+        getSection(dlDomain, "notifications", callback);
+    }
 
-			callback(undefined, domainInfo.notifications || []);
-		})
-
-	}
+    this.getMQEndpoints = (dlDomain, callback) => {
+        getSection(dlDomain, "mqEndpoints", callback);
+    }
 
     this.addRawInfo = (dlDomain, rawInfo) => {
         console.warn("This function is obsolete. Doing nothing");

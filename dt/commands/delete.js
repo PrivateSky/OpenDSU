@@ -40,9 +40,9 @@ class DeleteCommand extends Command {
     _runCommand(arg, bar, options, callback){
         if (typeof options === 'function'){
             callback = options;
-            options = {}
+            options = undefined
         }
-        options = options || {ignoreMounts: false};
+        options = options || {ignoreMounts: false, ignoreError: true};
         console.log("Deleting " + arg);
         bar.delete(arg, options, err => err
             ? _err(`Could not delete path '${arg}'`, err, callback)

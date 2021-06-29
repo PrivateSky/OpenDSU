@@ -26,9 +26,9 @@ function W3CDID_Mixin(target) {
         securityContext.verifyForDID(target, hash, signature, callback);
     };
 
-    target.signImpl = (privateKey, data, callback) => {
+    target.signImpl = (privateKeys, data, callback) => {
         const keySSI = keySSISpace.createTemplateSeedSSI(target.getDomain());
-        keySSI.initialize(keySSI.getDLDomain(), privateKey);
+        keySSI.initialize(keySSI.getDLDomain(), privateKeys[0]);
         crypto.sign(keySSI, data, callback);
     };
 
@@ -64,40 +64,31 @@ function W3CDID_Mixin(target) {
         securityContext.decryptAsDID(target, encryptedMessage, callback);
     };
 
-    const createCompatibleSeedSSI = async () => {
-        let newSeedSSI;
+    const saveNewKeyPairInSC = async (receiverDIDDocument, compatibleSSI) => {
         try {
-            newSeedSSI = await $$.promisify(keySSISpace.createSeedSSI)(receiverDIDDocument.getDomain());
-        } catch (e) {
-            throw createOpenDSUErrorWrapper(`Failed to create seed SSI`, e);
-        }
-
-        try {
-            await $$.promisify(securityContext.addPrivateKeyForDID)(receiverDIDDocument, newSeedSSI.getPrivateKey("raw"));
-            await $$.promisify(securityContext.addPublicKeyForDID)(receiverDIDDocument, newSeedSSI.getPublicKey("raw"));
+            await $$.promisify(securityContext.addPrivateKeyForDID)(receiverDIDDocument, compatibleSSI.getPrivateKey("raw"));
+            await $$.promisify(securityContext.addPublicKeyForDID)(receiverDIDDocument, compatibleSSI.getPublicKey("raw"));
         } catch (e) {
             throw createOpenDSUErrorWrapper(`Failed to save new private key and public key in security context`, e);
         }
 
         try {
-            await $$.promisify(receiverDIDDocument.addPublicKey)(newSeedSSI.getPublicKey("raw"));
+            await $$.promisify(receiverDIDDocument.addPublicKey)(compatibleSSI.getPublicKey("raw"));
         } catch (e) {
             throw createOpenDSUErrorWrapper(`Failed to save new private key and public key in security context`, e);
         }
-
-        return newSeedSSI;
     };
 
-    target.encryptMessageImpl = function (privateKey, receiverDIDDocument, message, callback) {
+    target.encryptMessageImpl = function (privateKeys, receiverDIDDocument, message, callback) {
         const senderSeedSSI = keySSISpace.createTemplateSeedSSI(target.getDomain());
-        senderSeedSSI.initialize(target.getDomain(), privateKey);
+        senderSeedSSI.initialize(target.getDomain(), privateKeys[0]);
 
         receiverDIDDocument.getPublicKey("raw", async (err, receiverPublicKey) => {
             if (err) {
                 return callback(createOpenDSUErrorWrapper(`Failed to get sender publicKey`, err));
             }
 
-            const publicKeySSI = keySSISpace.createPublicKeySSI(receiverDIDDocument.getDomain(), receiverPublicKey);
+            const publicKeySSI = keySSISpace.createPublicKeySSI("seed", receiverPublicKey);
 
             const encryptMessage = (receiverKeySSI) => {
                 let encryptedMessage;
@@ -110,39 +101,73 @@ function W3CDID_Mixin(target) {
                 callback(undefined, encryptedMessage);
             }
 
-            if (!senderSeedSSI.isCompatibleWith(publicKeySSI)) {
-                let compatibleSSI;
-                try {
-                    compatibleSSI = await createCompatibleSeedSSI();
-                } catch (e) {
-                    return callback(createOpenDSUErrorWrapper(`Failed to create compatible seed ssi`, err));
-                }
-
-                encryptMessage(compatibleSSI);
-            } else {
-                encryptMessage(publicKeySSI);
+            let compatibleSSI;
+            try {
+                compatibleSSI = await $$.promisify(publicKeySSI.generateCompatiblePowerfulKeySSI)();
+            } catch (e) {
+                return callback(createOpenDSUErrorWrapper(`Failed to create compatible seed ssi`, e));
             }
+
+            try {
+                await saveNewKeyPairInSC(receiverDIDDocument, compatibleSSI);
+            } catch (e) {
+                return callback(createOpenDSUErrorWrapper(`Failed to save compatible seed ssi`, e));
+            }
+
+            encryptMessage(compatibleSSI);
         });
     };
 
-    target.decryptMessageImpl = function (privateKey, encryptedMessage, callback) {
-        const receiverSeedSSI = keySSISpace.createTemplateSeedSSI(target.getDomain());
-        receiverSeedSSI.initialize(target.getDomain(), privateKey);
+    target.decryptMessageImpl = function (privateKeys, encryptedMessage, callback) {
         let decryptedMessage;
-        try {
-            decryptedMessage = crypto.ecies_decrypt_ds(receiverSeedSSI, encryptedMessage);
-        } catch (e) {
-            return callback(createOpenDSUErrorWrapper(`Failed to decrypt message`, e));
+        const decryptMessageRecursively = (privateKeyIndex) => {
+            const privateKey = privateKeys[privateKeyIndex];
+            if (typeof privateKey === "undefined") {
+                return callback(createOpenDSUErrorWrapper(`Failed to decrypt message`, Error(`Private key is undefined`)));
+            }
+
+            const receiverSeedSSI = keySSISpace.createTemplateSeedSSI(target.getDomain());
+            receiverSeedSSI.initialize(target.getDomain(), privateKey);
+            try {
+                decryptedMessage = crypto.ecies_decrypt_ds(receiverSeedSSI, encryptedMessage);
+            } catch (e) {
+                return decryptMessageRecursively(privateKeyIndex + 1);
+            }
+
+            callback(undefined, decryptedMessage);
         }
 
-        callback(undefined, decryptedMessage);
+        decryptMessageRecursively(0);
     };
 
     /* messages to the APiHUb MQ compatible APIs
 
     * */
-    target.sendMessage = function (message, toOtherDID, callback) {
 
+    target.getHash = () => {
+        return crypto.sha256(target.getIdentifier());
+    };
+
+    target.sendMessage = function (message, toOtherDID, callback) {
+        const mqHandler = require("opendsu").loadAPI("mq").getMQHandlerForDID(toOtherDID);
+        target.encryptMessage(toOtherDID, message, (err, encryptedMessage) => {
+            if (err) {
+                return callback(createOpenDSUErrorWrapper(`Failed to encrypt message`, err));
+            }
+
+            mqHandler.writeMessage(encryptedMessage, callback);
+        });
+    };
+
+    target.readMessage = function ( callback) {
+        const mqHandler = require("opendsu").loadAPI("mq").getMQHandlerForDID(target);
+        mqHandler.previewMessage((err, encryptedMessage) => {
+            if (err) {
+                return callback(createOpenDSUErrorWrapper(`Failed to read message`, err));
+            }
+
+            target.decryptMessage(encryptedMessage.message, callback);
+        });
     };
 
     target.on = function (callback) {

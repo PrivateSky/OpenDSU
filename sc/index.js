@@ -35,26 +35,44 @@ function SecurityContext(keySSI) {
 
 
     this.registerDID = (didDocument, callback) => {
-        storageDB.insertRecord(DIDS_PRIVATE_KEYS, didDocument.getIdentifier(), didDocument.getPrivateKeys(), (err) => {
-            if (err) {
-                return storageDB.updateRecord(DIDS_PRIVATE_KEYS, didDocument.getIdentifier(), didDocument.getPrivateKeys(), callback);
+        let privateKeys = didDocument.getPrivateKeys();
+        if (!Array.isArray(privateKeys)) {
+            privateKeys = [privateKeys]
+        }
+        storageDB.getRecord(DIDS_PRIVATE_KEYS, didDocument.getIdentifier(), (err, res) => {
+            if (err || !res) {
+                return storageDB.insertRecord(DIDS_PRIVATE_KEYS, didDocument.getIdentifier(), {privateKeys: privateKeys}, callback);
             }
 
-            callback();
+            privateKeys.forEach(privateKey => {
+                res.privateKeys.push(privateKey);
+            })
+            storageDB.updateRecord(DIDS_PRIVATE_KEYS, didDocument.getIdentifier(), res, callback);
         });
     };
 
-    this.addPrivateKeyForDID = (didDocument, privateKey, callback)=>{
-        return storageDB.updateRecord(DIDS_PRIVATE_KEYS, didDocument.getIdentifier(), privateKey, callback);
-    }
+    this.addPrivateKeyForDID = (didDocument, privateKey, callback) => {
+        const privateKeyObj = {privateKeys: [privateKey]}
 
-    this.addPublicKeyForDID = (didDocument, publicKey, callback)=>{
-        storageDB.insertRecord(DIDS_PUBLIC_KEYS, didDocument.getIdentifier(), publicKey, (err) => {
-            if (err) {
-                return storageDB.updateRecord(DIDS_PUBLIC_KEYS, didDocument.getIdentifier(), publicKey, callback);
+        storageDB.getRecord(DIDS_PRIVATE_KEYS, didDocument.getIdentifier(), (err, res) => {
+            if (err || !res) {
+                return storageDB.insertRecord(DIDS_PRIVATE_KEYS, didDocument.getIdentifier(), privateKeyObj, callback);
             }
 
-            callback();
+            res.privateKeys.push(privateKey);
+            storageDB.updateRecord(DIDS_PRIVATE_KEYS, didDocument.getIdentifier(), res, callback);
+        });
+    }
+
+    this.addPublicKeyForDID = (didDocument, publicKey, callback) => {
+        const publicKeyObj = {publicKeys: [publicKey]}
+        storageDB.getRecord(DIDS_PUBLIC_KEYS, didDocument.getIdentifier(), (err, res) => {
+            if (err || !res) {
+                return storageDB.insertRecord(DIDS_PUBLIC_KEYS, didDocument.getIdentifier(), publicKeyObj, callback);
+            }
+
+            res.publicKeys.push(publicKey);
+            return storageDB.updateRecord(DIDS_PUBLIC_KEYS, didDocument.getIdentifier(), res, callback);
         });
     }
 
@@ -64,7 +82,8 @@ function SecurityContext(keySSI) {
                 return callback(err);
             }
 
-            callback(undefined, $$.Buffer.from(record.privateKey));
+            const privateKeysAsBuff = record.privateKeys.map(privateKey => $$.Buffer.from(privateKey));
+            callback(undefined, privateKeysAsBuff);
         });
     };
 
@@ -171,22 +190,22 @@ function SecurityContext(keySSI) {
 
 
     this.encryptForDID = (senderDIDDocument, receiverDIDDocument, message, callback) => {
-        this.getPrivateInfoForDID(senderDIDDocument.getIdentifier(), (err, privateKey) => {
+        this.getPrivateInfoForDID(senderDIDDocument.getIdentifier(), (err, privateKeys) => {
             if (err) {
                 return callback(createOpenDSUErrorWrapper(`Failed to get private info for did ${senderDIDDocument.getIdentifier()}`, err));
             }
 
-            senderDIDDocument.encryptMessageImpl(privateKey, receiverDIDDocument, message, callback);
+            senderDIDDocument.encryptMessageImpl(privateKeys, receiverDIDDocument, message, callback);
         });
     };
 
     this.decryptAsDID = (didDocument, encryptedMessage, callback) => {
-        this.getPrivateInfoForDID(didDocument.getIdentifier(), (err, privateKey) => {
+        this.getPrivateInfoForDID(didDocument.getIdentifier(), (err, privateKeys) => {
             if (err) {
                 return callback(createOpenDSUErrorWrapper(`Failed to get private info for did ${didDocument.getIdentifier()}`, err));
             }
 
-            didDocument.decryptMessageImpl(privateKey, encryptedMessage, callback);
+            didDocument.decryptMessageImpl(privateKeys, encryptedMessage, callback);
         });
     };
 
