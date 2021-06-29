@@ -95,7 +95,23 @@ async function generateNoncedCommand(signerDID, domain, contractName, methodName
     }
 }
 
+function generateSafeCommandForSpecificServer(serverUrl, ...args) {
+    if (!serverUrl || typeof serverUrl !== "string") {
+        throw new Error(`Invalid serverUrl specified`);
+    }
+    generateSafeCommand(...args);
+}
+
+function generateNoncedCommandForSpecificServer(serverUrl, ...args) {
+    if (!serverUrl || typeof serverUrl !== "string") {
+        throw new Error(`Invalid serverUrl specified`);
+    }
+    generateNoncedCommand(...args);
+}
+
 module.exports = {
     generateSafeCommand,
     generateNoncedCommand,
+    generateSafeCommandForSpecificServer,
+    generateNoncedCommandForSpecificServer,
 };

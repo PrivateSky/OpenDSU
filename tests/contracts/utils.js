@@ -132,6 +132,7 @@ async function launchApiHubTestNodeWithTestDomain(options, callback) {
 
         const contractBdnsConfig = {
             validators: [{ DID: validatorDID.getIdentifier(), URL: process.env[constants.BDNS_ROOT_HOSTS] }],
+            contractServices: [process.env[constants.BDNS_ROOT_HOSTS]],
         };
         const bdnsConfigPath = path.join(configPath, "bdns");
         await $$.promisify(testIntegration.storeFile)(bdnsConfigPath, "contract.json", JSON.stringify(contractBdnsConfig));
