@@ -37,19 +37,6 @@ function MappingEngine(storageService, options) {
 
 	function digestMessage(message) {
 		return new Promise((resolve, reject) => {
-			function finish() {
-				//first of all we set an event listener to catch any errors during the commit processes
-				errorHandler.observeUserRelevantMessages("error", function ({message, error}) {
-					return reject(errorHandler.createOpenDSUErrorWrapper("Caught an error during commit batch", error));
-
-					/*const cancelBatch = $$.promisify(persistenceDSU.cancelBatch);
-					cancelBatch().then(res => {
-						reject(errorHandler.createOpenDSUErrorWrapper("Batch canceled", error));
-					}).catch(err => {
-						reject(errorHandler.createOpenDSUErrorWrapper("Batch canceled", errorHandler.createOpenDSUErrorWrapper(err.message, error)));
-					});*/
-				});
-			}
 
 			async function process() {
 				const mappings = mappingRegistry.getMappings();
