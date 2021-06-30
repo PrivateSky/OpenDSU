@@ -98,7 +98,10 @@ function MappingEngine(storageService, options) {
 					}
 				}
 				if (!messageDigested) {
-					console.log(`Unable to find a suitable mapping to handle the following message: ${JSON.stringify(message)}`);
+					let messageString = JSON.stringify(message);
+					const maxDisplayLength = 1024;
+					console.log(`Unable to find a suitable mapping to handle the following message: ${messageString.length<maxDisplayLength?messageString:messageString.slice(0,maxDisplayLength)+"..."}`);
+					reject(`Unable to find a suitable mapping to handle the messsage`);
 				}
 				return messageDigested;
 			}
