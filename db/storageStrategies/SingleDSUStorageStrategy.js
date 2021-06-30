@@ -314,11 +314,13 @@ function SingleDSUStorageStrategy() {
     function deleteIndex(tableName, fieldName, pk, value, callback) {
         storageDSU.delete(getIndexPath(tableName, fieldName, value, pk), (err) => {
             let retErr = undefined;
+
+            //TODO handle error type
             if (err) {
                 retErr = createOpenDSUErrorWrapper(`Failed to delete file ${getIndexPath(tableName, fieldName, value, pk)}`, err);
             }
-
-            callback(retErr);
+            //ignoring error on purpose
+            callback(undefined);
 
 
         });
