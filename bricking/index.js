@@ -12,9 +12,10 @@ const isValidVaultCache = () => {
 }
 
 const isValidBrickHash = async (hashLinkSSI, brickData) => {
+    const ensureIsBuffer = require("swarmutils").ensureIsBuffer;
     const crypto = openDSU.loadAPI("crypto");
     const hashFn = crypto.getCryptoFunctionForKeySSI(hashLinkSSI, "hash");
-    const actualHash = hashFn(brickData);
+    const actualHash = hashFn(ensureIsBuffer(brickData));
     const expectedHash = hashLinkSSI.getHash();
     return actualHash === expectedHash;
 }
