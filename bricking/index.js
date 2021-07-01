@@ -11,6 +11,14 @@ const isValidVaultCache = () => {
     return typeof config.get(constants.CACHE.VAULT_TYPE) !== "undefined" && config.get(constants.CACHE.VAULT_TYPE) !== constants.CACHE.NO_CACHE;
 }
 
+const isValidBrickHash = async (hashLinkSSI, brickData) => {
+    const crypto = openDSU.loadAPI("crypto");
+    const hashFn = crypto.getCryptoFunctionForKeySSI(hashLinkSSI, "hash");
+    const actualHash = hashFn(brickData);
+    const expectedHash = hashLinkSSI.getHash();
+    return actualHash === expectedHash;
+}
+
 /**
  * Get brick
  * @param {hashLinkSSI} hashLinkSSI
@@ -54,16 +62,23 @@ const getBrick = (hashLinkSSI, authToken, callback) => {
 
             const queries = brickStorageArray.map((storage) => fetch(`${storage}/bricking/${dlDomain}/get-brick/${brickHash}`));
 
-            Promise.all(queries).then((responses) => {
-                responses[0].arrayBuffer().then((data) => {
-                    if (typeof cache !== "undefined") {
-                        cache.put(brickHash, data);
+            Promise
+                .all(queries)
+                .then(async (responses) => {
+                    for (const response of responses) {
+                        const brickData = await response.arrayBuffer();
+                        if (await isValidBrickHash(hashLinkSSI, brickData)) {
+                            if (typeof cache !== "undefined") {
+                                cache.put(brickHash, brickData);
+                            }
+                            return callback(undefined, brickData);
+                        }
                     }
-                    callback(null, data)
+                    throw Error(`Failed to validate brick <${brickHash}>`);
+                })
+                .catch(err => {
+                    return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to get brick <${brickHash}> from brick storage`, err));
                 });
-            }).catch((err) => {
-                return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to get brick <${brickHash}> from brick storage`, err));
-            });
         });
     }
 
