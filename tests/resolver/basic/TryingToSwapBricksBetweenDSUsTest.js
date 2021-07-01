@@ -36,6 +36,7 @@ assert.callback('Trying to alter BrickMap of a DSU', async (testDone) => {
 
     const dsu1_bricks = (await utils.extractBricks(env)).filter(dsu1_brick => !dsu0_hashes.includes(dsu1_brick.hash));
 
+    // swap bricks
     const dsu0_promises = dsu0_bricks.map((dsu0_brick, i) => (async () => {
         await $$.promisify(fs.writeFile)(dsu0_brick.path, dsu1_bricks[i].buffer);
     })());
@@ -48,8 +49,8 @@ assert.callback('Trying to alter BrickMap of a DSU', async (testDone) => {
     env.vault.put(dsu0_keySSI.getIdentifier(), undefined);
     env.vault.put(dsu1_keySSIString, undefined);
 
-    // fill cache entirely with DSUs
-    await utils.fillCacheEntirely(env);
+    // commented for optimisation reasons, but now BrickMaps are still cached in psk-cache
+    // await utils.fillCacheEntirely(env);
 
     // load data from altered DSUs
     try {
@@ -60,11 +61,15 @@ assert.callback('Trying to alter BrickMap of a DSU', async (testDone) => {
         const dsu1_data = await $$.promisify(dsu1_loaded.readFile)('/example0.txt');
 
         console.log({ dsu0_data, dsu1_data });
+        console.log({ dsu0_utf8: dsu0_data.toString(), dsu1_utf8: dsu1_data.toString() });
         assert.true(false, `Should not be able to read from 'dsu0' and 'dsu1'!`);
     } catch (err) {
-        assert.true(err.message.startsWith(`Failed to load DSU`), 'Error message');
+        assert.true(
+            err.message.startsWith(`Failed to load DSU`) ||
+            err.message.startsWith(`Failed to create buffer from bricks`),
+            'Error message');
         assert.true(err.originalMessage.startsWith(`Failed to validate brick`), 'Error originalMessage');
-    } finally {
-        testDone();
     }
+
+    testDone();
 }, 5 * 60 * 1000);

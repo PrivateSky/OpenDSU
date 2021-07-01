@@ -75,7 +75,8 @@ async function extractLatestBrickMap({ brickStoragePath }) {
 }
 
 /**
- * Fills cache entirely with DSUs, 3 cache levels (each of them is of size 1000
+ * Fills cache entirely with DSUs, 3 cache levels (each of them is of size 1000)
+ * Check module psk-cache
  *
  * @param {Object} env
  * @param {string} env.domain
