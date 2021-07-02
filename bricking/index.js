@@ -11,7 +11,7 @@ const isValidVaultCache = () => {
     return typeof config.get(constants.CACHE.VAULT_TYPE) !== "undefined" && config.get(constants.CACHE.VAULT_TYPE) !== constants.CACHE.NO_CACHE;
 }
 
-const isValidBrickHash = async (hashLinkSSI, brickData) => {
+const isValidBrickHash = (hashLinkSSI, brickData) => {
     const ensureIsBuffer = require("swarmutils").ensureIsBuffer;
     const crypto = openDSU.loadAPI("crypto");
     const hashFn = crypto.getCryptoFunctionForKeySSI(hashLinkSSI, "hash");
@@ -66,14 +66,19 @@ const getBrick = (hashLinkSSI, authToken, callback) => {
             Promise
                 .all(queries)
                 .then(async (responses) => {
+                    let brickContent;
                     for (const response of responses) {
                         const brickData = await response.arrayBuffer();
-                        if (await isValidBrickHash(hashLinkSSI, brickData)) {
+                        if (isValidBrickHash(hashLinkSSI, brickData)) {
                             if (typeof cache !== "undefined") {
                                 cache.put(brickHash, brickData);
                             }
-                            return callback(undefined, brickData);
+                            brickContent = brickData;
+                            break;
                         }
+                    }
+                    if(brickContent){
+                        return callback(undefined, brickContent);
                     }
                     throw Error(`Failed to validate brick <${brickHash}>`);
                 })

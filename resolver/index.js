@@ -58,20 +58,7 @@ const createDSU = (templateKeySSI, options, callback) => {
             }
             addDSUInstanceInCache(dsuInstance, callback);
         }
-
-        dsuInstance.getKeySSIAsObject((err, keySSI) => {
-            if (err) {
-                return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to get SeedSSI`, err));
-            }
-
-            // const sc = require("../sc").getSecurityContext();
-            // sc.registerKeySSI(keySSI);
-            if (typeof options === "object" && options.addLog && keySSI.getTypeName() !== KEY_SSIS.CONST_SSI) {
-                dsuInstance.dsuLog("DSU created on " + Date.now(), addInCache);
-            } else {
-                addInCache(undefined, dsuInstance);
-            }
-        });
+        addInCache(undefined, dsuInstance);
     });
 };
 
