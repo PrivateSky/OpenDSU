@@ -161,7 +161,7 @@ function W3CDID_Mixin(target) {
 
     target.readMessage = function (callback) {
         const mqHandler = require("opendsu").loadAPI("mq").getMQHandlerForDID(target);
-        mqHandler.previewMessage((err, encryptedMessage) => {
+        mqHandler.readMessage((err, encryptedMessage) => {
             if (err) {
                 return callback(createOpenDSUErrorWrapper(`Failed to read message`, err));
             }
