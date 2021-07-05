@@ -4,11 +4,23 @@ const tir = require("../../../../psknode/tests/util/tir");
 const dc = require("double-check");
 const assert = dc.assert;
 
-const openDSU = require('../../index');
+const openDSU = require("../../index");
 $$.__registerModule("opendsu", openDSU);
 const w3cDID = openDSU.loadAPI("w3cdid");
 const TaskCounter = require("swarmutils").TaskCounter;
 const DOMAIN = "default";
+const DOMAIN_CONFIG = {
+    anchoring: {
+        type: "FS",
+        option: {
+            enableBricksLedger: false,
+        },
+        commands: {
+            addAnchor: "anchor",
+        },
+    },
+    enable: ["mq"],
+};
 
 async function createIdentities() {
     const ids = ["first", "second", "third"];
@@ -27,7 +39,6 @@ async function createIdentities() {
     return didDocuments;
 }
 
-
 function Message(serialisation) {
     let message = {};
     if (typeof serialisation !== "undefined") {
@@ -44,8 +55,7 @@ function Message(serialisation) {
 
     this.getGroup = () => {
         return message.group;
-    }
-
+    };
 
     this.setContent = (content) => {
         message.content = content;
@@ -56,7 +66,7 @@ function Message(serialisation) {
     };
 
     this.setSender = (senderDID) => {
-        message.sender = senderDID
+        message.sender = senderDID;
     };
 
     this.getSender = () => {
@@ -65,39 +75,25 @@ function Message(serialisation) {
 
     this.getSerialisation = () => {
         return JSON.stringify(message);
-    }
+    };
 }
 
-const messageContent = "Hello DID based MQs!"
+const messageContent = "Hello DID based MQs!";
 
-function configureDomain(rootFolder, domain) {
-    const domainConfig = {
-        "anchoring": {
-            "type": "FS",
-            "option": {
-                "enableBricksLedger": false
-            },
-            "commands": {
-                "addAnchor": "anchor"
-            }
-        },
-        "enable": ["mq"]
-    }
-    const fs = require("fs");
-    const path = require("path");
-    const pathToConfigFolder = path.join(rootFolder, "external-volume/config");
-    fs.mkdirSync(path.join(pathToConfigFolder, "domains"), {recursive: true})
-    fs.writeFileSync(path.join(pathToConfigFolder, `domains/${domain}.json`), JSON.stringify(domainConfig));
-    process.env.PSK_CONFIG_LOCATION = pathToConfigFolder;
-}
-
-assert.callback('w3cDID Group test', (testFinished) => {
-    dc.createTestFolder('createDSU', async (err, folder) => {
-        configureDomain(folder, DOMAIN);
-        tir.launchApiHubTestNode(10, folder, async (err) => {
-            if (err) {
-                throw err;
-            }
+assert.callback(
+    "w3cDID Group test",
+    (testFinished) => {
+        dc.createTestFolder("createDSU", async (err, folder) => {
+            await tir.launchConfigurableApiHubTestNodeAsync({
+                maxTries: 10,
+                storageFolder: folder,
+                domains: [
+                    {
+                        name: DOMAIN,
+                        config: DOMAIN_CONFIG,
+                    },
+                ],
+            });
 
             const resolver = openDSU.loadAPI("resolver");
             const sc = openDSU.loadAPI("sc");
@@ -105,12 +101,12 @@ assert.callback('w3cDID Group test', (testFinished) => {
             const initializeSC = async () => {
                 try {
                     const seedDSU = await $$.promisify(resolver.createSeedDSU)(DOMAIN);
-                    const seedSSI = await $$.promisify(seedDSU.getKeySSIAsObject)()
+                    const seedSSI = await $$.promisify(seedDSU.getKeySSIAsObject)();
                     sc.getSecurityContext(seedSSI);
                 } catch (e) {
                     throw e;
                 }
-            }
+            };
             try {
                 await initializeSC();
                 const didDocuments = await createIdentities();
@@ -125,7 +121,7 @@ assert.callback('w3cDID Group test', (testFinished) => {
 
                         assert.equal(new Message(msg).getContent(), messageContent);
                         counter++;
-                        if (counter === didDocuments.length-1) {
+                        if (counter === didDocuments.length - 1) {
                             testFinished();
                         }
                     });
@@ -138,22 +134,19 @@ assert.callback('w3cDID Group test', (testFinished) => {
                 const sender = didDocuments[0].getIdentifier();
                 const message = new Message();
                 message.setContent(messageContent);
-                message.setSender(sender)
+                message.setSender(sender);
                 await $$.promisify(groupDIDDocument.sendMessage)(message);
                 console.log(sender, "sent message", message.getSerialisation());
 
                 for (let i = 0; i < didDocuments.length; i++) {
                     await callReadMessage(didDocuments[i]);
                 }
-
             } catch (e) {
                 return console.log(e);
             }
 
             // assert.equal(decryptedMessage.message.toString(), dataToSend, "The received message is not the same as the message sent");
-
         });
-    });
-
-}, 15000);
-
+    },
+    15000
+);
