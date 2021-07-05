@@ -25,17 +25,21 @@ assert.callback('Trying to create a new anchor for an existing ConstDSU', (testF
 
 
 function createDSU(domain, keySSICallback) {
-    resolver.createArrayDSU(domain, ["username", "password"],(err, dsu) => {
+    resolver.createArrayDSU(domain, ["username"+Date.now(), "password"],(err, dsu) => {
         if (err) {
             throw err;
         }
-
-        dsu.getKeySSIAsString((err, keySSI) => {
-            if (err) {
+        dsu.writeFile("/filename", "filecontent", (err)=>{
+            if(err){
                 throw err;
             }
-            resolver.createDSUForExistingSSI(keySSI, keySSICallback);
-        })
+            dsu.getKeySSIAsString((err, keySSI) => {
+                if (err) {
+                    throw err;
+                }
+                resolver.createDSUForExistingSSI(keySSI, keySSICallback);
+            });
+        });
     });
 }
 

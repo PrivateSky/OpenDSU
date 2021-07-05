@@ -12,24 +12,43 @@ function DemoPKDocument(identifier){
         callback(undefined, hash == signature);
     };
 
-    function getApiHubEndpoint(){
-        const opendsu = require("opendsu");
-        const getBaseURL = require("../../utils/getBaseURL");
-        const consts = opendsu.constants;
-        const system = opendsu.loadApi("system");
-        // return system.getEnvironmentVariable(consts.BDNS_ROOT_HOSTS);
-        return getBaseURL();
+    let domainName;
+
+    this.setDomain = function(name) {
+        domainName = name;
     }
 
-    this.sendMessage = (message, toOtherDID, callback) => {
+    function getApiHubEndpoint() {
+        return new Promise(async (resolve, reject) => {
+            const opendsu = require("opendsu");
+            const getBaseURL = require("../../utils/getBaseURL");
+            const consts = opendsu.constants;
+            const system = opendsu.loadApi("system");
+            // return system.getEnvironmentVariable(consts.BDNS_ROOT_HOSTS);
+            if (domainName) {
+                const bdns = opendsu.loadApi('bdns');
+                try {
+                    let mqArray = await $$.promisify(bdns.getMQEndpoints)(domainName);
+                    if (mqArray.length > 0) {
+                        return resolve(mqArray[0]);
+                    }
+                } catch (e) {
+                    resolve(getBaseURL());
+                }
+            }
+            resolve(getBaseURL());
+        });
+    }
+
+    this.sendMessage = async (message, toOtherDID, callback) => {
         const opendsu = require("opendsu");
         const http = opendsu.loadApi("http");
-
-        let url = `${getApiHubEndpoint()}/mq/send-message/${encodeURI(toOtherDID)}`;
+        let apiHubEndpoint = await getApiHubEndpoint();
+        let url = `${apiHubEndpoint}/mq/send-message/${encodeURI(toOtherDID)}`;
         let options = message;
 
-        let request = http.doPost(url, options, (err, response)=>{
-            if(err){
+        let request = http.doPost(url, options, (err, response) => {
+            if (err) {
                 return callback(OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to send message`, err)));
             }
 
@@ -37,8 +56,8 @@ function DemoPKDocument(identifier){
         });
     };
 
-    this.readMessage = (callback) => {
-        const endpoint = getApiHubEndpoint();
+    this.readMessage = async (callback) => {
+        const endpoint = await getApiHubEndpoint();
         const opendsu = require("opendsu");
         const http = opendsu.loadApi("http");
         let didIdentifier = this.getIdentifier();
@@ -51,7 +70,8 @@ function DemoPKDocument(identifier){
                     return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to create channel for DID ${didIdentifier}`, err));
                 }
             }
-            function makeRequest(){
+
+            function makeRequest() {
                 let url = `${endpoint}/mq/receive-message/${encodeURI(didIdentifier)}`;
                 let options = {};
 
@@ -59,7 +79,7 @@ function DemoPKDocument(identifier){
 
                 request.then((response) => {
                     return response.text();
-                }).then((message)=>{
+                }).then((message) => {
                     return callback(undefined, message);
                 }).catch((err) => {
                     return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Unable to read message`, err));

@@ -37,19 +37,6 @@ function MappingEngine(storageService, options) {
 
 	function digestMessage(message) {
 		return new Promise((resolve, reject) => {
-			function finish() {
-				//first of all we set an event listener to catch any errors during the commit processes
-				errorHandler.observeUserRelevantMessages("error", function ({message, error}) {
-					return reject(errorHandler.createOpenDSUErrorWrapper("Caught an error during commit batch", error));
-
-					/*const cancelBatch = $$.promisify(persistenceDSU.cancelBatch);
-					cancelBatch().then(res => {
-						reject(errorHandler.createOpenDSUErrorWrapper("Batch canceled", error));
-					}).catch(err => {
-						reject(errorHandler.createOpenDSUErrorWrapper("Batch canceled", errorHandler.createOpenDSUErrorWrapper(err.message, error)));
-					});*/
-				});
-			}
 
 			async function process() {
 				const mappings = mappingRegistry.getMappings();
@@ -98,7 +85,10 @@ function MappingEngine(storageService, options) {
 					}
 				}
 				if (!messageDigested) {
-					console.log(`Unable to find a suitable mapping to handle the following message: ${JSON.stringify(message)}`);
+					let messageString = JSON.stringify(message);
+					const maxDisplayLength = 1024;
+					console.log(`Unable to find a suitable mapping to handle the following message: ${messageString.length<maxDisplayLength?messageString:messageString.slice(0,maxDisplayLength)+"..."}`);
+					reject(`Unable to find a suitable mapping to handle the messsage`);
 				}
 				return messageDigested;
 			}

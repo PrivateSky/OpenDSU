@@ -44,12 +44,12 @@ const versions = (keySSI, authToken, callback) => {
         const fetchAnchor = (service) => {
             return fetch(`${service}/anchor/${dlDomain}/get-all-versions/${anchorId}`)
                 .then((response) => {
-                    return response.json().then((hlStrings) => {
+                    return response.json().then(async(hlStrings) => {
                         const hashLinks = hlStrings.map((hlString) => {
                             return keyssi.parse(hlString);
                         });
 
-                        const validatedHashLinks = $$.promisify(validateHashLinks)(keySSI, hashLinks);
+                        const validatedHashLinks = await $$.promisify(validateHashLinks)(keySSI, hashLinks);
 
                         // cache.put(anchorId, hlStrings);
                         return validatedHashLinks;

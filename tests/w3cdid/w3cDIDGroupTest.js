@@ -8,23 +8,23 @@ const openDSU = require('../../index');
 $$.__registerModule("opendsu", openDSU);
 const w3cDID = openDSU.loadAPI("w3cdid");
 const TaskCounter = require("swarmutils").TaskCounter;
+const DOMAIN = "default";
 
-function createIdentities(callback) {
+async function createIdentities() {
     const ids = ["first", "second", "third"];
     const didDocuments = [];
-    const tc = new TaskCounter(() => callback(undefined, didDocuments));
-
-    tc.increment(ids.length);
     for (let i = 0; i < ids.length; i++) {
-        w3cDID.createIdentity("demo", ids[i], (err, didDocument) => {
-            if (err) {
-                return callback(err);
-            }
+        let didDocument;
+        try {
+            didDocument = await $$.promisify(w3cDID.createIdentity)("name", DOMAIN, ids[i]);
+        } catch (e) {
+            throw e;
+        }
 
-            didDocuments.push(didDocument);
-            tc.decrement();
-        });
+        didDocuments.push(didDocument);
     }
+
+    return didDocuments;
 }
 
 
@@ -70,68 +70,88 @@ function Message(serialisation) {
 
 const messageContent = "Hello DID based MQs!"
 
+function configureDomain(rootFolder, domain) {
+    const domainConfig = {
+        "anchoring": {
+            "type": "FS",
+            "option": {
+                "enableBricksLedger": false
+            },
+            "commands": {
+                "addAnchor": "anchor"
+            }
+        },
+        "enable": ["mq"]
+    }
+    const fs = require("fs");
+    const path = require("path");
+    const pathToConfigFolder = path.join(rootFolder, "external-volume/config");
+    fs.mkdirSync(path.join(pathToConfigFolder, "domains"), {recursive: true})
+    fs.writeFileSync(path.join(pathToConfigFolder, `domains/${domain}.json`), JSON.stringify(domainConfig));
+    process.env.PSK_CONFIG_LOCATION = pathToConfigFolder;
+}
+
 assert.callback('w3cDID Group test', (testFinished) => {
-    tir.launchVirtualMQNode(async (err, port) => {
-        if (err) {
-            throw err;
-        }
-
-        const domain = "default";
-        const resolver = openDSU.loadAPI("resolver");
-        const sc = openDSU.loadAPI("sc");
-
-        const seedDSU = await $$.promisify(resolver.createSeedDSU)(domain);
-        const seedSSI = await $$.promisify(seedDSU.getKeySSIAsObject)();
-
-        await sc.getSecurityContext(seedSSI);
-        createIdentities((err, didDocuments) => {
+    dc.createTestFolder('createDSU', async (err, folder) => {
+        configureDomain(folder, DOMAIN);
+        tir.launchApiHubTestNode(10, folder, async (err) => {
             if (err) {
                 throw err;
             }
-            w3cDID.createIdentity("group", "default", "myTeam", (err, groupDIDDocument) => {
-                if (err) {
-                    throw err;
+
+            const resolver = openDSU.loadAPI("resolver");
+            const sc = openDSU.loadAPI("sc");
+
+            const initializeSC = async () => {
+                try {
+                    const seedDSU = await $$.promisify(resolver.createSeedDSU)(DOMAIN);
+                    const seedSSI = await $$.promisify(seedDSU.getKeySSIAsObject)()
+                    sc.getSecurityContext(seedSSI);
+                } catch (e) {
+                    throw e;
                 }
+            }
+            try {
+                await initializeSC();
+                const didDocuments = await createIdentities();
+                const groupDIDDocument = await $$.promisify(w3cDID.createIdentity)("group", DOMAIN, "myTeam");
+                let counter = 0;
 
-                const secondTC = new TaskCounter(() => {
-                    const sender = didDocuments[0].getIdentifier();
-                    setTimeout(() => {
-                        const message = new Message();
-                        message.setContent(messageContent);
-                        message.setSender(sender)
-                        groupDIDDocument.sendMessage(message, (err) => {
-                            if (err) {
-                                throw err;
-                            }
-                            console.log(sender, "sent message", message.getSerialisation());
-                        });
-                    }, 1000);
-                });
-
-                secondTC.increment(didDocuments.length);
-                let counter = 2;
-                for (let i = 0; i < didDocuments.length; i++) {
-                    groupDIDDocument.addMember(didDocuments[i].getIdentifier(), (err) => {
+                function callReadMessage(didDocument) {
+                    didDocument.readMessage((err, msg) => {
                         if (err) {
                             throw err;
                         }
 
-                        secondTC.decrement();
-
-                        didDocuments[i].readMessage((err, msg) => {
-                            if (err) {
-                                throw err;
-                            }
-
-                            console.log(`${didDocuments[i].getIdentifier()} received message ${msg}`);
-                            counter--;
-                            if (counter === 0) {
-                                testFinished();
-                            }
-                        });
+                        assert.equal(new Message(msg).getContent(), messageContent);
+                        counter++;
+                        if (counter === didDocuments.length-1) {
+                            testFinished();
+                        }
                     });
                 }
-            });
+
+                for (let i = 0; i < didDocuments.length; i++) {
+                    await $$.promisify(groupDIDDocument.addMember)(didDocuments[i].getIdentifier());
+                }
+
+                const sender = didDocuments[0].getIdentifier();
+                const message = new Message();
+                message.setContent(messageContent);
+                message.setSender(sender)
+                await $$.promisify(groupDIDDocument.sendMessage)(message);
+                console.log(sender, "sent message", message.getSerialisation());
+
+                for (let i = 0; i < didDocuments.length; i++) {
+                    await callReadMessage(didDocuments[i]);
+                }
+
+            } catch (e) {
+                return console.log(e);
+            }
+
+            // assert.equal(decryptedMessage.message.toString(), dataToSend, "The received message is not the same as the message sent");
+
         });
     });
 
