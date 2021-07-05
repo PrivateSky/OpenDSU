@@ -6,7 +6,7 @@ const assert = dc.assert;
 const contracts = require("../../../contracts");
 const w3cDID = require("../../../w3cdid");
 
-const { launchApiHubTestNodeWithTestDomain } = require("../utils");
+const { launchApiHubTestNodeWithContractAsync } = require("../utils");
 
 assert.callback(
     "Use BDNS contract to update domain info and read it back",
@@ -22,7 +22,7 @@ assert.callback(
                 contractServices: ["http://localhost"],
             };
 
-            await $$.promisify(launchApiHubTestNodeWithTestDomain)();
+            await launchApiHubTestNodeWithContractAsync();
 
             const signerDID = await $$.promisify(w3cDID.createIdentity)("demo", "id");
 

@@ -6,7 +6,7 @@ const assert = dc.assert;
 const contracts = require("../../../contracts");
 const w3cDID = require("../../../w3cdid");
 
-const { launchApiHubTestNodeWithTestDomain } = require("../utils");
+const { launchApiHubTestNodeWithContractAsync } = require("../utils");
 
 assert.callback(
     "Simulate a reply attack after calling a nonced method using the opendsu contract's generateNoncedCommand",
@@ -15,7 +15,7 @@ assert.callback(
             const domain = "contract";
             const contractName = "test";
             const methodName = "nonced";
-            await $$.promisify(launchApiHubTestNodeWithTestDomain)();
+            await launchApiHubTestNodeWithContractAsync();
 
             const signerDID = await $$.promisify(w3cDID.createIdentity)("demo", "id");
 

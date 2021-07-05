@@ -6,7 +6,7 @@ const assert = dc.assert;
 const contracts = require("../../../contracts");
 const w3cDID = require("../../../w3cdid");
 
-const { launchApiHubTestNodeWithTestDomain } = require("../utils");
+const { launchApiHubTestNodeWithContractAsync } = require("../utils");
 
 assert.callback(
     "Use BDNS contract to add a subdomain, update the subdomain info and read it back",
@@ -16,7 +16,7 @@ assert.callback(
             const contract = "bdns";
             const subdomainJSON = { name: "subdomain2" };
 
-            await $$.promisify(launchApiHubTestNodeWithTestDomain)();
+            await launchApiHubTestNodeWithContractAsync();
 
             const signerDID = await $$.promisify(w3cDID.createIdentity)("demo", "id");
 

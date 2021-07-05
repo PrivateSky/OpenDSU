@@ -6,7 +6,7 @@ const assert = dc.assert;
 const contracts = require("../../contracts");
 const { createTemplateKeySSI } = require("../../keyssi");
 
-const { launchApiHubTestNodeWithTestDomain } = require("./utils");
+const { launchApiHubTestNodeWithContractAsync } = require("./utils");
 
 assert.callback(
     "Call contract method with the an existing domain config file that contains all relevant configuration",
@@ -15,7 +15,7 @@ assert.callback(
             const domain = "contract";
             const contract = "anchoring";
 
-            await $$.promisify(launchApiHubTestNodeWithTestDomain)();
+            await launchApiHubTestNodeWithContractAsync();
 
             const generateSafeCommand = $$.promisify(contracts.generateSafeCommand);
 

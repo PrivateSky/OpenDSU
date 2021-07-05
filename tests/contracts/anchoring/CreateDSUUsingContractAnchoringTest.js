@@ -6,13 +6,13 @@ const assert = dc.assert;
 const resolver = require("../../../resolver");
 const { createTemplateKeySSI } = require("../../../keyssi");
 
-const { launchApiHubTestNodeWithTestDomain } = require("../utils");
+const { launchApiHubTestNodeWithContractAsync } = require("../utils");
 
 assert.callback(
     "Create DSU with anchoring configuration set to use anchoring contract",
     async (testFinished) => {
         try {
-            await $$.promisify(launchApiHubTestNodeWithTestDomain)();
+            await launchApiHubTestNodeWithContractAsync();
 
             const keySSISeed = createTemplateKeySSI("seed", "contract");
             const dsu = await $$.promisify(resolver.createDSU)(keySSISeed);
