@@ -51,23 +51,31 @@ assert.callback('key DID SSI test', (testFinished) => {
                 }
             }
 
-            let decryptedMessage;
             const dataToSend = "someData";
 
+            let receiverDIDDocument;
+            let senderDIDDocument
             try {
                 await initializeSC();
-                const senderDIDDocument = await $$.promisify(w3cDID.createIdentity)("name", domain, "sender");
-                const receiverDIDDocument = await $$.promisify(w3cDID.createIdentity)("name", domain, "receiver");
+                senderDIDDocument = await $$.promisify(w3cDID.createIdentity)("name", domain, "sender");
+                receiverDIDDocument = await $$.promisify(w3cDID.createIdentity)("name", domain, "receiver");
 
-                await $$.promisify(senderDIDDocument.sendMessage)(dataToSend, receiverDIDDocument);
                 const resolvedDIDDocument = await $$.promisify(w3cDID.resolveDID)(receiverDIDDocument.getIdentifier());
-                decryptedMessage = await $$.promisify(resolvedDIDDocument.readMessage)();
             } catch (e) {
                 return console.log(e);
             }
 
-            assert.equal(decryptedMessage.message.toString(), dataToSend, "The received message is not the same as the message sent");
-            testFinished();
+            senderDIDDocument.sendMessage(dataToSend, receiverDIDDocument, err => {
+                console.log("Sent message", dataToSend)
+                receiverDIDDocument.readMessage((err, decryptedMessage) => {
+                    if (err) {
+                        return console.log(err);
+                    }
+
+                    assert.equal(decryptedMessage, dataToSend, "The received message is not the same as the message sent");
+                    testFinished();
+                });
+            });
         });
     });
 }, 10000);

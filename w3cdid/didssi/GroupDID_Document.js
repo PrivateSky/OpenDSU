@@ -106,7 +106,8 @@ function GroupDID_Document(domain, groupName) {
             for (let i = 0; i < noMembers; i++) {
                 if (membersIds[i] !== message.getSender()) {
                     try {
-                        await $$.promisify(senderDIDDocument.sendMessage)(message.getSerialisation(), membersIds[i])
+                        const receiverDIDDocument = await $$.promisify(w3cDID.resolveDID)(membersIds[i]);
+                        await $$.promisify(senderDIDDocument.sendMessage)(message.getSerialisation(), receiverDIDDocument)
                     } catch (e) {
                         return callback(e);
                     }

@@ -59,7 +59,7 @@ function KeyDID_Document(isInitialisation, seedSSI) {
     };
 
     this.getPrivateKeys = () => {
-        return seedSSI.getPrivateKey()
+        return [seedSSI.getPrivateKey()];
     };
 
     return this;

@@ -87,7 +87,7 @@ function ConstDID_Document_Mixin(target, domain, name) {
     }
 
     target.getPrivateKeys = () => {
-        return target.privateKey;
+        return [target.privateKey];
     };
 
     target.getPublicKey = (format, callback) => {
