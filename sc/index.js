@@ -53,7 +53,6 @@ function SecurityContext(keySSI) {
 
     this.addPrivateKeyForDID = (didDocument, privateKey, callback) => {
         const privateKeyObj = {privateKeys: [privateKey]}
-
         storageDB.getRecord(DIDS_PRIVATE_KEYS, didDocument.getIdentifier(), (err, res) => {
             if (err || !res) {
                 return storageDB.insertRecord(DIDS_PRIVATE_KEYS, didDocument.getIdentifier(), privateKeyObj, callback);
@@ -82,7 +81,13 @@ function SecurityContext(keySSI) {
                 return callback(err);
             }
 
-            const privateKeysAsBuff = record.privateKeys.map(privateKey => $$.Buffer.from(privateKey));
+            const privateKeysAsBuff = record.privateKeys.map(privateKey => {
+                if(privateKey){
+                    return $$.Buffer.from(privateKey)
+                }
+
+                return privateKey;
+            });
             callback(undefined, privateKeysAsBuff);
         });
     };

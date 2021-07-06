@@ -5,7 +5,7 @@ const assert = dc.assert;
 
 const contracts = require("../../../contracts");
 
-const { launchApiHubTestNodeWithTestDomain } = require("../utils");
+const { launchApiHubTestNodeWithContractAsync } = require("../utils");
 
 assert.callback(
     "Call a nonced method using the opendsu contract's generateSafeCommand without specifying a timestamp nor signature",
@@ -15,7 +15,7 @@ assert.callback(
             const contract = "test";
             const method = "nonced";
 
-            await $$.promisify(launchApiHubTestNodeWithTestDomain)();
+            await launchApiHubTestNodeWithContractAsync();
 
             const generateNoncedCommand = $$.promisify(contracts.generateNoncedCommand);
 

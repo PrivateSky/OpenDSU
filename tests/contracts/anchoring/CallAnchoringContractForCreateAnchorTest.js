@@ -6,7 +6,7 @@ const assert = dc.assert;
 const contracts = require("../../../contracts");
 const { createHashLinkSSI, createTemplateKeySSI } = require("../../../keyssi");
 
-const { launchApiHubTestNodeWithTestDomain } = require("../utils");
+const { launchApiHubTestNodeWithContractAsync } = require("../utils");
 
 assert.callback(
     "Call anchoring contract methods createAnchor and appendToAnchor and checking getAllVersions for results",
@@ -15,7 +15,7 @@ assert.callback(
             const domain = "contract";
             const contract = "anchoring";
 
-            await $$.promisify(launchApiHubTestNodeWithTestDomain)();
+            await launchApiHubTestNodeWithContractAsync();
 
             const generateSafeCommand = $$.promisify(contracts.generateSafeCommand);
 

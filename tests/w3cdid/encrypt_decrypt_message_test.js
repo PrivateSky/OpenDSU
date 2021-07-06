@@ -35,8 +35,8 @@ assert.callback('key DID SSI test', (testFinished) => {
                 const receiverDIDDocument = await $$.promisify(w3cDID.createIdentity)("name", domain, "receiver");
                 const message = "someData";
                 const encryptedMessage = await $$.promisify(senderDIDDocument.encryptMessage)(receiverDIDDocument, message);
-                const decryptedObj = await $$.promisify(receiverDIDDocument.decryptMessage)(encryptedMessage);
-                assert.equal(message, decryptedObj.message.toString(), `Decrypted message is not the same as the original message`);
+                const decryptedMessage = await $$.promisify(receiverDIDDocument.decryptMessage)(encryptedMessage);
+                assert.equal(message, decryptedMessage, `Decrypted message is not the same as the original message`);
             } catch (e) {
                 return console.log(e);
             }

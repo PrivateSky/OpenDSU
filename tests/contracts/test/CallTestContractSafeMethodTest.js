@@ -5,7 +5,7 @@ const assert = dc.assert;
 
 const contracts = require("../../../contracts");
 
-const { launchApiHubTestNodeWithTestDomain } = require("../utils");
+const { launchApiHubTestNodeWithContractAsync } = require("../utils");
 
 assert.callback(
     "Call a safe method using the opendsu contract's generateSafeCommand",
@@ -15,7 +15,7 @@ assert.callback(
             const contract = "test";
             const method = "safe";
 
-            await $$.promisify(launchApiHubTestNodeWithTestDomain)();
+            await launchApiHubTestNodeWithContractAsync();
 
             const generateSafeCommand = $$.promisify(contracts.generateSafeCommand);
 

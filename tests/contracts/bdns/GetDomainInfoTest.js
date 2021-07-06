@@ -6,7 +6,7 @@ const assert = dc.assert;
 const contracts = require("../../../contracts");
 const moduleConstants = require("../../../moduleConstants");
 
-const { launchApiHubTestNodeWithTestDomain } = require("../utils");
+const { launchApiHubTestNodeWithContractAsync } = require("../utils");
 
 assert.callback(
     "Use BDNS contract to read domain info",
@@ -15,7 +15,8 @@ assert.callback(
             const domain = "contract";
             const contract = "bdns";
 
-            await $$.promisify(launchApiHubTestNodeWithTestDomain)();
+            await launchApiHubTestNodeWithContractAsync();
+            console.log('FINISHED LAUNCHIGN')
 
             const generateSafeCommand = $$.promisify(contracts.generateSafeCommand);
 

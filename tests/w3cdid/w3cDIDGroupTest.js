@@ -4,29 +4,40 @@ const tir = require("../../../../psknode/tests/util/tir");
 const dc = require("double-check");
 const assert = dc.assert;
 
-const openDSU = require('../../index');
+const openDSU = require("../../index");
 $$.__registerModule("opendsu", openDSU);
 const w3cDID = openDSU.loadAPI("w3cdid");
 const TaskCounter = require("swarmutils").TaskCounter;
+const DOMAIN = "default";
+const DOMAIN_CONFIG = {
+    anchoring: {
+        type: "FS",
+        option: {
+            enableBricksLedger: false,
+        },
+        commands: {
+            addAnchor: "anchor",
+        },
+    },
+    enable: ["mq"],
+};
 
-function createIdentities(callback) {
+async function createIdentities() {
     const ids = ["first", "second", "third"];
     const didDocuments = [];
-    const tc = new TaskCounter(() => callback(undefined, didDocuments));
-
-    tc.increment(ids.length);
     for (let i = 0; i < ids.length; i++) {
-        w3cDID.createIdentity("demo", ids[i], (err, didDocument) => {
-            if (err) {
-                return callback(err);
-            }
+        let didDocument;
+        try {
+            didDocument = await $$.promisify(w3cDID.createIdentity)("name", DOMAIN, ids[i]);
+        } catch (e) {
+            throw e;
+        }
 
-            didDocuments.push(didDocument);
-            tc.decrement();
-        });
+        didDocuments.push(didDocument);
     }
-}
 
+    return didDocuments;
+}
 
 function Message(serialisation) {
     let message = {};
@@ -44,8 +55,7 @@ function Message(serialisation) {
 
     this.getGroup = () => {
         return message.group;
-    }
-
+    };
 
     this.setContent = (content) => {
         message.content = content;
@@ -56,7 +66,7 @@ function Message(serialisation) {
     };
 
     this.setSender = (senderDID) => {
-        message.sender = senderDID
+        message.sender = senderDID;
     };
 
     this.getSender = () => {
@@ -65,75 +75,78 @@ function Message(serialisation) {
 
     this.getSerialisation = () => {
         return JSON.stringify(message);
-    }
+    };
 }
 
-const messageContent = "Hello DID based MQs!"
+const messageContent = "Hello DID based MQs!";
 
-assert.callback('w3cDID Group test', (testFinished) => {
-    tir.launchVirtualMQNode(async (err, port) => {
-        if (err) {
-            throw err;
-        }
+assert.callback(
+    "w3cDID Group test",
+    (testFinished) => {
+        dc.createTestFolder("createDSU", async (err, folder) => {
+            await tir.launchConfigurableApiHubTestNodeAsync({
+                maxTries: 10,
+                storageFolder: folder,
+                domains: [
+                    {
+                        name: DOMAIN,
+                        config: DOMAIN_CONFIG,
+                    },
+                ],
+            });
 
-        const domain = "default";
-        const resolver = openDSU.loadAPI("resolver");
-        const sc = openDSU.loadAPI("sc");
+            const resolver = openDSU.loadAPI("resolver");
+            const sc = openDSU.loadAPI("sc");
 
-        const seedDSU = await $$.promisify(resolver.createSeedDSU)(domain);
-        const seedSSI = await $$.promisify(seedDSU.getKeySSIAsObject)();
-
-        await sc.getSecurityContext(seedSSI);
-        createIdentities((err, didDocuments) => {
-            if (err) {
-                throw err;
-            }
-            w3cDID.createIdentity("group", "default", "myTeam", (err, groupDIDDocument) => {
-                if (err) {
-                    throw err;
+            const initializeSC = async () => {
+                try {
+                    const seedDSU = await $$.promisify(resolver.createSeedDSU)(DOMAIN);
+                    const seedSSI = await $$.promisify(seedDSU.getKeySSIAsObject)();
+                    sc.getSecurityContext(seedSSI);
+                } catch (e) {
+                    throw e;
                 }
+            };
+            try {
+                await initializeSC();
+                const didDocuments = await createIdentities();
+                const groupDIDDocument = await $$.promisify(w3cDID.createIdentity)("group", DOMAIN, "myTeam");
+                let counter = 0;
 
-                const secondTC = new TaskCounter(() => {
-                    const sender = didDocuments[0].getIdentifier();
-                    setTimeout(() => {
-                        const message = new Message();
-                        message.setContent(messageContent);
-                        message.setSender(sender)
-                        groupDIDDocument.sendMessage(message, (err) => {
-                            if (err) {
-                                throw err;
-                            }
-                            console.log(sender, "sent message", message.getSerialisation());
-                        });
-                    }, 1000);
-                });
-
-                secondTC.increment(didDocuments.length);
-                let counter = 2;
-                for (let i = 0; i < didDocuments.length; i++) {
-                    groupDIDDocument.addMember(didDocuments[i].getIdentifier(), (err) => {
+                function callReadMessage(didDocument) {
+                    didDocument.readMessage((err, msg) => {
                         if (err) {
                             throw err;
                         }
 
-                        secondTC.decrement();
-
-                        didDocuments[i].readMessage((err, msg) => {
-                            if (err) {
-                                throw err;
-                            }
-
-                            console.log(`${didDocuments[i].getIdentifier()} received message ${msg}`);
-                            counter--;
-                            if (counter === 0) {
-                                testFinished();
-                            }
-                        });
+                        assert.equal(new Message(msg).getContent(), messageContent);
+                        counter++;
+                        if (counter === didDocuments.length - 1) {
+                            testFinished();
+                        }
                     });
                 }
-            });
+
+                for (let i = 0; i < didDocuments.length; i++) {
+                    await $$.promisify(groupDIDDocument.addMember)(didDocuments[i].getIdentifier());
+                }
+
+                const sender = didDocuments[0].getIdentifier();
+                const message = new Message();
+                message.setContent(messageContent);
+                message.setSender(sender);
+                await $$.promisify(groupDIDDocument.sendMessage)(message);
+                console.log(sender, "sent message", message.getSerialisation());
+
+                for (let i = 0; i < didDocuments.length; i++) {
+                    await callReadMessage(didDocuments[i]);
+                }
+            } catch (e) {
+                return console.log(e);
+            }
+
+            // assert.equal(decryptedMessage.message.toString(), dataToSend, "The received message is not the same as the message sent");
         });
-    });
-
-}, 15000);
-
+    },
+    15000
+);
