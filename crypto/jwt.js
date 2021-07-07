@@ -236,7 +236,7 @@ function isJwtNotActive(body) {
 function verifyJWTContent(jwtContent, callback) {
     const {header, body} = jwtContent;
 
-    if (header.typ !== SEED_SSI_HEADER_TYPE) return callback(JWT_ERRORS.INVALID_JWT_HEADER_TYPE);
+    if (header.typ !== SEED_SSI_HEADER_TYPE && header.typ !== DID_HEADER_TYPE) return callback(JWT_ERRORS.INVALID_JWT_HEADER_TYPE);
     if (!body.iss) return callback(JWT_ERRORS.INVALID_JWT_ISSUER);
     if (isJwtExpired(body)) return callback(JWT_ERRORS.JWT_TOKEN_EXPIRED);
     if (isJwtNotActive(body)) return callback(JWT_ERRORS.JWT_TOKEN_NOT_ACTIVE);
