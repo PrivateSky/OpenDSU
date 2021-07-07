@@ -113,12 +113,29 @@ const DossierBuilder = function(sourceDSU, varStore){
      * @param {function(err, KeySSI)} callback
      */
     let updateDossier = function(bar, cfg, commands, callback) {
-        if (commands.length === 0)
-            return saveDSU(bar, cfg, callback);
+        if (commands.length === 0) {
+            return bar.commitBatch((err) => {
+                if (err) {
+                    return callback(err);
+                }
+
+                saveDSU(bar, cfg, callback);
+            })
+        }
+
+        if (!bar.batchInProgress()) {
+            try {
+                bar.beginBatch();
+            } catch (e) {
+                return callback(e);
+            }
+        }
+
         let cmd = commands.shift();
         runCommand(bar, cmd, commands,(err, updated_bar) => {
-            if (err)
+            if (err) {
                 return callback(err);
+            }
             updateDossier(updated_bar, cfg, commands, callback);
         });
     };
