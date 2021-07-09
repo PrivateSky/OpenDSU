@@ -151,6 +151,18 @@ const createJWT = (seedSSI, scope, credentials, options, callback) => {
     );
 };
 
+const createJWTForDID = (did, scope, credentials, options, callback) => {
+    jwtUtils.createJWTForDID(
+        {
+            did,
+            scope,
+            credentials,
+            options
+        },
+        callback
+    );
+};
+
 const verifyJWT = (jwt, rootOfTrustVerificationStrategy, callback) => {
     jwtUtils.verifyJWT(
         {
@@ -162,19 +174,37 @@ const verifyJWT = (jwt, rootOfTrustVerificationStrategy, callback) => {
     );
 };
 
+const verifyDID_JWT = (jwt, rootOfTrustVerificationStrategy, callback) => {
+    jwtUtils.verifyDID_JWT(
+        {
+            jwt,
+            rootOfTrustVerificationStrategy
+        },
+        callback
+    );
+};
+
 const createCredential = (issuerSeedSSI, credentialSubjectSReadSSI, callback) => {
     createJWT(issuerSeedSSI, "", null, {subject: credentialSubjectSReadSSI}, callback);
+};
+
+const createCredentialForDID = (did, credentialSubjectDID, callback) => {
+    createJWTForDID(did, "", null, {subject: credentialSubjectDID}, callback);
 };
 
 const createAuthToken = (holderSeedSSI, scope, credential, callback) => {
     createJWT(holderSeedSSI, scope, credential, null, callback);
 };
 
+const createAuthTokenForDID = (holderDID, scope, credential, callback) => {
+    createJWTForDID(holderDID, scope, credential, null, callback);
+};
+
 const createPresentationToken = (holderSeedSSI, scope, credential, callback) => {
     createJWT(holderSeedSSI, scope, credential, null, callback);
 };
 
-const verifyAuthToken = (jwt, listOfIssuers, callback) => {
+function verifyToken(jwt, listOfIssuers, verifyJWTFn, callback) {
     if (!listOfIssuers || !listOfIssuers.length) return callback(JWT_ERRORS.EMPTY_LIST_OF_ISSUERS_PROVIDED);
 
     // checks every credentials from the JWT's body to see if it has at least one JWT issues by one of listOfIssuers for the current subject
@@ -183,19 +213,19 @@ const verifyAuthToken = (jwt, listOfIssuers, callback) => {
         // the JWT doesn't have credentials specified so we cannot check for valid authorizarion
         if (!credentials) return verificationCallback(null, false);
 
-        const currentSubject = jwtUtils.getReadableSSI(subject);
+        const currentSubject = jwtUtils.getReadableIdentity(subject);
 
         const credentialVerifiers = credentials.map((credential) => {
             return new Promise((resolve) => {
-                verifyJWT(
+                verifyJWTFn(
                     credential,
                     ({body}, credentialVerificationCallback) => {
                         // check if credential was issued for the JWT that we are verifying the authorization for
-                        const credentialSubject = jwtUtils.getReadableSSI(body.sub);
+                        const credentialSubject = jwtUtils.getReadableIdentity(body.sub);
                         const isCredentialIssuedForSubject = !!credentialSubject && credentialSubject === currentSubject;
                         if (!isCredentialIssuedForSubject) return credentialVerificationCallback(null, false);
 
-                        const credentialIssuer = jwtUtils.getReadableSSI(body.iss);
+                        const credentialIssuer = jwtUtils.getReadableIdentity(body.iss);
 
                         // console.log(`Checking for credentialIssuer ${credentialIssuer} inside `, listOfIssuers);
                         // listOfIssuers.forEach(issuer => {
@@ -203,7 +233,7 @@ const verifyAuthToken = (jwt, listOfIssuers, callback) => {
                         // })
 
                         const isValidIssuer = listOfIssuers.some((issuer) => !!credentialIssuer
-                            && jwtUtils.getReadableSSI(issuer) === credentialIssuer);
+                            && jwtUtils.getReadableIdentity(issuer) === credentialIssuer);
                         credentialVerificationCallback(null, isValidIssuer);
                     },
                     (credentialVerifyError, isCredentialValid) => {
@@ -229,7 +259,15 @@ const verifyAuthToken = (jwt, listOfIssuers, callback) => {
             });
     };
 
-    verifyJWT(jwt, rootOfTrustVerificationStrategy, callback);
+    verifyJWTFn(jwt, rootOfTrustVerificationStrategy, callback);
+}
+
+const verifyAuthToken = (jwt, listOfIssuers, callback) => {
+    verifyToken(jwt, listOfIssuers, verifyJWT, callback);
+};
+
+const verifyDIDAuthToken = (jwt, listOfIssuers, callback) => {
+    verifyToken(jwt, listOfIssuers, verifyDID_JWT, callback);
 };
 
 
@@ -261,7 +299,7 @@ module.exports = {
     createAuthToken,
     verifyAuthToken,
     createPresentationToken,
-    getReadableSSI: jwtUtils.getReadableSSI,
+    getReadableSSI: jwtUtils.getReadableIdentity,
     parseJWTSegments: jwtUtils.parseJWTSegments,
     createBloomFilter,
     JWT_ERRORS,
@@ -269,5 +307,10 @@ module.exports = {
     convertPrivateKey,
     convertPublicKey,
     ecies_encrypt_ds,
-    ecies_decrypt_ds
+    ecies_decrypt_ds,
+    createJWTForDID,
+    verifyDID_JWT,
+    verifyDIDAuthToken,
+    createAuthTokenForDID,
+    createCredentialForDID
 };

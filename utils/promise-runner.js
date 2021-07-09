@@ -80,7 +80,7 @@ function runOneSuccessful(listEntries, executeEntry, callback, debugInfo) {
       let result;
       try {
           result = await executeEntry(entry);
-      } catch (e) {
+      } catch (err) {
           if (!availableListEntries.length) {
               return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to execute entry`, err));
           }
