@@ -76,19 +76,20 @@ function runOneSuccessful(listEntries, executeEntry, callback, debugInfo) {
 
   const entry = availableListEntries.shift();
 
-  const executeForSingleEntry = (entry) => {
-    return executeEntry(entry)
-      .then((result) => {
-        return callback(null, result);
-      })
-      .catch((err) => {
-        if (!availableListEntries.length) {
-          return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to execute entry`, err));
-        }
+  const executeForSingleEntry = async (entry) => {
+      let result;
+      try {
+          result = await executeEntry(entry);
+      } catch (e) {
+          if (!availableListEntries.length) {
+              return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to execute entry`, err));
+          }
 
-        const nextEntry = availableListEntries.shift();
-        executeForSingleEntry(nextEntry);
-      });
+          const nextEntry = availableListEntries.shift();
+          return executeForSingleEntry(nextEntry);
+      }
+
+     return callback(undefined, result);
   };
 
   executeForSingleEntry(entry);
