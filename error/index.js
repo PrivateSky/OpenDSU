@@ -18,7 +18,10 @@ function ErrorWrapper(message, err, otherErrors){
                 newErr.originalMessage = newErr.originalMessage.replace(/\n/g, " ");
             }
         }
+    } else if (!err) {
+        err = {};
     }
+
 
     try{
         if (err.originalMessage) {
