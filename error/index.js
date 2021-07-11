@@ -1,11 +1,14 @@
 function ErrorWrapper(message, err, otherErrors){
     let newErr = {};
-    if((err && err.message) || otherErrors) {
+
+    err = err || {};
+
+    if (err.message || otherErrors) {
         if (err.originalMessage) {
             newErr.originalMessage = err.originalMessage;
-        }else{
+        } else {
             newErr.originalMessage = err.message;
-            if(otherErrors){
+            if (otherErrors) {
                 if (typeof otherErrors === "string") {
                     newErr.originalMessage += otherErrors;
                 }
@@ -14,33 +17,31 @@ function ErrorWrapper(message, err, otherErrors){
                     otherErrors.forEach(e => newErr.originalMessage += `[${e.message}]`);
                 }
             }
-            if(typeof newErr.originalMessage === "string") {
+            if (typeof newErr.originalMessage === "string") {
                 newErr.originalMessage = newErr.originalMessage.replace(/\n/g, " ");
             }
         }
-    } else if (!err) {
-        err = {};
+
     }
 
-
-    try{
+    try {
         if (err.originalMessage) {
             newErr = new Error(message + `(${err.originalMessage})`);
             newErr.originalMessage = err.originalMessage;
-        }else{
+        } else {
             newErr = new Error(newErr.originalMessage);
             newErr.originalMessage = newErr.message;
         }
         throw newErr;
-    }catch (e) {
+    } catch (e) {
         newErr = e;
     }
     newErr.previousError = err;
     newErr.debug_message = message;
-    if(err){
+    if (err.stack) {
         newErr.debug_stack   = err.stack;
     }
-    if(otherErrors){
+    if (otherErrors) {
         newErr.otherErrors = otherErrors;
     }
     return newErr;

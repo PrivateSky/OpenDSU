@@ -64,7 +64,7 @@ async function runAll(listEntries, executeEntry, validateResults, callback, debu
   let baseError = debugInfo;
   if(errorExecutions.length){
     if(baseError){
-      baseError = OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper("Error found during runAll", errorExecutions[0], errorExecutions, debugInfo));
+      baseError = OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper("Error found during runAll", errorExecutions[0], errorExecutions));
     }
   }
   return OpenDSUSafeCallback(callback)((createOpenDSUErrorWrapper("FAILED to runAll " , baseError)));
