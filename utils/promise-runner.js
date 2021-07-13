@@ -1,4 +1,5 @@
 const arrayUtils = require("./array");
+const { OpenDSUSafeCallback, createOpenDSUErrorWrapper } = require('./../error')
 
 function validateMajorityRunAllWithSuccess(successResults, errorResults, totalCount) {
   const successCount = successResults.length;
@@ -28,7 +29,7 @@ function runSinglePromise(executePromise, promiseInput) {
     });
 }
 
-function runAll(listEntries, executeEntry, validateResults, callback, debugInfo) {
+async function runAll(listEntries, executeEntry, validateResults, callback, debugInfo) {
   if (typeof validateResults !== "function") {
     validateResults = validateMajorityRunAllWithSuccess;
   }
@@ -36,34 +37,37 @@ function runAll(listEntries, executeEntry, validateResults, callback, debugInfo)
   const allInitialExecutions = listEntries.map((entry) => {
     return runSinglePromise(executeEntry, entry);
   });
-  Promise.all(allInitialExecutions)
-    .then((results) => {
-      const successExecutions = results.filter((run) => run.success);
-      let errorExecutions = results.filter((run) => !run.success);
-      errorExecutions = errorExecutions.map(e => {
-        if (e.error && e.error.error) {
-          return e.error.error;
-        }else {
-          return e;
-        }
-      });
-      const isConsideredSuccessfulRun = validateResults(successExecutions, errorExecutions);
-      if (isConsideredSuccessfulRun) {
-        const successExecutionResults = successExecutions.map((run) => run.result);
-        return callback(null, successExecutionResults);
-      }
 
-      let baseError = debugInfo;
-      if(errorExecutions.length){
-        if(baseError){
-          baseError = createOpenDSUErrorWrapper("Error found during runAll", errorExecutions[0], errorExecutions, debugInfo);
-        }
-      }
-      return callback(createOpenDSUErrorWrapper("FAILED to runAll " , baseError));
-    })
-    .catch(( error) => {
-      callback(error)
-    });
+  let results;
+
+  try {
+    results = await Promise.all(allInitialExecutions)
+  } catch (e) {
+    return callback(e);
+  }
+
+  const successExecutions = results.filter((run) => run.success);
+  let errorExecutions = results.filter((run) => !run.success);
+  errorExecutions = errorExecutions.map(e => {
+    if (e.error && e.error.error) {
+      return e.error.error;
+    }else {
+      return e;
+    }
+  });
+  const isConsideredSuccessfulRun = validateResults(successExecutions, errorExecutions);
+  if (isConsideredSuccessfulRun) {
+    const successExecutionResults = successExecutions.map((run) => run.result);
+    return callback(null, successExecutionResults);
+  }
+
+  let baseError = debugInfo;
+  if(errorExecutions.length){
+    if(baseError){
+      baseError = OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper("Error found during runAll", errorExecutions[0], errorExecutions));
+    }
+  }
+  return OpenDSUSafeCallback(callback)((createOpenDSUErrorWrapper("FAILED to runAll " , baseError)));
 }
 
 function runOneSuccessful(listEntries, executeEntry, callback, debugInfo) {
@@ -76,25 +80,26 @@ function runOneSuccessful(listEntries, executeEntry, callback, debugInfo) {
 
   const entry = availableListEntries.shift();
 
-  const executeForSingleEntry = (entry) => {
-    return executeEntry(entry)
-      .then((result) => {
-        return callback(null, result);
-      })
-      .catch((err) => {
-        if (!availableListEntries.length) {
-          return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to execute entry`, err));
-        }
+  const executeForSingleEntry = async (entry) => {
+      let result;
+      try {
+          result = await executeEntry(entry);
+      } catch (err) {
+          if (!availableListEntries.length) {
+              return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to execute entry`, err));
+          }
 
-        const nextEntry = availableListEntries.shift();
-        executeForSingleEntry(nextEntry);
-      });
+          const nextEntry = availableListEntries.shift();
+          return executeForSingleEntry(nextEntry);
+      }
+
+     return callback(undefined, result);
   };
 
   executeForSingleEntry(entry);
 }
 
-function runEnoughForMajority(listEntries, executeEntry, initialRunCount, validateResults, callback, debugInfo) {
+async function runEnoughForMajority(listEntries, executeEntry, initialRunCount, validateResults, callback, debugInfo) {
   const totalCount = listEntries.length;
 
   if (!initialRunCount || typeof initialRunCount !== "number") {
@@ -111,7 +116,7 @@ function runEnoughForMajority(listEntries, executeEntry, initialRunCount, valida
   const initialEntries = listEntries.slice(0, initialRunCount);
   const remainingEntries = listEntries.slice(initialRunCount);
 
-  const checkAllExecutedRunResults = () => {
+  const checkAllExecutedRunResults = async () => {
     const successExecutions = allExecutedRunResults.filter((run) => run.success);
     const errorExecutions = allExecutedRunResults.filter((run) => !run.success);
 
@@ -127,27 +132,22 @@ function runEnoughForMajority(listEntries, executeEntry, initialRunCount, valida
     }
 
     const nextEntry = remainingEntries.shift();
-    runSinglePromise(executeEntry, nextEntry)
-      .then((nextEntryResult) => {
-        allExecutedRunResults.push(nextEntryResult);
-        checkAllExecutedRunResults();
-      })
-      .catch(() => {
-        // runSinglePromise already makes sure no catch is thrown
-        // put to ignore nodejs unhandled execution warning
-      });
+
+    const nextEntryResult = await runSinglePromise(executeEntry, nextEntry);
+    allExecutedRunResults.push(nextEntryResult);
+    checkAllExecutedRunResults();
   };
 
   const allInitialExecutions = initialEntries.map((entry) => {
     return runSinglePromise(executeEntry, entry);
   });
 
-  Promise.all(allInitialExecutions)
-    .then((results) => {
-      allExecutedRunResults = results;
-      checkAllExecutedRunResults();
-    })
-    .catch((error) => callback(error));
+  try {
+    allExecutedRunResults = await Promise.all(allInitialExecutions);
+  } catch (e) {
+    return callback(e);
+  }
+  checkAllExecutedRunResults();
 }
 
 module.exports = {
