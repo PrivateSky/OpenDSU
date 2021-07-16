@@ -165,8 +165,23 @@ registry.defineApi("getResolver", function (domain, ssiType, options) {
 		"loadDSU"];
 
 	const resolver = require("opendsu").loadApi("resolver");
-	for(let i=0; i<promisify.length; i++){
-		resolver[promisify[i]] = $$.promisify(resolver[promisify[i]]);
+	if(!resolver.isPromisified){
+		for(let i=0; i<promisify.length; i++){
+			let promisifiedFn =  $$.promisify(resolver[promisify[i]]);
+			Object.defineProperty(resolver,promisify[i],{
+				get:function(){
+					return promisifiedFn;
+				},
+				set:function (newMethod){
+					if(newMethod && newMethod.toString().indexOf("promisify")){
+						console.log("Method may be already promisified");
+					}
+					promisifiedFn = newMethod;
+					return true;
+				}
+			})
+		}
+		resolver.isPromisified = true;
 	}
 
 	return resolver;
