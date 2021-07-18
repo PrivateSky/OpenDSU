@@ -165,10 +165,14 @@ registry.defineApi("getResolver", function (domain, ssiType, options) {
 		"loadDSU"];
 
 	const resolver = require("opendsu").loadApi("resolver");
-	for(let i=0; i<promisify.length; i++){
-		resolver[promisify[i]] = $$.promisify(resolver[promisify[i]]);
+
+	const instance = {};
+	instance.__proto__ = resolver;
+
+	for (let i = 0; i < promisify.length; i++) {
+		instance[promisify[i]] = $$.promisify(resolver[promisify[i]]);
 	}
 
-	return resolver;
+	return instance;
 });
 

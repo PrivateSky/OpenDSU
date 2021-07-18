@@ -13,10 +13,11 @@ assert.callback('Create DSU on partial supported domain will fail', (testfinishe
 
     dc.createTestFolder('createDSU', (err, folder) => {
         testIntegration.launchApiHubTestNode(10, folder, (err) => {
-            const domain = 'testdomain';
+            const domain = 'default';
             prepareBDNSContext(folder);
-            createDSU(domain, (err, dus) => {
-                // assert.notEqual(typeof err, 'undefined');
+            createDSU(domain, (err, dsu) => {
+                assert.notEqual(typeof err, 'undefined', "DSU should not be created");
+                assert.true(err.message.indexOf(`The provided domain ${domain} is not configured`) !== -1, "Error message should reflect unsupported domain");
 
                 testfinished();
             });

@@ -64,9 +64,9 @@ function MappingEngine(storageService, options) {
 							.then(async results => {
 									for (let i = 0; i < results.length; i++) {
 										let result = results[i];
-										if (result && result.status == "rejected") {
-											registeredDSUs[i].cancelBatch();
-											let getDSUIdentifier = $$.promisify(registeredDSUs[i].getKeySSIAsString);
+										if (result && result.status === "rejected") {
+											await $$.promisify(instance.registeredDSUs[i].cancelBatch)();
+											let getDSUIdentifier = $$.promisify(instance.registeredDSUs[i].getKeySSIAsString);
 											return reject(errorHandler.createOpenDSUErrorWrapper(`Cancel batch on dsu identified with ${await getDSUIdentifier()}`, error));
 										}
 									}
@@ -105,13 +105,25 @@ function MappingEngine(storageService, options) {
 
 		async function rollback(){
 			const cancelBatch = $$.promisify(storageService.cancelBatch);
-			await cancelBatch();
+			try {
+				await cancelBatch();
+			}
+			catch (e){
+				console.log("Not able to cancel batch", e)
+			}
 			inProgress = false;
+
 		}
 
 		async function finish() {
 			const commitBatch = $$.promisify(storageService.commitBatch);
-			await commitBatch();
+			try {
+				await commitBatch();
+			}
+			catch (e) {
+				console.log("Not able to commit batch",e)
+			}
+
 			inProgress = false;
 		}
 

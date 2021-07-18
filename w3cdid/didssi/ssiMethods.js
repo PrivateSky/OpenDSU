@@ -61,7 +61,11 @@ function NameDID_Method() {
     }
 
     this.resolve = (tokens, callback) => {
-        callback(null, NameDIDDocument.createDIDDocument(tokens))
+        const nameDIDDocument = NameDIDDocument.createDIDDocument(tokens);
+        nameDIDDocument.on("initialised", () => {
+            const securityContext = require("opendsu").loadAPI("sc").getSecurityContext();
+            callback(null, nameDIDDocument)
+        });
     }
 }
 

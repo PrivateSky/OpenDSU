@@ -34,7 +34,8 @@ function BDNS() {
                 return callback(Error(`The provided domain ${dlDomain} is not configured`));
             }
 
-            return bdnsCache[dlDomain][section] ? bdnsCache[dlDomain][section] : [getBaseURL()];
+            const config = bdnsCache[dlDomain][section] ? bdnsCache[dlDomain][section] : [getBaseURL()];
+            callback(undefined, config);
         }
 
         if (!isInitialized) {
@@ -42,13 +43,13 @@ function BDNS() {
                 if (dlDomain === undefined) {
                     return callback(new Error("The domain is not defined"));
                 }
-                callback(undefined, load_or_default());
+                return load_or_default();
             })
         }
         if (dlDomain === undefined) {
             return callback(new Error("The domain is not defined"));
         }
-        callback(undefined, load_or_default());
+        load_or_default();
     }
 
     this.getRawInfo = (dlDomain, callback) => {
