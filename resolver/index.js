@@ -285,16 +285,16 @@ const getRemoteHandler = (dsuKeySSI, remoteURL, presentation) => {
 
 function invalidateDSUCache(dsuKeySSI) {
     let cacheKey
-    if (typeof dsuKeySSI !== "string") {
-        cacheKey = dsuKeySSI.getAnchorId();
-    } else {
 
-        try {
+    try {
+        if (typeof dsuKeySSI !== "string") {
+            cacheKey = dsuKeySSI.getAnchorId();
+        } else {
             const keySSI = keySSISpace.parse(dsuKeySSI);
             cacheKey = keySSI.getAnchorId();
-        } catch (e) {
-            console.error(e);
         }
+    } catch (e) {
+        console.error(e);
     }
 
     if (cacheKey) {
