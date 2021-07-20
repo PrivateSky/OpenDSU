@@ -22,7 +22,7 @@ const _loadDSU = promisify(resolver.loadDSU);
 // Make sure the result is not cached
 assert.callback('Test caching for DSU mounted with SReadSSI', (testfinished) => {
 
-    dc.createTestFolder('loadDSUWithoutCache',(err,folder) => {
+    dc.createTestFolder('SReadSSIDSULoadCacheBug',(err,folder) => {
         testIntegration.launchApiHubTestNode(10, folder, async (err) => {
             if (err) {
                 throw err;
@@ -35,27 +35,6 @@ assert.callback('Test caching for DSU mounted with SReadSSI', (testfinished) => 
             let parentDSU = await loadDSU(parentKeySSI.getIdentifier());
             const childDSU = await loadDSU(childKeySSI.getIdentifier());
 
-            // Enable push notification each time the child anchors new changes
-            childDSU.enableAnchoringNotifications(true);
-
-            // Subscribe the parent to new anchor notifications
-            await parentDSU.enableAutoSync(true, {
-                // Auto sync will propagate to child dsu mounted with sreadssi
-                ignoreMounts: false,
-
-                // called each time a new change has been anchored
-                onSync: async (syncResult) => {
-                    assert.true(syncResult, "Auto syncing should have worked");
-
-                    const currentChildStatus = await parentDSU.readFile('/child/info');
-                    assert.true(currentChildStatus.toString() === 'updated', 'Child has been updated')
-
-                    testfinished();
-                },
-                onError: (err) => {
-                    throw err;
-                }
-            });
 
             // Get the current child status
             const childStatus = await parentDSU.readFile('/child/info');
@@ -63,6 +42,10 @@ assert.callback('Test caching for DSU mounted with SReadSSI', (testfinished) => 
 
             // Update the child status
             await childDSU.writeFile('/info', 'updated');
+
+            const currentChildStatus = await parentDSU.readFile('/child/info');
+            assert.true(currentChildStatus.toString() === 'updated', 'Child has been updated')
+            testfinished();
         })
     })
 }, 5000);
