@@ -15,11 +15,12 @@ const registerDSUFactory = (type, factory) => {
 };
 
 function addDSUInstanceInCache(dsuInstance, callback) {
-    dsuInstance.getKeySSIAsString((err, keySSI) => {
+    dsuInstance.getKeySSIAsObject((err, keySSI) => {
         if (err) {
             return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to retrieve keySSI`, err));
         }
-        dsuCache.set(keySSI, dsuInstance);
+        const cacheKey = keySSI.getAnchorId();
+        dsuCache.set(cacheKey, dsuInstance);
         callback(undefined, dsuInstance);
     });
 }
@@ -107,8 +108,8 @@ const loadDSU = (keySSI, options, callback) => {
             return callback(createOpenDSUErrorWrapper(`Failed to parse keySSI ${keySSI}`, e));
         }
     }
-    const ssiId = keySSI.getIdentifier();
-    let fromCache = dsuCache.get(ssiId);
+    const cacheKey = keySSI.getAnchorId()
+    let fromCache = dsuCache.get(cacheKey);
     if (fromCache) {
         return callback(undefined, fromCache);
     }
@@ -283,11 +284,22 @@ const getRemoteHandler = (dsuKeySSI, remoteURL, presentation) => {
 };
 
 function invalidateDSUCache(dsuKeySSI) {
-    let ssiId = dsuKeySSI;
-    if (typeof dsuKeySSI != "string") {
-        ssiId = dsuKeySSI.getIdentifier();
+    let cacheKey
+    if (typeof dsuKeySSI !== "string") {
+        cacheKey = dsuKeySSI.getAnchorId();
+    } else {
+
+        try {
+            const keySSI = keySSISpace.parse(dsuKeySSI);
+            cacheKey = keySSI.getAnchorId();
+        } catch (e) {
+            console.error(e);
+        }
     }
-    delete dsuCache.set(ssiId, undefined);
+
+    if (cacheKey) {
+        delete dsuCache.set(cacheKey, undefined);
+    }
 }
 
 module.exports = {
