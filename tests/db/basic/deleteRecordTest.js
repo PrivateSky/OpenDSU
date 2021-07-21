@@ -31,11 +31,22 @@ assert.callback("DB query+deleteRecord test", (testFinishCallback) => {
             let storageSSI = keySSIApis.createSeedSSI("default");
 
             let mydb = db.getWalletDB(storageSSI, "testDb");
-
-            mydb.insertRecord("test", "123", { "api": "receivedOrders", "message": "Payload1", "key": "123" }, function (err, res) {
-                mydb.insertRecord("test", "456", { "api": "receivedOrders", "message": "Payload2", "key": "456" }, function (err, res) {
-                    mydb.insertRecord("test", "789", { "api": "receivedOrders", "message": "Payload3", "key": "789" }, function (err, res) {
-                        testPersistence(mydb.getShareableSSI());
+            const record1 = { "api": "receivedOrders", "message": "Payload1", "key": "123" };
+            const record2 =  { "api": "receivedOrders", "message": "Payload2", "key": "456" };
+            const record3 = { "api": "receivedOrders", "message": "Payload3", "key": "789" };
+            mydb.insertRecord("test", "123", record1, function (err, res) {
+                mydb.insertRecord("test", "456", record2, function (err, res) {
+                    mydb.insertRecord("test", "789", record3, function (err, res) {
+                        // testPersistence(mydb.getShareableSSI());
+                        mydb.deleteRecord("test", record1.key, (err, aRecord) => {
+                            if (err) {
+                                throw err;
+                            }
+                            mydb.filter("test", (err, records) => {
+                                assert.equal(records.length, 2);
+                                testFinishCallback();
+                            });
+                        });
                     });
                 });
             });
