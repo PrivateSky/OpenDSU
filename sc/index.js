@@ -3,6 +3,9 @@
 
  */
 
+const constants = require("../moduleConstants");
+const keySSISpace = require("opendsu").loadAPI("keyssi");
+
 const getMainDSU = () => {
     if (!globalVariableExists("rawDossier")) {
         throw Error("Main DSU does not exist in the current context.");
@@ -31,8 +34,38 @@ function SecurityContext(keySSI) {
         keySSI = keySSISpace.parse(keySSI);
     }
 
-    let storageDB = db.getWalletDB(keySSI, DB_NAME);
+    let storageDB;
 
+    const init = async () => {
+        if (typeof keySSI === "undefined") {
+            let mainDSU;
+            try {
+                mainDSU = getMainDSU();
+            } catch (e) {
+                keySSI = keySSISpace.createSeedSSI("default");
+            }
+
+            if (mainDSU) {
+                try {
+                    keySSI = await $$.promisify(loadSecurityContext)()
+                } catch (e) {
+                    try {
+                        keySSI = await $$.promisify(createSecurityContext)();
+                        await $$.promisify(saveSecurityContext)(keySSI);
+                    } catch (e) {
+                        throw createOpenDSUErrorWrapper(`Failed to create security context`, e);
+                    }
+                }
+            }
+        }
+
+        storageDB = db.getWalletDB(keySSI, DB_NAME);
+        this.finishInitialisation();
+        storageDB.on("initialised", () => {
+            console.log("intitialised db ============================================================");
+
+        })
+    }
 
     this.registerDID = (didDocument, callback) => {
         let privateKeys = didDocument.getPrivateKeys();
@@ -82,7 +115,7 @@ function SecurityContext(keySSI) {
             }
 
             const privateKeysAsBuff = record.privateKeys.map(privateKey => {
-                if(privateKey){
+                if (privateKey) {
                     return $$.Buffer.from(privateKey)
                 }
 
@@ -214,26 +247,70 @@ function SecurityContext(keySSI) {
         });
     };
 
+    this.getDb = () => {
+        return db;
+    }
+
+    const bindAutoPendingFunctions = require("../utils/BindAutoPendingFunctions").bindAutoPendingFunctions;
+    bindAutoPendingFunctions(this);
+    init();
     return this;
+}
+
+const getVaultDomain = (callback) => {
+    const mainDSU = getMainDSU();
+    mainDSU.readFile(constants.ENVIRONMENT_PATH, (err, environment) => {
+        if (err) {
+            return callback(createOpenDSUErrorWrapper(`Failed to read environment file`, err));
+        }
+
+        try {
+            environment = JSON.parse(environment.toString())
+        } catch (e) {
+            return callback(createOpenDSUErrorWrapper(`Failed to parse environment data`, e));
+        }
+
+        callback(undefined, environment.vaultDomain);
+    })
+}
+
+const loadSecurityContext = (callback) => {
+    const mainDSU = getMainDSU();
+    mainDSU.readFile(constants.SECURITY_CONTEXT, (err, securityContextKeySSI) => {
+        if (err) {
+            return callback(createOpenDSUErrorWrapper(`Failed to read security context keySSI`, err));
+        }
+
+        callback(undefined, securityContextKeySSI.toString());
+    })
+}
+
+const saveSecurityContext = (scKeySSI, callback) => {
+    if (typeof scKeySSI === "object") {
+        scKeySSI = scKeySSI.getIdentifier();
+    }
+    const mainDSU = getMainDSU();
+    mainDSU.writeFile(constants.SECURITY_CONTEXT, scKeySSI, (err) => {
+        if (err) {
+            return callback(createOpenDSUErrorWrapper(`Failed to save security context keySSI`, err));
+        }
+
+        callback(undefined);
+    })
+}
+
+const createSecurityContext = (callback) => {
+    getVaultDomain((err, vaultDomain) => {
+        if (err) {
+            return callback(createOpenDSUErrorWrapper(`Failed to get vault domain`, err));
+        }
+
+        keySSISpace.createSeedSSI(vaultDomain, callback);
+    })
 }
 
 const getSecurityContext = (keySSI) => {
     if (typeof $$.sc === "undefined") {
-        const keySSISpace = require("opendsu").loadAPI("keyssi");
-        if (typeof keySSI === "undefined") {
-            //TODO get sc from main dsu
-            // throw Error(`A keySSI should be provided.`)
-            keySSI = keySSISpace.createSeedSSI("default");
-        }
-
-        if (typeof keySSI === "string") {
-            try {
-                keySSI = keySSISpace.parse(keySSI);
-            } catch (e) {
-                throw createOpenDSUErrorWrapper(`Failed to parse keySSI ${keySSI}`, e);
-            }
-        }
-
         $$.sc = new SecurityContext(keySSI);
     }
 
