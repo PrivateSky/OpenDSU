@@ -61,10 +61,6 @@ function SecurityContext(keySSI) {
 
         storageDB = db.getWalletDB(keySSI, DB_NAME);
         this.finishInitialisation();
-        storageDB.on("initialised", () => {
-            console.log("intitialised db ============================================================");
-
-        })
     }
 
     this.registerDID = (didDocument, callback) => {
