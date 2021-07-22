@@ -1,6 +1,7 @@
 const KeySSIResolver = require("key-ssi-resolver");
 const keySSISpace = require("opendsu").loadApi("keyssi");
 const cache = require("../cache");
+
 let dsuCache = cache.getMemoryCache("DSUs");
 let {ENVIRONMENT_TYPES, KEY_SSIS} = require("../moduleConstants.js");
 const {getWebWorkerBootScript, getNodeWorkerBootScript} = require("./resolver-utils");
@@ -95,6 +96,35 @@ const createDSUForExistingSSI = (ssi, options, callback) => {
     createDSU(ssi, options, callback);
 };
 
+/**
+ * Check if the DSU is up to date by comparing its
+ * current anchored HashLink with the latest anchored version.
+ * If a new anchor is detected refresh the DSU
+ */
+const latestDSUVersion = (dsu, keySSI, callback) => {
+    const current = dsu.getCurrentAnchoredHashLink();
+    dsu.getLatestAnchoredHashLink((err, latest) => {
+        if (err) {
+            return callback(err);
+        }
+
+        if (current.getHash() === latest.getHash()) {
+            return callback(undefined, dsu);
+        }
+
+        if (dsu.hasUnanchoredChanges()) {
+            return callback(undefined, dsu);
+        }
+
+        dsu.refresh((err) => {
+            if (err) {
+                return callback(err);
+            }
+            return callback(undefined, dsu);
+        });
+    });
+}
+
 const loadDSU = (keySSI, options, callback) => {
     if (typeof options === "function") {
         callback = options;
@@ -108,14 +138,16 @@ const loadDSU = (keySSI, options, callback) => {
             return callback(createOpenDSUErrorWrapper(`Failed to parse keySSI ${keySSI}`, e));
         }
     }
+
+
     const cacheKey = keySSI.getAnchorId()
-    let fromCache = dsuCache.get(cacheKey);
-    if (fromCache) {
-        return callback(undefined, fromCache);
+    const cachedDSU = dsuCache.get(cacheKey);
+
+    if (cachedDSU) {
+        return latestDSUVersion(cachedDSU, keySSI, callback);
     }
+
     const keySSIResolver = initializeResolver(options);
-    // const sc = require("../sc").getSecurityContext();
-    // sc.registerKeySSI(keySSI);
     keySSIResolver.loadDSU(keySSI, options, (err, dsuInstance) => {
         if (err) {
             return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to load DSU`, err));
