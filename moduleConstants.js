@@ -16,6 +16,8 @@ module.exports = {
 	DATA_FOLDER: "/data",
 	MANIFEST_FILE: "/manifest",
 	BDNS_ROOT_HOSTS: "BDNS_ROOT_HOSTS",
+	ENVIRONMENT_PATH: "/environment.json",
+	SECURITY_CONTEXT: "/security_context",
 	CACHE: {
 		FS: "fs",
 		MEMORY: "memory",
