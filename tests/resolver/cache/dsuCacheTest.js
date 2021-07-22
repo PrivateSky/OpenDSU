@@ -2,9 +2,9 @@ process.env.NO_LOGS = true;
 
 const { fork } = require('child_process');
 
-require("../../../../psknode/bundles/testsRuntime");
+require("../../../../../psknode/bundles/testsRuntime");
 
-const tir = require("../../../../psknode/tests/util/tir");
+const tir = require("../../../../../psknode/tests/util/tir");
 
 
 const dc = require("double-check");

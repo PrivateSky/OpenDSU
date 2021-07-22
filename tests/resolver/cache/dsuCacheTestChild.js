@@ -1,6 +1,6 @@
 process.env.NO_LOGS = true;
 
-require("../../../../../privatesky/psknode/bundles/openDSU");
+require("../../../../../../privatesky/psknode/bundles/openDSU");
 
 // require("../../privatesky/psknode/bundles/openDSU");
 
