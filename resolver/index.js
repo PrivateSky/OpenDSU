@@ -139,20 +139,32 @@ const loadDSU = (keySSI, options, callback) => {
         }
     }
 
+    let cachingEnabled = true;
+    if (typeof options === 'object' && options !== null && options.skipCache) {
+        cachingEnabled = false;
+    }
 
-    const cacheKey = keySSI.getAnchorId()
-    const cachedDSU = dsuCache.get(cacheKey);
+    if (cachingEnabled) {
+        const cacheKey = keySSI.getAnchorId()
+        const cachedDSU = dsuCache.get(cacheKey);
 
-    if (cachedDSU) {
-        return latestDSUVersion(cachedDSU, keySSI, callback);
+        if (cachedDSU) {
+            return latestDSUVersion(cachedDSU, keySSI, callback);
+        }
     }
 
     const keySSIResolver = initializeResolver(options);
+
     keySSIResolver.loadDSU(keySSI, options, (err, dsuInstance) => {
         if (err) {
             return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to load DSU`, err));
         }
-        addDSUInstanceInCache(dsuInstance, callback);
+
+        if (cachingEnabled) {
+            return addDSUInstanceInCache(dsuInstance, callback);
+        }
+
+        callback(undefined, dsuInstance);
     });
 };
 
