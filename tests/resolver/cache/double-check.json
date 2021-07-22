@@ -1,4 +1,4 @@
 {
   "confFileName": "double-check.json",
-  "ignore": ["*.js"]
+  "ignore": ["dsuCacheTest.js", "dsuCacheTestChild.js"]
 }
