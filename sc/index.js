@@ -244,7 +244,7 @@ function SecurityContext(keySSI) {
     };
 
     this.getDb = () => {
-        return db;
+        return storageDB;
     }
 
     const bindAutoPendingFunctions = require("../utils/BindAutoPendingFunctions").bindAutoPendingFunctions;
