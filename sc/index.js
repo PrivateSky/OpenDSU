@@ -266,7 +266,7 @@ const getVaultDomain = (callback) => {
             return callback(createOpenDSUErrorWrapper(`Failed to parse environment data`, e));
         }
 
-        callback(undefined, environment.vaultDomain);
+        callback(undefined, environment.domain);
     })
 }
 
