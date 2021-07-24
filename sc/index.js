@@ -244,7 +244,7 @@ function SecurityContext(keySSI) {
     };
 
     this.getDb = () => {
-        return db;
+        return storageDB;
     }
 
     const bindAutoPendingFunctions = require("../utils/BindAutoPendingFunctions").bindAutoPendingFunctions;
@@ -266,7 +266,7 @@ const getVaultDomain = (callback) => {
             return callback(createOpenDSUErrorWrapper(`Failed to parse environment data`, e));
         }
 
-        callback(undefined, environment.vaultDomain);
+        callback(undefined, environment.domain);
     })
 }
 
