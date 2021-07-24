@@ -101,7 +101,7 @@ const createDSUForExistingSSI = (ssi, options, callback) => {
  * current anchored HashLink with the latest anchored version.
  * If a new anchor is detected refresh the DSU
  */
-const latestDSUVersion = (dsu, keySSI, callback) => {
+const getLatestDSUVersion = (dsu, keySSI, callback) => {
     const current = dsu.getCurrentAnchoredHashLink();
     dsu.getLatestAnchoredHashLink((err, latest) => {
         if (err) {
@@ -109,13 +109,16 @@ const latestDSUVersion = (dsu, keySSI, callback) => {
         }
 
         if (current.getHash() === latest.getHash()) {
+            // No new version detected
             return callback(undefined, dsu);
         }
 
         if (dsu.hasUnanchoredChanges()) {
+            // The DSU is in the process of anchoring - don't refresh it
             return callback(undefined, dsu);
         }
 
+        // A new version is detected, refresh the DSU content
         dsu.refresh((err) => {
             if (err) {
                 return callback(err);
@@ -149,7 +152,7 @@ const loadDSU = (keySSI, options, callback) => {
         const cachedDSU = dsuCache.get(cacheKey);
 
         if (cachedDSU) {
-            return latestDSUVersion(cachedDSU, keySSI, callback);
+            return getLatestDSUVersion(cachedDSU, keySSI, callback);
         }
     }
 
