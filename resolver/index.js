@@ -1,6 +1,7 @@
 const KeySSIResolver = require("key-ssi-resolver");
 const keySSISpace = require("opendsu").loadApi("keyssi");
 const cache = require("../cache");
+
 let dsuCache = cache.getMemoryCache("DSUs");
 let {ENVIRONMENT_TYPES, KEY_SSIS} = require("../moduleConstants.js");
 const {getWebWorkerBootScript, getNodeWorkerBootScript} = require("./resolver-utils");
@@ -95,6 +96,38 @@ const createDSUForExistingSSI = (ssi, options, callback) => {
     createDSU(ssi, options, callback);
 };
 
+/**
+ * Check if the DSU is up to date by comparing its
+ * current anchored HashLink with the latest anchored version.
+ * If a new anchor is detected refresh the DSU
+ */
+const getLatestDSUVersion = (dsu, callback) => {
+    const current = dsu.getCurrentAnchoredHashLink();
+    dsu.getLatestAnchoredHashLink((err, latest) => {
+        if (err) {
+            return callback(err);
+        }
+
+        if (current.getHash() === latest.getHash()) {
+            // No new version detected
+            return callback(undefined, dsu);
+        }
+
+        if (dsu.hasUnanchoredChanges()) {
+            // The DSU is in the process of anchoring - don't refresh it
+            return callback(undefined, dsu);
+        }
+
+        // A new version is detected, refresh the DSU content
+        dsu.refresh((err) => {
+            if (err) {
+                return callback(err);
+            }
+            return callback(undefined, dsu);
+        });
+    });
+}
+
 const loadDSU = (keySSI, options, callback) => {
     if (typeof options === "function") {
         callback = options;
@@ -108,19 +141,33 @@ const loadDSU = (keySSI, options, callback) => {
             return callback(createOpenDSUErrorWrapper(`Failed to parse keySSI ${keySSI}`, e));
         }
     }
-    const cacheKey = keySSI.getAnchorId()
-    let fromCache = dsuCache.get(cacheKey);
-    if (fromCache) {
-        return callback(undefined, fromCache);
+
+    let cachingEnabled = true;
+    if (typeof options === 'object' && options !== null && options.skipCache) {
+        cachingEnabled = false;
     }
+
+    if (cachingEnabled) {
+        const cacheKey = keySSI.getAnchorId()
+        const cachedDSU = dsuCache.get(cacheKey);
+
+        if (cachedDSU) {
+            return getLatestDSUVersion(cachedDSU, callback);
+        }
+    }
+
     const keySSIResolver = initializeResolver(options);
-    // const sc = require("../sc").getSecurityContext();
-    // sc.registerKeySSI(keySSI);
+
     keySSIResolver.loadDSU(keySSI, options, (err, dsuInstance) => {
         if (err) {
             return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to load DSU`, err));
         }
-        addDSUInstanceInCache(dsuInstance, callback);
+
+        if (cachingEnabled) {
+            return addDSUInstanceInCache(dsuInstance, callback);
+        }
+
+        callback(undefined, dsuInstance);
     });
 };
 
