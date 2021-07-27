@@ -203,7 +203,7 @@ function Response(httpRequest, httpResponse) {
 					if ($$.Buffer.isBuffer(responseBody)) {
 						responseBody = responseBody.toString();
 					}
-					jsonContent = JSON.parse(responseBody);
+					jsonContent = responseBody ? JSON.parse(responseBody) : responseBody;
 				} catch (e) {
 					return reject(e);
 				}

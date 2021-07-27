@@ -8,6 +8,8 @@ const cachedAnchoring = require("./cachedAnchoring");
 const config = require("../config");
 const {validateHashLinks} = require("./anchoring-utils");
 
+const NO_VERSIONS_ERROR = "NO_VERSIONS_ERROR";
+
 const isValidVaultCache = () => {
     return typeof config.get(constants.CACHE.VAULT_TYPE) !== "undefined" && config.get(constants.CACHE.VAULT_TYPE) !== constants.CACHE.NO_CACHE;
 }
@@ -30,7 +32,6 @@ const versions = (keySSI, authToken, callback) => {
         return cachedAnchoring.versions(anchorId, callback);
     }
 
-
     bdns.getAnchoringServices(dlDomain, (err, anchoringServicesArray) => {
         if (err) {
             return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to get anchoring services from bdns`, err));
@@ -45,6 +46,9 @@ const versions = (keySSI, authToken, callback) => {
             return fetch(`${service}/anchor/${dlDomain}/get-all-versions/${anchorId}`)
                 .then((response) => {
                     return response.json().then(async(hlStrings) => {
+                        if(!hlStrings) {
+                            throw new Error(NO_VERSIONS_ERROR);
+                        }
                         const hashLinks = hlStrings.map((hlString) => {
                             return keyssi.parse(hlString);
                         });
@@ -57,7 +61,17 @@ const versions = (keySSI, authToken, callback) => {
                 });
         };
 
-        promiseRunner.runOneSuccessful(anchoringServicesArray, fetchAnchor, callback, new Error("get Anchoring Service"));
+        const runnerCallback = (error, result) => {
+            if(error && error.message === NO_VERSIONS_ERROR) {
+                // the requested anchor doesn't exist on any of the queried anchoring services,
+                // so return an empty versions list in order to now break the existing code in this situation
+               return callback(null, []);
+            }
+            
+            callback(error, result);
+        }
+
+        promiseRunner.runOneSuccessful(anchoringServicesArray, fetchAnchor, runnerCallback, new Error("get Anchoring Service"));
     });
 };
 

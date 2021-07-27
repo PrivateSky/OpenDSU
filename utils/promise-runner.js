@@ -86,7 +86,7 @@ function runOneSuccessful(listEntries, executeEntry, callback, debugInfo) {
           result = await executeEntry(entry);
       } catch (err) {
           if (!availableListEntries.length) {
-              return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to execute entry`, err));
+              return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to execute entry`+debugInfo, err));
           }
 
           const nextEntry = availableListEntries.shift();

@@ -61,30 +61,29 @@ const getBrick = (hashLinkSSI, authToken, callback) => {
                 return callback('No storage provided');
             }
 
-            const queries = brickStorageArray.map((storage) => fetch(`${storage}/bricking/${dlDomain}/get-brick/${brickHash}`));
-
-            Promise
-                .all(queries)
-                .then(async (responses) => {
-                    let brickContent;
-                    for (const response of responses) {
+            const fetchBrick = (storage) => {
+                return fetch(`${storage}/bricking/${dlDomain}/get-brick/${brickHash}`)
+                    .then(async (response) => {
                         const brickData = await response.arrayBuffer();
                         if (isValidBrickHash(hashLinkSSI, brickData)) {
                             if (typeof cache !== "undefined") {
                                 cache.put(brickHash, brickData);
                             }
-                            brickContent = brickData;
-                            break;
+                            return brickData;
                         }
-                    }
-                    if(brickContent){
-                        return callback(undefined, brickContent);
-                    }
-                    throw Error(`Failed to validate brick <${brickHash}>`);
-                })
-                .catch(err => {
-                    return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to get brick <${brickHash}> from brick storage`, err));
-                });
+                        throw Error(`Failed to validate brick <${brickHash}>`);
+                    });
+            };
+
+            const runnerCallback = (error, result) => {
+                if(error) {
+                    return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to get brick <${brickHash}> from brick storage`, error));
+                }
+                
+                callback(null, result);
+            }
+
+            promiseRunner.runOneSuccessful(brickStorageArray, fetchBrick, runnerCallback, "get brick");
         });
     }
 
@@ -154,7 +153,7 @@ const putBrick = (domain, brick, authToken, callback) => {
         if (err) {
             return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to get brick storage services from bdns`, err));
         }
-        const setBrick = (storage) => {
+        const setBrickInStorage = (storage) => {
             return new Promise((resolve, reject) => {
                 const putResult = doPut(`${storage}/bricking/${domain}/put-brick`, brick, (err, data) => {
                     if (err) {
@@ -169,11 +168,8 @@ const putBrick = (domain, brick, authToken, callback) => {
             })
         };
 
-        promiseRunner.runAll(brickStorageArray, setBrick, null, (err, results) => {
-            if (err || !results.length) {
-                if (!err) {
-                    err = new Error('Failed to create bricks in:' + brickStorageArray);
-                }
+        promiseRunner.runEnoughForMajority(brickStorageArray, setBrickInStorage, null, null, (err, results) => {
+            if (err) {
                 return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper("Failed to create bricks",err));
             }
 
@@ -190,7 +186,7 @@ const putBrick = (domain, brick, authToken, callback) => {
                     callback(undefined, brickHash);
                 })
 
-        }, new Error("Storing a brick"));
+        }, "Storing a brick");
     });
 };
 
