@@ -4,14 +4,104 @@
  */
 
 const constants = require("../moduleConstants");
-const keySSISpace = require("opendsu").loadAPI("keyssi");
+const openDSU = require("opendsu");
+const http = openDSU.loadAPI("http")
+const keySSISpace = openDSU.loadAPI("keyssi");
+const resolver = openDSU.loadAPI("resolver");
+const {getURLForSsappContext} = require("../utils/getURLForSsappContext");
+const fs = require("fs");
 
-const getMainDSU = () => {
-    if (!globalVariableExists("rawDossier")) {
-        throw Error("Main DSU does not exist in the current context.");
+function getMainDSU(callback) {
+    callback = $$.makeSaneCallback(callback);
+    if (globalVariableExists("rawDossier")) {
+        return callback(undefined, getGlobalVariable("rawDossier"));
     }
-    return getGlobalVariable("rawDossier");
-};
+    switch ($$.environmentType) {
+        case constants.ENVIRONMENT_TYPES.WEB_WORKER_ENVIRONMENT_TYPE:
+        case constants.ENVIRONMENT_TYPES.SERVICE_WORKER_ENVIRONMENT_TYPE:
+
+        function __getMainDSUFromSw() {
+            if (!globalVariableExists("rawDossier")) {
+                setTimeout(() => {
+                    __getMainDSUFromSw()
+                }, 100);
+                return;
+            }
+            return callback(undefined, getGlobalVariable("rawDossier"));
+        }
+
+            return __getMainDSUFromSw();
+        case constants.ENVIRONMENT_TYPES.BROWSER_ENVIRONMENT_TYPE:
+            return getMainDSUForIframe(callback);
+        case constants.ENVIRONMENT_TYPES.NODEJS_ENVIRONMENT_TYPE:
+            return getMainDSUForNode(callback);
+        default:
+            return callback(Error("Main DSU does not exist in the current context."));
+    }
+}
+
+function getMainDSUForNode(callback) {
+    const path = require("path");
+    const MAIN_DSU_PATH = path.join(require("os").tmpdir(), "wallet");
+    const DOMAIN = "vault";
+    const fs = require("fs");
+    const resolver = require("opendsu").loadAPI("resolver");
+
+    fs.readFile(MAIN_DSU_PATH, (err, mainDSUSSI) => {
+        if (err) {
+            resolver.createSeedDSU(DOMAIN, (err, seedDSU) => {
+                if (err) {
+                    return callback(err);
+                }
+
+                seedDSU.writeFile("/environment.json", JSON.stringify({domain: "vault"}), (err) => {
+                    if (err) {
+                        return callback(err);
+                    }
+                    seedDSU.getKeySSIAsString((err, seedSSI) => {
+                        if (err) {
+                            return callback(err);
+                        }
+
+                        fs.writeFile(MAIN_DSU_PATH, seedSSI, (err) => callback(err, seedDSU));
+                    });
+                })
+            })
+
+            return;
+        }
+
+        resolver.loadDSU(mainDSUSSI.toString(), callback);
+    })
+}
+
+function getMainDSUForIframe(callback) {
+    let mainDSU = getGlobalVariable("rawDossier");
+    if (mainDSU) {
+        return callback(undefined, mainDSU);
+    }
+
+    http.doGet(getURLForSsappContext("/getSSIForMainDSU"), (err, res) => {
+        if (err || res.length === 0) {
+            return callback(createOpenDSUErrorWrapper("Failed to get main DSU SSI", err));
+        }
+
+        let config = openDSU.loadApi("config");
+
+        let mainSSI = keySSISpace.parse(res);
+        if (mainSSI.getHint() === "server") {
+            config.disableLocalVault();
+        }
+        resolver.loadDSU(mainSSI, (err, mainDSU) => {
+            if (err) {
+                return callback(createOpenDSUErrorWrapper("Failed to load main DSU ", err));
+            }
+
+            setMainDSU(mainDSU);
+            callback(undefined, mainDSU);
+        });
+    });
+}
 
 const setMainDSU = (mainDSU) => {
     return setGlobalVariable("rawDossier", mainDSU);
@@ -35,16 +125,27 @@ function SecurityContext(keySSI) {
     }
 
     let storageDB;
+    let initialised = false;
+
+    function apiIsAvailable(callback) {
+        if (typeof storageDB === "undefined") {
+            callback(Error(`API unavailable because storageDB is unable to be initialised.`))
+            return false;
+        }
+
+        return true;
+    }
 
     const init = async () => {
         if (typeof keySSI === "undefined") {
             let mainDSU;
             try {
-                mainDSU = getMainDSU();
+                mainDSU = await $$.promisify(getMainDSU)();
             } catch (e) {
-                keySSI = keySSISpace.createSeedSSI("default");
+
             }
 
+            initialised = true;
             if (mainDSU) {
                 try {
                     keySSI = await $$.promisify(loadSecurityContext)()
@@ -56,14 +157,20 @@ function SecurityContext(keySSI) {
                         throw createOpenDSUErrorWrapper(`Failed to create security context`, e);
                     }
                 }
+                storageDB = db.getWalletDB(keySSI, DB_NAME);
             }
-        }
+            this.finishInitialisation();
 
-        storageDB = db.getWalletDB(keySSI, DB_NAME);
-        this.finishInitialisation();
+        } else {
+            storageDB = db.getWalletDB(keySSI, DB_NAME);
+            this.finishInitialisation();
+        }
     }
 
     this.registerDID = (didDocument, callback) => {
+        if (!apiIsAvailable(callback)) {
+            return;
+        }
         let privateKeys = didDocument.getPrivateKeys();
         if (!Array.isArray(privateKeys)) {
             privateKeys = [privateKeys]
@@ -81,6 +188,9 @@ function SecurityContext(keySSI) {
     };
 
     this.addPrivateKeyForDID = (didDocument, privateKey, callback) => {
+        if (!apiIsAvailable(callback)) {
+            return;
+        }
         const privateKeyObj = {privateKeys: [privateKey]}
         storageDB.getRecord(DIDS_PRIVATE_KEYS, didDocument.getIdentifier(), (err, res) => {
             if (err || !res) {
@@ -93,6 +203,9 @@ function SecurityContext(keySSI) {
     }
 
     this.addPublicKeyForDID = (didDocument, publicKey, callback) => {
+        if (!apiIsAvailable(callback)) {
+            return;
+        }
         const publicKeyObj = {publicKeys: [publicKey]}
         storageDB.getRecord(DIDS_PUBLIC_KEYS, didDocument.getIdentifier(), (err, res) => {
             if (err || !res) {
@@ -105,6 +218,9 @@ function SecurityContext(keySSI) {
     }
 
     this.getPrivateInfoForDID = (did, callback) => {
+        if (!apiIsAvailable(callback)) {
+            return;
+        }
         storageDB.getRecord(DIDS_PRIVATE_KEYS, did, (err, record) => {
             if (err) {
                 return callback(err);
@@ -122,6 +238,9 @@ function SecurityContext(keySSI) {
     };
 
     this.registerKeySSI = (keySSI, callback) => {
+        if (!apiIsAvailable(callback)) {
+            return;
+        }
         if (typeof keySSI === "undefined") {
             return callback(Error(`A SeedSSI should be specified.`));
         }
@@ -156,6 +275,9 @@ function SecurityContext(keySSI) {
     };
 
     this.getCapableOfSigningKeySSI = (keySSI, callback) => {
+        if (!apiIsAvailable(callback)) {
+            return;
+        }
         if (typeof keySSI === "undefined") {
             return callback(Error(`A SeedSSI should be specified.`));
         }
@@ -210,6 +332,9 @@ function SecurityContext(keySSI) {
     }
 
     this.signAsDID = (didDocument, data, callback) => {
+        if (!apiIsAvailable(callback)) {
+            return;
+        }
         this.getPrivateInfoForDID(didDocument.getIdentifier(), (err, privateKey) => {
             if (err) {
                 return callback(createOpenDSUErrorWrapper(`Failed to get private info for did ${didDocument.getIdentifier()}`, err));
@@ -219,11 +344,17 @@ function SecurityContext(keySSI) {
     }
 
     this.verifyForDID = (didDocument, data, signature, callback) => {
+        if (!apiIsAvailable(callback)) {
+            return;
+        }
         didDocument.verifyImpl(data, signature, callback);
     }
 
 
     this.encryptForDID = (senderDIDDocument, receiverDIDDocument, message, callback) => {
+        if (!apiIsAvailable(callback)) {
+            return;
+        }
         this.getPrivateInfoForDID(senderDIDDocument.getIdentifier(), (err, privateKeys) => {
             if (err) {
                 return callback(createOpenDSUErrorWrapper(`Failed to get private info for did ${senderDIDDocument.getIdentifier()}`, err));
@@ -233,7 +364,11 @@ function SecurityContext(keySSI) {
         });
     };
 
-    this.decryptAsDID = (didDocument, encryptedMessage, callback) => {
+    this.decryptAsDID = (didDocument, encryptedMessage, callback) => { // throw e;
+                // keySSI = keySSISpace.createSeedSSI("default");
+        if (!apiIsAvailable(callback)) {
+            return;
+        }
         this.getPrivateInfoForDID(didDocument.getIdentifier(), (err, privateKeys) => {
             if (err) {
                 return callback(createOpenDSUErrorWrapper(`Failed to get private info for did ${didDocument.getIdentifier()}`, err));
@@ -243,8 +378,13 @@ function SecurityContext(keySSI) {
         });
     };
 
-    this.getDb = () => {
-        return storageDB;
+    this.getDb = (callback) => {
+        if (!apiIsAvailable(callback)) {
+            return;
+        }
+        storageDB.on("initialised", () => {
+            callback(undefined, storageDB);
+        })
     }
 
     const bindAutoPendingFunctions = require("../utils/BindAutoPendingFunctions").bindAutoPendingFunctions;
@@ -254,30 +394,40 @@ function SecurityContext(keySSI) {
 }
 
 const getVaultDomain = (callback) => {
-    const mainDSU = getMainDSU();
-    mainDSU.readFile(constants.ENVIRONMENT_PATH, (err, environment) => {
+    getMainDSU((err, mainDSU) => {
         if (err) {
-            return callback(createOpenDSUErrorWrapper(`Failed to read environment file`, err));
+            return callback(err);
         }
 
-        try {
-            environment = JSON.parse(environment.toString())
-        } catch (e) {
-            return callback(createOpenDSUErrorWrapper(`Failed to parse environment data`, e));
-        }
+        mainDSU.readFile(constants.ENVIRONMENT_PATH, (err, environment) => {
+            if (err) {
+                return callback(createOpenDSUErrorWrapper(`Failed to read environment file`, err));
+            }
 
-        callback(undefined, environment.domain);
+            try {
+                environment = JSON.parse(environment.toString())
+            } catch (e) {
+                return callback(createOpenDSUErrorWrapper(`Failed to parse environment data`, e));
+            }
+
+            callback(undefined, environment.domain);
+        })
     })
 }
 
 const loadSecurityContext = (callback) => {
-    const mainDSU = getMainDSU();
-    mainDSU.readFile(constants.SECURITY_CONTEXT, (err, securityContextKeySSI) => {
+    getMainDSU((err, mainDSU) => {
         if (err) {
-            return callback(createOpenDSUErrorWrapper(`Failed to read security context keySSI`, err));
+            return callback(err);
         }
 
-        callback(undefined, securityContextKeySSI.toString());
+        mainDSU.readFile(constants.SECURITY_CONTEXT, (err, securityContextKeySSI) => {
+            if (err) {
+                return callback(createOpenDSUErrorWrapper(`Failed to read security context keySSI`, err));
+            }
+
+            callback(undefined, securityContextKeySSI.toString());
+        })
     })
 }
 
@@ -285,13 +435,18 @@ const saveSecurityContext = (scKeySSI, callback) => {
     if (typeof scKeySSI === "object") {
         scKeySSI = scKeySSI.getIdentifier();
     }
-    const mainDSU = getMainDSU();
-    mainDSU.writeFile(constants.SECURITY_CONTEXT, scKeySSI, (err) => {
+    getMainDSU((err, mainDSU) => {
         if (err) {
-            return callback(createOpenDSUErrorWrapper(`Failed to save security context keySSI`, err));
+            return callback(err);
         }
 
-        callback(undefined);
+        mainDSU.writeFile(constants.SECURITY_CONTEXT, scKeySSI, (err) => {
+            if (err) {
+                return callback(createOpenDSUErrorWrapper(`Failed to save security context keySSI`, err));
+            }
+
+            callback(undefined);
+        })
     })
 }
 
