@@ -1,5 +1,6 @@
 const mappingRegistry = require("./mappingRegistry.js");
 const apisRegistry = require("./apisRegistry.js");
+const errMap = require("./errorsMap.js")
 
 //loading defaultApis
 require("./defaultApis");
@@ -75,9 +76,12 @@ function MappingEngine(storageService, options) {
 							).catch(err => {
 							return reject(errorHandler.createOpenDSUErrorWrapper(`Caught error during commit batch on registered DSUs`, err));
 						});
-						}
-						catch(err){
-							reject(errorHandler.createOpenDSUErrorWrapper(`Caught error during mapping`, err));
+						} catch (err) {
+							if (err.debug_message) {
+								reject(err);
+							} else {
+								reject(errorHandler.createOpenDSUErrorWrapper(`Caught error during mapping`, err));
+							}
 						}
 						messageDigested = true;
 						//we apply only the first mapping found to be suited for the message that we try to digest
@@ -129,7 +133,7 @@ function MappingEngine(storageService, options) {
 
 		return new Promise((resolve, reject) => {
 				if (inProgress) {
-					throw Error("Mapping Engine is digesting messages for the moment.");
+					throw errMap.newCustomError(errMap.errorTypes.DIGESTING_MESSAGES);
 				}
 				inProgress = true;
 				storageService.beginBatch();
@@ -138,10 +142,10 @@ function MappingEngine(storageService, options) {
 				let digests = [];
 
 				for (let i = 0; i < messages.length; i++) {
-					let message = messages[i];
-					if (typeof message !== "object") {
-						throw Error(`Message is not an Object is :${typeof message} and has the value: ${message}`);
-					}
+          let message = messages[i];
+          if (typeof message !== "object") {
+            throw errMap.newCustomError(errMap.errorTypes.MESSAGE_IS_NOT_AN_OBJECT, {detailsMessage: `Found type: ${typeof message} and has the value: ${message}`})
+          }
 
 					function handleErrorsDuringPromiseResolving(err) {
 						reject(err);
@@ -165,14 +169,16 @@ function MappingEngine(storageService, options) {
 								// message digest failed
 								failedMessages.push({
 									message: messages[index],
-									reason: `Not able to digest message due to missing suitable mapping`
+									reason: `Not able to digest message due to missing suitable mapping`,
+									error: errMap.errorTypes.MISSING_MAPPING
 								});
 							}
 							break;
 						case "rejected" :
 							failedMessages.push({
 								message: messages[index],
-								reason: result.reason
+								reason: result.reason,
+								error: result.reason
 							});
 							break;
 					}
@@ -186,7 +192,6 @@ function MappingEngine(storageService, options) {
 				});
 			}
 
-
 				Promise.allSettled(digests)
 				.then(digestConfirmation)
 				.catch(handleErrorsDuringPromiseResolving);
@@ -199,12 +204,15 @@ function MappingEngine(storageService, options) {
 }
 
 module.exports = {
-	getMappingEngine: function (persistenceDSU, options) {
-		return new MappingEngine(persistenceDSU, options);
-	},
-	getMessagesPipe:function (){
-		return require("./messagesPipe");
-	},
-	defineMapping: mappingRegistry.defineMapping,
-	defineApi: apisRegistry.defineApi
+  getMappingEngine: function (persistenceDSU, options) {
+    return new MappingEngine(persistenceDSU, options);
+  },
+  getMessagesPipe: function () {
+    return require("./messagesPipe");
+  },
+  getErrorsMap: function () {
+    return errMap;
+  },
+  defineMapping: mappingRegistry.defineMapping,
+  defineApi: apisRegistry.defineApi
 }
