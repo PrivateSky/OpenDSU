@@ -1,11 +1,13 @@
 require("../../../../psknode/bundles/testsRuntime");
-
+const tir = require("../../../../psknode/tests/util/tir");
 const dc = require("double-check");
 const assert = dc.assert;
 
 assert.callback(
   "Testing setObject, getObject, insertRecord and getRecord from WalletStorage",
   async (testDone) => {
+    await tir.launchConfigurableApiHubTestNodeAsync();
+
     const env = {
       domain: "default"
     };
