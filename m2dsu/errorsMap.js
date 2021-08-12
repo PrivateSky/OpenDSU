@@ -17,7 +17,8 @@ errorTypes = {
         errors.push({
           errorType: this.errorCode,
           errorMessage: this.message,
-          errorDetails: `${item.field} - ${item.message}`
+          errorDetails: `${item.field} - ${item.message}`,
+          errorField: item.field
         })
       })
       return errors;
@@ -106,6 +107,9 @@ function newCustomError(errorObj, detailsObj) {
     code: errorObj.errorCode,
     details: errorObj.getDetails(detailsObj)
   });
+}
+function AddNewErrorType(){
+
 }
 
 module.exports = {

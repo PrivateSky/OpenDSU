@@ -18,10 +18,14 @@ function getPath(){
     const pathName = "path";
     return require(pathName);
 }
-
+function getBaseURL(){
+    const baseURL = require("../utils/getBaseURL");
+    return baseURL;
+}
 module.exports = {
     getEnvironmentVariable,
     setEnvironmentVariable,
     getFS,
-    getPath
+    getPath,
+    getBaseURL
 }
