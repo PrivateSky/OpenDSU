@@ -142,7 +142,7 @@ function MappingEngine(storageService, options) {
         for (let i = 0; i < messages.length; i++) {
           let message = messages[i];
           if (typeof message !== "object") {
-            throw errMap.newCustomError(errMap.errorTypes.MESSAGE_IS_NOT_AN_OBJECT, {detailsMessage: `Found type: ${typeof message} and has the value: ${message}`})
+            throw errMap.newCustomError(errMap.errorTypes.MESSAGE_IS_NOT_AN_OBJECT, [{detailsMessage: `Found type: ${typeof message} expected type object`}])
           }
 
           function handleErrorsDuringPromiseResolving(err) {

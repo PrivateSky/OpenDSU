@@ -5,75 +5,92 @@ errorTypes = {
     errorCode: 0,
     message: "Unknown error",
     getDetails: function (data) {
-      return {detailsMessage: ""}
+      return [{
+        errorType: this.errorCode,
+        errorMessage: this.message,
+        errorDetails: "",
+        errorField: data
+      }]
     }
   },
   "INVALID_MESSAGE_FORMAT": {
     errorCode: 1,
     message: "Invalid message format",
     getDetails: function (data) {
-      let errors = [];
-      data.forEach(item => {
-        errors.push({
+      return data.map(item => {
+        return {
           errorType: this.errorCode,
           errorMessage: this.message,
           errorDetails: `${item.field} - ${item.message}`,
           errorField: item.field
-        })
+        }
       })
-      return errors;
     }
   },
-  "NOT_IMPLEMENTED": {
+  "DB_OPERATION_FAIL": {
     errorCode: 2,
-    message: "This case is not implemented",
+    message: "Database operation failed",
     getDetails: function (data) {
-      return {detailsMessage: "Missing from the wallet database or database is corrupted"}
+      return [
+        {
+          errorType: this.errorCode,
+          errorMessage: this.message,
+          errorDetails: "Missing from the wallet database or database is corrupted",
+          errorField: data
+        }
+      ]
     }
   },
   "MESSAGE_IS_NOT_AN_OBJECT": {
     errorCode: 3,
     message: "Message is not an Object",
     getDetails: function (data) {
-      return {detailsMessage: ""}
+      return data.map(item => {
+        return {
+          errorType: this.errorCode,
+          errorMessage: this.message,
+          errorDetails: item.detailsMessage,
+          errorField: "unknown"
+        }
+      })
     }
   },
   "DIGESTING_MESSAGES": {
     errorCode: 4,
     message: "Mapping Engine is digesting messages for the moment",
     getDetails: function (data) {
-      return {detailsMessage: ""}
+      return [{
+        errorType: this.errorCode,
+        errorMessage: this.message,
+        errorDetails: "",
+        errorField: "unknown"
+      }]
     }
   },
   "MISSING_MAPPING": {
     errorCode: 5,
-    message: "Not able to digest message due to missing suitable mapping",
+    message: "Not able to digest message due to missing mapping",
     getDetails: function (data) {
-      return {detailsMessage: ""}
+      return [{
+        errorType: this.errorCode,
+        errorMessage: this.message,
+        errorDetails: "",
+        errorField: "unknown"
+      }]
     }
   },
   "MAPPING_ERROR": {
     errorCode: 6,
     message: "Caught error during mapping",
     getDetails: function (data) {
-      return {detailsMessage: ""}
+      return [{
+        errorType: this.errorCode,
+        errorMessage: this.message,
+        errorDetails: "",
+        errorField: "unknown"
+      }]
     }
-  },
-  "PRODUCT_NOT_FOUND": {
-    errorCode: 7,
-    message: "Product not found",
-    getDetails: function (data) {
-      return {detailsMessage: ""}
-    }
-  },
-  "BATCH_MISSING_PRODUCT": {
-    errorCode: 8,
-    message: "Fail to create a batch for a missing product",
-    getDetails: function (data) {
-      return {detailsMessage: ""}
-    }
-  },
-
+  }
 }
 
 function getErrorKeyByCode(errCode) {
@@ -108,7 +125,20 @@ function newCustomError(errorObj, detailsObj) {
     details: errorObj.getDetails(detailsObj)
   });
 }
-function AddNewErrorType(){
+
+function addNewErrorType(key, code, message, detailsFn) {
+  errorTypes[key] = {
+    errorCode: code,
+    message: message,
+    getDetails: detailsFn || function (data) {
+      return [{
+        errorType: this.errorCode,
+        errorMessage: this.message,
+        errorDetails: "",
+        errorField: data || "unknown"
+      }]
+    }
+  }
 
 }
 
@@ -116,5 +146,6 @@ module.exports = {
   errorTypes,
   newCustomError,
   getErrorKeyByCode,
-  getErrorKeyByMessage
+  getErrorKeyByMessage,
+  addNewErrorType
 }
