@@ -28,13 +28,13 @@ async function loadSecurityContext(dsuStorage, domainName) {
           return reject();
         }
 
-        return resolve(keySSI);
+        return resolve(keySSI.identifier);
       });
     });
   };
   const setKeySSIForSecurityContext = async (scKeySSI) => {
     return new Promise((resolve, reject) => {
-      dsuStorage.setObject(SC_PATH, { keySSI: scKeySSI }, (err) => {
+      dsuStorage.setObject(SC_PATH, { identifier: scKeySSI }, (err) => {
         if (err) {
           return reject(err);
         }
@@ -56,8 +56,11 @@ async function loadSecurityContext(dsuStorage, domainName) {
     throw Error(`Failed to load security context`);
   }
 
-  const sc = require("opendsu").loadAPI("sc");
-  sc.getSecurityContext(scKeySSI);
+  const openDSU = require("opendsu");
+  const sc = openDSU.loadAPI("sc");
+  const keySSI = openDSU.loadAPI("keyssi");
+
+  sc.getSecurityContext(keySSI.parse(scKeySSI));
 }
 
 async function loadWalletDatabase(dsuStorage, domainName, databaseName) {
