@@ -159,8 +159,16 @@ function SingleDSUStorageStrategy() {
                     if (err) {
                         return callback(createOpenDSUErrorWrapper(`No primary key found for value ${value}`, err));
                     }
+                    let uniquePks = [];
+                    pks.forEach(function (item) {
+                        if (uniquePks.indexOf(item) < 0) {
+                            uniquePks.push(item);
+                        } else {
+                            console.warn(`Record with pk ${item} already indexed on field ${fieldName}`);
+                        }
+                    });
 
-                    pksArray = pks;
+                    pksArray = uniquePks;
                     currentPosition = 0;
                     currentValue = value
 
