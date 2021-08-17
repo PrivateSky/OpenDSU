@@ -126,12 +126,24 @@ function SingleDSUStorageStrategy() {
                 return callback(createOpenDSUErrorWrapper(`Failed to add index for fields ${indexName} in table ${tableName}`, err));
             }
 
-            storageDSU.listFolders(getIndexPath(tableName, indexName), (err, values) => {
+            storageDSU.listFiles(getIndexPath(tableName, indexName), (err, values) => {
                 if (err) {
                     return callback(createOpenDSUErrorWrapper(`Failed read values for field ${indexName}`, err));
                 }
 
-                let filteredValues = query.filterValuesForIndex(values);
+                const pks = [];
+                const uniqueIndexedValues = [];
+                values.forEach(value => {
+                    const splitValue = value.split("/");
+                    if (pks.indexOf(splitValue[1]) === -1) {
+                        pks.push(splitValue[1]);
+                        uniqueIndexedValues.push(splitValue[0]);
+                    } else {
+                        console.warn(`Record with pk ${splitValue[1]} already indexed on field ${indexName}`);
+                    }
+                })
+
+                let filteredValues = query.filterValuesForIndex(uniqueIndexedValues);
                 query.sortValues(filteredValues, sort);
                 const getNextRecordForValue = getNextRecordFunction(tableName, indexName)
                 query.filter(filteredValues, getNextRecordForValue, limit, callback);
@@ -159,16 +171,8 @@ function SingleDSUStorageStrategy() {
                     if (err) {
                         return callback(createOpenDSUErrorWrapper(`No primary key found for value ${value}`, err));
                     }
-                    let uniquePks = [];
-                    pks.forEach(function (item) {
-                        if (uniquePks.indexOf(item) < 0) {
-                            uniquePks.push(item);
-                        } else {
-                            console.warn(`Record with pk ${item} already indexed on field ${fieldName}`);
-                        }
-                    });
 
-                    pksArray = uniquePks;
+                    pksArray = pks;
                     currentPosition = 0;
                     currentValue = value
 
