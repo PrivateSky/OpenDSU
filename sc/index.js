@@ -9,7 +9,6 @@ const http = openDSU.loadAPI("http")
 const keySSISpace = openDSU.loadAPI("keyssi");
 const resolver = openDSU.loadAPI("resolver");
 const {getURLForSsappContext} = require("../utils/getURLForSsappContext");
-const fs = require("fs");
 
 function getMainDSU(callback) {
     callback = $$.makeSaneCallback(callback);
@@ -107,7 +106,9 @@ const setMainDSU = (mainDSU) => {
     return setGlobalVariable("rawDossier", mainDSU);
 };
 
-function SecurityContext(keySSI) {
+function SecurityContext() {
+    const ObservableMixin = require("../utils/ObservableMixin");
+    ObservableMixin(this);
     const openDSU = require("opendsu");
     const crypto = openDSU.loadAPI("crypto");
     const db = openDSU.loadAPI("db")
@@ -118,18 +119,12 @@ function SecurityContext(keySSI) {
     const DIDS_PRIVATE_KEYS = "dids_private";
     const DIDS_PUBLIC_KEYS = "dids_public";
 
-    let isInitialized = false;
-
-    if (typeof keySSI === "string") {
-        keySSI = keySSISpace.parse(keySSI);
-    }
-
     let storageDB;
     let initialised = false;
 
     function apiIsAvailable(callback) {
-        if (typeof storageDB === "undefined") {
-            callback(Error(`API unavailable because storageDB is unable to be initialised.`))
+        if (!initialised) {
+            callback(Error(`API unavailable because enclave is unable to be initialised.`))
             return false;
         }
 
@@ -137,34 +132,10 @@ function SecurityContext(keySSI) {
     }
 
     const init = async () => {
-        if (typeof keySSI === "undefined") {
-            let mainDSU;
-            try {
-                mainDSU = await $$.promisify(getMainDSU)();
-            } catch (e) {
-
-            }
-
+        enclave.on("initialised", () => {
             initialised = true;
-            if (mainDSU) {
-                try {
-                    keySSI = await $$.promisify(loadSecurityContext)()
-                } catch (e) {
-                    try {
-                        keySSI = await $$.promisify(createSecurityContext)();
-                        await $$.promisify(saveSecurityContext)(keySSI);
-                    } catch (e) {
-                        throw createOpenDSUErrorWrapper(`Failed to create security context`, e);
-                    }
-                }
-                storageDB = db.getWalletDB(keySSI, DB_NAME);
-            }
-            this.finishInitialisation();
-
-        } else {
-            storageDB = db.getWalletDB(keySSI, DB_NAME);
-            this.finishInitialisation();
-        }
+            this.dispatchEvent("initialised")
+        })
     }
 
     this.registerDID = (didDocument, callback) => {
@@ -175,16 +146,7 @@ function SecurityContext(keySSI) {
         if (!Array.isArray(privateKeys)) {
             privateKeys = [privateKeys]
         }
-        storageDB.getRecord(DIDS_PRIVATE_KEYS, didDocument.getIdentifier(), (err, res) => {
-            if (err || !res) {
-                return storageDB.insertRecord(DIDS_PRIVATE_KEYS, didDocument.getIdentifier(), {privateKeys: privateKeys}, callback);
-            }
-
-            privateKeys.forEach(privateKey => {
-                res.privateKeys.push(privateKey);
-            })
-            storageDB.updateRecord(DIDS_PRIVATE_KEYS, didDocument.getIdentifier(), res, callback);
-        });
+        enclave.storeDID(didDocument, didDocument, privateKeys, callback);
     };
 
     this.addPrivateKeyForDID = (didDocument, privateKey, callback) => {
@@ -217,93 +179,12 @@ function SecurityContext(keySSI) {
         });
     }
 
-    this.getPrivateInfoForDID = (did, callback) => {
-        if (!apiIsAvailable(callback)) {
-            return;
-        }
-        storageDB.getRecord(DIDS_PRIVATE_KEYS, did, (err, record) => {
-            if (err) {
-                return callback(err);
-            }
-
-            const privateKeysAsBuff = record.privateKeys.map(privateKey => {
-                if (privateKey) {
-                    return $$.Buffer.from(privateKey)
-                }
-
-                return privateKey;
-            });
-            callback(undefined, privateKeysAsBuff);
-        });
-    };
-
     this.registerKeySSI = (keySSI, callback) => {
         if (!apiIsAvailable(callback)) {
             return;
         }
-        if (typeof keySSI === "undefined") {
-            return callback(Error(`A SeedSSI should be specified.`));
-        }
-
-        if (typeof keySSI === "string") {
-            try {
-                keySSI = keySSISpace.parse(keySSI);
-            } catch (e) {
-                return callback(createOpenDSUErrorWrapper(`Failed to parse keySSI ${keySSI}`, e))
-            }
-        }
-
-        const keySSIIdentifier = keySSI.getIdentifier();
-
-        function registerDerivedKeySSIs(derivedKeySSI) {
-            storageDB.insertRecord(KEY_SSIS_TABLE, derivedKeySSI.getIdentifier(), {capableOfSigningKeySSI: keySSIIdentifier}, (err) => {
-                if (err) {
-                    return callback(err);
-                }
-
-                try {
-                    derivedKeySSI = derivedKeySSI.derive();
-                } catch (e) {
-                    return callback();
-                }
-
-                registerDerivedKeySSIs(derivedKeySSI);
-            });
-        }
-
-        return registerDerivedKeySSIs(keySSI);
-    };
-
-    this.getCapableOfSigningKeySSI = (keySSI, callback) => {
-        if (!apiIsAvailable(callback)) {
-            return;
-        }
-        if (typeof keySSI === "undefined") {
-            return callback(Error(`A SeedSSI should be specified.`));
-        }
-
-        if (typeof keySSI === "string") {
-            try {
-                keySSI = keySSISpace.parse(keySSI);
-            } catch (e) {
-                return callback(createOpenDSUErrorWrapper(`Failed to parse keySSI ${keySSI}`, e))
-            }
-        }
-
-        storageDB.getRecord(KEY_SSIS_TABLE, keySSI.getIdentifier(), (err, record) => {
-            if (err) {
-                return callback(createOpenDSUErrorWrapper(`No capable of signing keySSI found for keySSI ${keySSI.getIdentifier()}`, err));
-            }
-
-            let keySSI;
-            try {
-                keySSI = keySSISpace.parse(record.capableOfSigningKeySSI);
-            } catch (e) {
-                return callback(createOpenDSUErrorWrapper(`Failed to parse keySSI ${record.capableOfSigningKeySSI}`, e))
-            }
-
-            callback(undefined, keySSI);
-        });
+        const generateUid =
+        enclave.storeSeedSSI(undefined, keySSI, )
     };
 
     this.getKeySSI = (keySSI) => {
@@ -335,12 +216,7 @@ function SecurityContext(keySSI) {
         if (!apiIsAvailable(callback)) {
             return;
         }
-        this.getPrivateInfoForDID(didDocument.getIdentifier(), (err, privateKey) => {
-            if (err) {
-                return callback(createOpenDSUErrorWrapper(`Failed to get private info for did ${didDocument.getIdentifier()}`, err));
-            }
-            didDocument.signImpl(privateKey, data, callback);
-        });
+        enclave.sign(didDocument, didDocument, data, callback);
     }
 
     this.verifyForDID = (didDocument, data, signature, callback) => {
@@ -355,27 +231,15 @@ function SecurityContext(keySSI) {
         if (!apiIsAvailable(callback)) {
             return;
         }
-        this.getPrivateInfoForDID(senderDIDDocument.getIdentifier(), (err, privateKeys) => {
-            if (err) {
-                return callback(createOpenDSUErrorWrapper(`Failed to get private info for did ${senderDIDDocument.getIdentifier()}`, err));
-            }
-
-            senderDIDDocument.encryptMessageImpl(privateKeys, receiverDIDDocument, message, callback);
-        });
+        enclave.encryptMessage(senderDIDDocument, senderDIDDocument, receiverDIDDocument, message, callback);
     };
 
     this.decryptAsDID = (didDocument, encryptedMessage, callback) => { // throw e;
-                // keySSI = keySSISpace.createSeedSSI("default");
+        // keySSI = keySSISpace.createSeedSSI("default");
         if (!apiIsAvailable(callback)) {
             return;
         }
-        this.getPrivateInfoForDID(didDocument.getIdentifier(), (err, privateKeys) => {
-            if (err) {
-                return callback(createOpenDSUErrorWrapper(`Failed to get private info for did ${didDocument.getIdentifier()}`, err));
-            }
-
-            didDocument.decryptMessageImpl(privateKeys, encryptedMessage, callback);
-        });
+        enclave.decryptMessage(didDocument, didDocument, encryptedMessage, callback)
     };
 
     this.getDb = (callback) => {
@@ -387,8 +251,12 @@ function SecurityContext(keySSI) {
         })
     }
 
+    this.storageDbIsInitialised = () => {
+        return typeof storageDB !== "undefined";
+    }
+
     const bindAutoPendingFunctions = require("../utils/BindAutoPendingFunctions").bindAutoPendingFunctions;
-    bindAutoPendingFunctions(this);
+    bindAutoPendingFunctions(this, ["on", "off"]);
     init();
     return this;
 }

@@ -7,7 +7,13 @@ function get(key) {
     return config[key];
 }
 
+function setEnv() {
+    //update environment.json
+}
 
+function getEnv() {
+
+}
 
 const autoconfigFromEnvironment = require("./autoConfigFromEnvironment");
 

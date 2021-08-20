@@ -32,11 +32,11 @@ const createDSU = (templateKeySSI, options, callback) => {
         options = {addLog: true};
     }
 
-    if(typeof options === "undefined"){
+    if (typeof options === "undefined") {
         options = {};
     }
 
-    if(typeof options.addLog === "undefined"){
+    if (typeof options.addLog === "undefined") {
         options.addLog = true;
     }
 
@@ -60,7 +60,26 @@ const createDSU = (templateKeySSI, options, callback) => {
             }
             addDSUInstanceInCache(dsuInstance, callback);
         }
-        addInCache(undefined, dsuInstance);
+
+        // const sc = require("opendsu").loadAPI("sc").getSecurityContext();
+        // if (sc.storageDbIsInitialised()) {
+        //     dsuInstance.getKeySSIAsObject((err, seedSSI) => {
+        //         if (err) {
+        //             return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to get seed SSI`, err));
+        //         }
+        //
+        //         sc.registerKeySSI(seedSSI, (err) => {
+        //             if (err) {
+        //                 return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to register seed ssi`, err));
+        //             }
+        //
+        //
+        //             addInCache(undefined, dsuInstance);
+        //         })
+        //     });
+        // } else {
+            addInCache(undefined, dsuInstance);
+        // }
     });
 };
 
@@ -156,8 +175,13 @@ const loadDSU = (keySSI, options, callback) => {
         }
     }
 
+    // const sc = require("opendsu").loadAPI("sc").getSecurityContext();
+    // sc.getCapableOfSigningKeySSI(keySSI, (err, capableOfSigningKeySSI) => {
+    //     if (err) {
+    //         return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to get capable of signing key ssi for ssi ${keySSI.getIdentifier()}`, err));
+    //     }
+    //
     const keySSIResolver = initializeResolver(options);
-
     keySSIResolver.loadDSU(keySSI, options, (err, dsuInstance) => {
         if (err) {
             return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to load DSU`, err));
@@ -169,6 +193,7 @@ const loadDSU = (keySSI, options, callback) => {
 
         callback(undefined, dsuInstance);
     });
+    // });
 };
 
 /*

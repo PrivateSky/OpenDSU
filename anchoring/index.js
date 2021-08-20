@@ -172,7 +172,11 @@ function createDigitalProof(SSICapableOfSigning, newSSIIdentifier, lastSSIIdenti
         return SSICapableOfSigning.sign(dataToSign, callback);
     }
 
-    callback(undefined, {signature: "", publicKey: ""});
+    if(SSICapableOfSigning.getTypeName() === constants.KEY_SSIS.CONST_SSI || SSICapableOfSigning.getTypeName() === constants.KEY_SSIS.ARRAY_SSI || SSICapableOfSigning.getTypeName() === constants.KEY_SSIS.WALLET_SSI){
+        return callback(undefined, {signature: "", publicKey: ""});
+    }
+
+    callback(Error(`The provided SSI does not grant writing rights`));
 }
 
 const getObservable = (keySSI, fromVersion, authToken, timeout) => {
