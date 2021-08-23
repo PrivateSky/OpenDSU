@@ -17,5 +17,8 @@ function connectEnclave(forDID, enclaveDID, ...args){
 }
 
 module.exports = {
-    initialiseWalletDBEnclave
+    initialiseWalletDBEnclave,
+    initialiseAPIHUBEnclave,
+    initialiseHighSecurityEnclave,
+    connectEnclave
 }

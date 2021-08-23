@@ -17,7 +17,14 @@ module.exports = {
 	MANIFEST_FILE: "/manifest",
 	BDNS_ROOT_HOSTS: "BDNS_ROOT_HOSTS",
 	ENVIRONMENT_PATH: "/environment.json",
-	SECURITY_CONTEXT: "/security_context",
+	SECURITY_CONTEXT_KEY_SSI: "scKeySSI",
+	VAULT_DOMAIN: "domain",
+	ENCLAVE_TYPE: "enclaveType",
+	ENCLAVE_TYPES: {
+		WALLET_DB_ENCLAVE: "WalletDBEnclave",
+		APIHUB_ENCLAVE: "ApihubEnclave",
+		HIGH_SECURITY_ENCLAVE: "HighSecurityEnclave"
+	},
 	CACHE: {
 		FS: "fs",
 		MEMORY: "memory",

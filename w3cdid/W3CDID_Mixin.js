@@ -80,10 +80,10 @@ function W3CDID_Mixin(target) {
         didDocument,
         compatibleSSI.getPrivateKey("raw")
       );
-      await $$.promisify(securityContext.addPublicKeyForDID)(
-        didDocument,
-        compatibleSSI.getPublicKey("raw")
-      );
+      // await $$.promisify(securityContext.addPublicKeyForDID)(
+      //   didDocument,
+      //   compatibleSSI.getPublicKey("raw")
+      // );
     } catch (e) {
       throw createOpenDSUErrorWrapper(
         `Failed to save new private key and public key in security context`,

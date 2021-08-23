@@ -1,6 +1,3 @@
-const {createOpenDSUErrorWrapper} = require("../../error");
-const {callContractEndpoint} = require("../../contracts/utils");
-
 function WalletDBEnclave() {
     const openDSU = require("opendsu");
     const crypto = openDSU.loadAPI("crypto");
@@ -59,9 +56,6 @@ function WalletDBEnclave() {
     }
 
     const getCapableOfSigningKeySSI = (keySSI, callback) => {
-        if (!apiIsAvailable(callback)) {
-            return;
-        }
         if (typeof keySSI === "undefined") {
             return callback(Error(`A SeedSSI should be specified.`));
         }
@@ -142,7 +136,7 @@ function WalletDBEnclave() {
             });
         }
 
-        storageDB.insertRecord(forDID, SEED_SSIS_TABLE, alias, {seedSSI: keySSIIdentifier}, (err) => {
+        storageDB.insertRecord(SEED_SSIS_TABLE, alias, {seedSSI: keySSIIdentifier}, (err) => {
             if (err) {
                 return callback(err);
             }
@@ -161,6 +155,18 @@ function WalletDBEnclave() {
                 res.privateKeys.push(privateKey);
             })
             storageDB.updateRecord(DIDS_PRIVATE_KEYS, storedDID.getIdentifier(), res, callback);
+        });
+    }
+
+    this.addPrivateKeyForDID = (didDocument, privateKey, callback) => {
+        const privateKeyObj = {privateKeys: [privateKey]}
+        storageDB.getRecord(DIDS_PRIVATE_KEYS, didDocument.getIdentifier(), (err, res) => {
+            if (err || !res) {
+                return storageDB.insertRecord(DIDS_PRIVATE_KEYS, didDocument.getIdentifier(), privateKeyObj, callback);
+            }
+
+            res.privateKeys.push(privateKey);
+            storageDB.updateRecord(DIDS_PRIVATE_KEYS, didDocument.getIdentifier(), res, callback);
         });
     }
 
