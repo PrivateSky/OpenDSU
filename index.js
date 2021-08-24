@@ -50,6 +50,7 @@ if(!PREVENT_DOUBLE_LOADING_OF_OPENDSU.INITIALISED){
             case "cache":return require("./cache"); break;
             case "config":return require("./config"); break;
             case "system":return require("./system"); break;
+            case "utils":return require("./utils"); break;
             case "db":return require("./db"); break;
             case "w3cdid":return require("./w3cdid"); break;
             case "error":return require("./error"); break;
