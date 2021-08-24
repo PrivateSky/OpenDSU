@@ -5,7 +5,6 @@ const dc = require("double-check");
 const assert = dc.assert;
 const openDSU = require('../../index');
 $$.__registerModule("opendsu", openDSU);
-const enclaveAPI = openDSU.loadAPI("enclave");
 const scAPI = openDSU.loadAPI("sc");
 const keySSISpace = openDSU.loadAPI("keyssi");
 
@@ -21,9 +20,9 @@ assert.callback('Initialise security context test', (testFinished) => {
         const sc = scAPI.getSecurityContext();
         const seedSSI = await $$.promisify(keySSISpace.createSeedSSI)("default");
         const alias = await $$.promisify(sc.registerKeySSI)("someDID", seedSSI);
-        console.log("alias", alias);
+        assert.true(alias !== undefined);
 
         testFinished();
     });
-}, 50000000);
+}, 5000);
 
