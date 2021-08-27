@@ -14,35 +14,27 @@ assert.callback('key DID SSI test', (testFinished) => {
     const domain = 'default';
     let sc;
 
-    dc.createTestFolder('createDSU', (err, folder) => {
-        tir.launchApiHubTestNode(10, folder, async (err) => {
-            if (err) {
-                throw err;
+    dc.createTestFolder('createDSU', async (err, folder) => {
+        const vaultDomainConfig = {
+            "anchoring": {
+                "type": "FS",
+                "option": {}
             }
-            const initializeSC = async () => {
-                try {
-                    const seedDSU = await $$.promisify(resolver.createSeedDSU)(domain);
-                    const seedSSI = await $$.promisify(seedDSU.getKeySSIAsObject)()
-                    sc = scAPI.getSecurityContext(seedSSI);
-                } catch (e) {
-                    throw e;
-                }
-            }
+        }
+        await tir.launchConfigurableApiHubTestNodeAsync({domains: [{name: "vault", config: vaultDomainConfig}]});
+        try {
+            sc = scAPI.getSecurityContext();
+            const senderDIDDocument = await $$.promisify(w3cDID.createIdentity)("name", domain, "sender");
+            const receiverDIDDocument = await $$.promisify(w3cDID.createIdentity)("name", domain, "receiver");
+            const message = "someData";
+            const encryptedMessage = await $$.promisify(senderDIDDocument.encryptMessage)(receiverDIDDocument, message);
+            const decryptedMessage = await $$.promisify(receiverDIDDocument.decryptMessage)(encryptedMessage);
+            assert.equal(message, decryptedMessage, `Decrypted message is not the same as the original message`);
+        } catch (e) {
+            return console.log(e);
+        }
 
-            try {
-                await initializeSC();
-                const senderDIDDocument = await $$.promisify(w3cDID.createIdentity)("name", domain, "sender");
-                const receiverDIDDocument = await $$.promisify(w3cDID.createIdentity)("name", domain, "receiver");
-                const message = "someData";
-                const encryptedMessage = await $$.promisify(senderDIDDocument.encryptMessage)(receiverDIDDocument, message);
-                const decryptedMessage = await $$.promisify(receiverDIDDocument.decryptMessage)(encryptedMessage);
-                assert.equal(message, decryptedMessage, `Decrypted message is not the same as the original message`);
-            } catch (e) {
-                return console.log(e);
-            }
-
-            testFinished();
-        });
+        testFinished();
     });
 }, 5000);
 

@@ -91,31 +91,19 @@ assert.callback(
     "w3cDID Group test",
     (testFinished) => {
         dc.createTestFolder("createDSU", async (err, folder) => {
-            await tir.launchConfigurableApiHubTestNodeAsync({
-                maxTries: 10,
-                storageFolder: folder,
-                domains: [
-                    {
-                        name: DOMAIN,
-                        config: DOMAIN_CONFIG,
-                    },
-                ],
-            });
+            const vaultDomainConfig = {
+                "anchoring": {
+                    "type": "FS",
+                    "option": {}
+                }
+            }
+            await tir.launchConfigurableApiHubTestNodeAsync({domains: [{name: "vault", config: vaultDomainConfig}, {name:DOMAIN, config: DOMAIN_CONFIG}]});
 
             const resolver = openDSU.loadAPI("resolver");
             const sc = openDSU.loadAPI("sc");
 
-            const initializeSC = async () => {
-                try {
-                    const seedDSU = await $$.promisify(resolver.createSeedDSU)(DOMAIN);
-                    const seedSSI = await $$.promisify(seedDSU.getKeySSIAsObject)();
-                    sc.getSecurityContext(seedSSI);
-                } catch (e) {
-                    throw e;
-                }
-            };
             try {
-                await initializeSC();
+                sc.getSecurityContext();
                 const didDocuments = await createIdentities();
                 const groupDIDDocument = await $$.promisify(w3cDID.createIdentity)("group", DOMAIN, "myTeam");
                 let counter = 0;

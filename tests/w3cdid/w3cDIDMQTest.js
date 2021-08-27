@@ -10,11 +10,14 @@ const keySSI = require("../../keyssi")
 
 assert.callback('w3cDID MQ test', (testFinished) => {
 	const message = "Hello DID based MQs!";
-    tir.launchVirtualMQNode(function (err, port) {
-        if (err) {
-            throw err;
+    dc.createTestFolder("createDSU", async (err, folder) => {
+        const vaultDomainConfig = {
+            "anchoring": {
+                "type": "FS",
+                "option": {}
+            }
         }
-
+        await tir.launchConfigurableApiHubTestNodeAsync({domains: [{name: "vault", config: vaultDomainConfig}]});
         w3cDID.createIdentity("demo", "myfirstDemoIdentity", (err, firstDIDDocument) => {
             if (err) {
                 throw err;

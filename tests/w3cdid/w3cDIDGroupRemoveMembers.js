@@ -27,10 +27,14 @@ function createIdentities(callback) {
 }
 
 assert.callback('w3cDID Group remove member test', (testFinished) => {
-    tir.launchVirtualMQNode(function (err, port) {
-        if (err) {
-            throw err;
+    dc.createTestFolder('createDSU', async (err, folder) => {
+        const vaultDomainConfig = {
+            "anchoring": {
+                "type": "FS",
+                "option": {}
+            }
         }
+        await tir.launchConfigurableApiHubTestNodeAsync({domains: [{name: "vault", config: vaultDomainConfig}]});
         createIdentities((err, didDocuments) => {
             if (err) {
                 throw err;

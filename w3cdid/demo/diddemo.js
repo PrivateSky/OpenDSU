@@ -1,9 +1,6 @@
 
 
 function DemoPKDocument(identifier){
-    let mixin =  require("../W3CDID_Mixin");
-    mixin(this);
-
     this.sign = function(hash, callback){
         return hash;
     };

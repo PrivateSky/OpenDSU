@@ -17,21 +17,21 @@ assert.callback(
     const sc = openDSU.loadAPI("sc");
     const persistence = openDSU.loadAPI("persistence");
 
-    const mainDSU = await $$.promisify(resolver.createDSUx)(env.domain, "seed");
-    sc.setMainDSU(mainDSU);
+    // const mainDSU = await $$.promisify(resolver.createDSUx)(env.domain, "seed");
+    // sc.setMainDSU(mainDSU);
 
     const testStorage = persistence.getWalletStorage(env.domain, "testDB");
 
-    {
-      const path = "/test-path";
-      const actualObject = { key: "value" };
-      await testStorage.setObjectAsync(path, actualObject);
-      const expectedObject = await testStorage.getObjectAsync(path);
-      assert.equal(
-        JSON.stringify(expectedObject),
-        JSON.stringify(actualObject)
-      );
-    }
+    // {
+    //   const path = "/test-path";
+    //   const actualObject = { key: "value" };
+    //   await testStorage.setObjectAsync(path, actualObject);
+    //   const expectedObject = await testStorage.getObjectAsync(path);
+    //   assert.equal(
+    //     JSON.stringify(expectedObject),
+    //     JSON.stringify(actualObject)
+    //   );
+    // }
 
     {
       const table = "test-table";
@@ -44,5 +44,5 @@ assert.callback(
     }
 
     testDone();
-  }
+  }, 50000000
 );

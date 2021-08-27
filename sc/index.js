@@ -41,7 +41,10 @@ function getMainDSU(callback) {
 
 function getMainDSUForNode(callback) {
     const path = require("path");
-    const MAIN_DSU_PATH = path.join(require("os").tmpdir(), "wallet");
+    const crypto = require("opendsu").loadAPI("crypto");
+    const uid = crypto.generateRandom(5).toString("hex");
+    const BASE_DIR_PATH = path.join(require("os").tmpdir(),uid);
+    const MAIN_DSU_PATH = path.join(BASE_DIR_PATH, "wallet");
     const DOMAIN = "vault";
     const fs = require("fs");
     const resolver = require("opendsu").loadAPI("resolver");
@@ -62,6 +65,7 @@ function getMainDSUForNode(callback) {
                             return callback(err);
                         }
 
+                        fs.mkdirSync(BASE_DIR_PATH, {recursive: true});
                         fs.writeFile(MAIN_DSU_PATH, seedSSI, (err) => callback(err, seedDSU));
                     });
                 })
@@ -221,7 +225,7 @@ function SecurityContext() {
     }
 
     this.signAsDID = (didDocument, data, callback) => {
-        enclave.sign(didDocument, didDocument, data, callback);
+        enclave.signForDID(didDocument, didDocument, data, callback);
     }
 
     this.verifyForDID = (didDocument, data, signature, callback) => {
@@ -238,9 +242,23 @@ function SecurityContext() {
     }
 
     this.getDb = (callback) => {
-        storageDB.on("initialised", () => {
-            callback(undefined, storageDB);
-        })
+        const dbApi = require("opendsu").loadAPI("db");
+        getMainDSU((err, mainDSU) => {
+            if (err) {
+                return callback(err);
+            }
+
+            mainDSU.getKeySSIAsObject((err, keySSI)=>{
+                if (err) {
+                    return callback(err);
+                }
+
+                const db = dbApi.getWalletDB(keySSI, "defaultDB")
+                db.on("initialised", () => {
+                    callback(undefined, db);
+                })
+            })
+        });
     }
 
     const bindAutoPendingFunctions = require("../utils/BindAutoPendingFunctions").bindAutoPendingFunctions;

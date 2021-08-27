@@ -30,37 +30,22 @@ assert.callback(
         let sc;
 
         dc.createTestFolder("createDSU", async (err, folder) => {
-            await tir.launchConfigurableApiHubTestNodeAsync({
-                maxTries: 10,
-                storageFolder: folder,
-                domains: [
-                    {
-                        name: domain,
-                        config: DOMAIN_CONFIG,
-                    },
-                ],
-            });
-
-            const initializeSC = async () => {
-                try {
-                    const seedDSU = await $$.promisify(resolver.createSeedDSU)(domain);
-                    const seedSSI = await $$.promisify(seedDSU.getKeySSIAsObject)();
-                    sc = scAPI.getSecurityContext(seedSSI);
-                } catch (e) {
-                    throw e;
+            const vaultDomainConfig = {
+                "anchoring": {
+                    "type": "FS",
+                    "option": {}
                 }
-            };
+            }
+            await tir.launchConfigurableApiHubTestNodeAsync({domains: [{name: "vault", config: vaultDomainConfig}, {name:domain, config: DOMAIN_CONFIG}]});
 
             const dataToSend = "someData";
 
             let receiverDIDDocument;
             let senderDIDDocument;
             try {
-                await initializeSC();
+                const sc = scAPI.getSecurityContext();
                 senderDIDDocument = await $$.promisify(w3cDID.createIdentity)("name", domain, "sender");
                 receiverDIDDocument = await $$.promisify(w3cDID.createIdentity)("name", domain, "receiver");
-
-                const resolvedDIDDocument = await $$.promisify(w3cDID.resolveDID)(receiverDIDDocument.getIdentifier());
             } catch (e) {
                 return console.log(e);
             }
@@ -78,5 +63,5 @@ assert.callback(
             });
         });
     },
-    10000
+    10000000
 );

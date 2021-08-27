@@ -14,36 +14,28 @@ assert.callback('key DID SSI test', (testFinished) => {
     const domain = 'default';
     let sc;
 
-    dc.createTestFolder('createDSU', (err, folder) => {
-        tir.launchApiHubTestNode(10, folder, async (err) => {
-            if (err) {
-                throw err;
+    dc.createTestFolder('createDSU', async (err, folder) => {
+        const vaultDomainConfig = {
+            "anchoring": {
+                "type": "FS",
+                "option": {}
             }
-            const initializeSC = async () => {
-                try {
-                    const seedDSU = await $$.promisify(resolver.createSeedDSU)(domain);
-                    const seedSSI = await $$.promisify(seedDSU.getKeySSIAsObject)()
-                    sc = scAPI.getSecurityContext(seedSSI);
-                } catch (e) {
-                    throw e;
-                }
-            }
+        }
+        await tir.launchConfigurableApiHubTestNodeAsync({domains: [{name: "vault", config: vaultDomainConfig}]});
+        try {
+            sc = scAPI.getSecurityContext();
+            const seedSSI = await $$.promisify(keySSI.createSeedSSI)(domain);
+            const didDocument = await $$.promisify(w3cDID.createIdentity)("sread", seedSSI);
 
-            try {
-                await initializeSC();
-                const seedSSI = await $$.promisify(keySSI.createSeedSSI)(domain);
-                const didDocument = await $$.promisify(w3cDID.createIdentity)("sread", seedSSI);
-
-                const dataToSign = "someData";
-                const signature = await $$.promisify(didDocument.sign)(dataToSign);
-                const resolvedDIDDocument = await $$.promisify(w3cDID.resolveDID)(didDocument.getIdentifier());
-                const verificationResult = await $$.promisify(resolvedDIDDocument.verify)(dataToSign, signature);
-                assert.true(verificationResult, "Failed to verify signature");
-                testFinished();
-            } catch (e) {
-                throw e;
-            }
-        });
+            const dataToSign = "someData";
+            const signature = await $$.promisify(didDocument.sign)(dataToSign);
+            const resolvedDIDDocument = await $$.promisify(w3cDID.resolveDID)(didDocument.getIdentifier());
+            const verificationResult = await $$.promisify(resolvedDIDDocument.verify)(dataToSign, signature);
+            assert.true(verificationResult, "Failed to verify signature");
+            testFinished();
+        } catch (e) {
+            throw e;
+        }
     });
-}, 5000);
+}, 5000000);
 
