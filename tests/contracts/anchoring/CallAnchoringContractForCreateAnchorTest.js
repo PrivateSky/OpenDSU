@@ -56,5 +56,5 @@ assert.callback(
             console.error(error);
         }
     },
-    10000
+    20000
 );

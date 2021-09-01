@@ -36,7 +36,7 @@ assert.callback("Resolver DSU Creation with different domains", (callback) => {
       });
     })
   })
-})
+}, 5000 )
 
 function assertFileWasWritten(dsu, filename, data, callback) {
   dsu.writeFile(filename, data, (err, hash) => {
