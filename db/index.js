@@ -33,9 +33,16 @@ let getSharedDB = function(keySSI, dbName){
     return db;
 };
 
+const getInMemoryDB = ()=>{
+    const MemoryStorageStrategy = require("./storageStrategies/MemoryStorageStrategy");
+    const storageStrategy = new MemoryStorageStrategy();
+    return getBasicDB(storageStrategy);
+}
+
 module.exports = {
     getBasicDB,
     getWalletDB: getSharedDB,
     getMultiUserDB,
-    getSharedDB
+    getSharedDB,
+    getInMemoryDB
 }

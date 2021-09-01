@@ -1,12 +1,11 @@
-
-
-
 function SingleDSUStorageStrategy(){
+    const ObservableMixin = require("../../utils/ObservableMixin");
     let volatileMemory = {}
     let self = this
     let storageDSU, afterInitialisation;
     let dbName;
 
+    ObservableMixin(this);
     function getTable(tableName){
         let table = volatileMemory[tableName];
         if(!table){
@@ -128,6 +127,10 @@ function SingleDSUStorageStrategy(){
             callback(undefined, record);
         }
     };
+
+    setTimeout(()=>{
+        this.dispatchEvent("initialised");
+    })
 }
 
 module.exports = SingleDSUStorageStrategy;

@@ -22,6 +22,7 @@ module.exports = {
 	ENCLAVE_TYPE: "enclaveType",
 	ENCLAVE_TYPES: {
 		WALLET_DB_ENCLAVE: "WalletDBEnclave",
+		MEMORY_ENCLAVE: "MemoryEnclave",
 		APIHUB_ENCLAVE: "ApihubEnclave",
 		HIGH_SECURITY_ENCLAVE: "HighSecurityEnclave"
 	},

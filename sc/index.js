@@ -43,7 +43,7 @@ function getMainDSUForNode(callback) {
     const path = require("path");
     const crypto = require("opendsu").loadAPI("crypto");
     const uid = crypto.generateRandom(5).toString("hex");
-    const BASE_DIR_PATH = path.join(require("os").tmpdir(),uid);
+    const BASE_DIR_PATH = path.join(require("os").tmpdir(), uid);
     const MAIN_DSU_PATH = path.join(BASE_DIR_PATH, "wallet");
     const DOMAIN = "vault";
     const fs = require("fs");
@@ -131,6 +131,8 @@ function SecurityContext() {
                 return enclaveAPI.initialiseAPIHUBEnclave();
             case constants.ENCLAVE_TYPES.HIGH_SECURITY_ENCLAVE:
                 return enclaveAPI.initialiseHighSecurityEnclave();
+            case constants.ENCLAVE_TYPES.MEMORY_ENCLAVE:
+                return enclaveAPI.initialiseMemoryEnclave();
             default:
                 throw Error(`Invalid enclave type ${enclaveType}`)
         }
@@ -146,10 +148,10 @@ function SecurityContext() {
         }
 
         if (typeof enclaveType === "undefined") {
-            enclaveType = constants.ENCLAVE_TYPES.WALLET_DB_ENCLAVE;
-            try{
+            enclaveType = constants.ENCLAVE_TYPES.MEMORY_ENCLAVE;
+            try {
                 await $$.promisify(config.setEnv)(constants.ENCLAVE_TYPE, enclaveType)
-            }catch (e) {
+            } catch (e) {
                 throw createOpenDSUErrorWrapper(`Failed to set env enclaveType`, e);
             }
         }
@@ -202,7 +204,7 @@ function SecurityContext() {
     this.registerKeySSI = (forDID, keySSI, callback) => {
         const generateUid = require("swarmutils").generateUid;
         const alias = generateUid(10).toString("hex");
-        enclave.storeSeedSSI(forDID, keySSI, alias, err=>{
+        enclave.storeSeedSSI(forDID, keySSI, alias, err => {
             if (err) {
                 return callback(err);
             }
@@ -241,6 +243,10 @@ function SecurityContext() {
         enclave.decryptMessage(didDocument, didDocument, encryptedMessage, callback)
     }
 
+    this.enclaveInitialised = ()=>{
+        return initialised;
+    }
+
     this.getDb = (callback) => {
         const dbApi = require("opendsu").loadAPI("db");
         getMainDSU((err, mainDSU) => {
@@ -248,7 +254,7 @@ function SecurityContext() {
                 return callback(err);
             }
 
-            mainDSU.getKeySSIAsObject((err, keySSI)=>{
+            mainDSU.getKeySSIAsObject((err, keySSI) => {
                 if (err) {
                     return callback(err);
                 }
@@ -262,7 +268,7 @@ function SecurityContext() {
     }
 
     const bindAutoPendingFunctions = require("../utils/BindAutoPendingFunctions").bindAutoPendingFunctions;
-    bindAutoPendingFunctions(this, ["on", "off"]);
+    bindAutoPendingFunctions(this, ["on", "off", "enclaveInitialised"]);
     init();
     return this;
 }

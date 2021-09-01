@@ -1,6 +1,13 @@
+const WalletDBEnclave = require("./impl/WalletDBEnclave");
+
 function initialiseWalletDBEnclave(){
     const WalletDBEnclave = require("./impl/WalletDBEnclave");
     return new WalletDBEnclave();
+}
+
+function initialiseMemoryEnclave(){
+    const MemoryEnclave = require("./impl/MemoryEnclave");
+    return new MemoryEnclave();
 }
 
 function initialiseAPIHUBEnclave(adminDID) {
@@ -18,6 +25,7 @@ function connectEnclave(forDID, enclaveDID, ...args){
 
 module.exports = {
     initialiseWalletDBEnclave,
+    initialiseMemoryEnclave,
     initialiseAPIHUBEnclave,
     initialiseHighSecurityEnclave,
     connectEnclave

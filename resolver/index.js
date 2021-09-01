@@ -61,25 +61,25 @@ const createDSU = (templateKeySSI, options, callback) => {
             addDSUInstanceInCache(dsuInstance, callback);
         }
 
-        // const sc = require("opendsu").loadAPI("sc").getSecurityContext();
-        // if (sc.storageDbIsInitialised()) {
-        //     dsuInstance.getKeySSIAsObject((err, seedSSI) => {
-        //         if (err) {
-        //             return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to get seed SSI`, err));
-        //         }
-        //
-        //         sc.registerKeySSI(seedSSI, (err) => {
-        //             if (err) {
-        //                 return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to register seed ssi`, err));
-        //             }
-        //
-        //
-        //             addInCache(undefined, dsuInstance);
-        //         })
-        //     });
-        // } else {
+        const sc = require("opendsu").loadAPI("sc").getSecurityContext();
+        if (sc.enclaveInitialised()) {
+            dsuInstance.getKeySSIAsObject((err, seedSSI) => {
+                if (err) {
+                    return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to get seed SSI`, err));
+                }
+
+                sc.registerKeySSI(undefined, seedSSI, (err) => {
+                    if (err) {
+                        return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to register seed ssi`, err));
+                    }
+
+
+                    addInCache(undefined, dsuInstance);
+                })
+            });
+        } else {
             addInCache(undefined, dsuInstance);
-        // }
+        }
     });
 };
 
