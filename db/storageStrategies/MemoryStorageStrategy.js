@@ -1,5 +1,6 @@
-function SingleDSUStorageStrategy(){
+function MemoryStorageStrategy(){
     const ObservableMixin = require("../../utils/ObservableMixin");
+    const operators = require("./operators");
     let volatileMemory = {}
     let self = this
     let storageDSU, afterInitialisation;
@@ -30,6 +31,63 @@ function SingleDSUStorageStrategy(){
         callback(undefined,result);
     };
 
+    this.filter = function (tableName, conditionsArray, sort, limit, callback) {
+        if (typeof conditionsArray === "function") {
+            callback = conditionsArray;
+            conditionsArray = undefined;
+            sort = undefined;
+            limit = undefined;
+        }
+
+        if (typeof conditionsArray === "undefined") {
+            conditionsArray = "__timestamp > 0";
+        }
+
+        if (typeof conditionsArray === "string") {
+            conditionsArray = [conditionsArray];
+        } else if (!Array.isArray(conditionsArray)) {
+            return callback(Error(`Condition argument of filter function need to be string or array of strings`));
+        }
+
+        if (typeof sort === "function") {
+            callback = sort;
+            sort = undefined;
+            limit = undefined;
+        }
+
+        if (typeof limit === "function") {
+            callback = limit;
+            limit = undefined;
+        }
+
+        if (typeof limit === "undefined") {
+            limit = Infinity;
+        }
+
+        if (typeof sort === "undefined") {
+            sort = "asc";
+        }
+
+        const tbl = getTable(tableName);
+        const records = Object.values(tbl);
+        const filteredRecords = [];
+        let Query = require("./Query");
+        let query = new Query(conditionsArray);
+        const conditions = query.getConditions();
+        records.forEach(record => {
+            let shouldBeAdded = true;
+            for (let i = 0; i < conditions.length; i++) {
+                if (!operators[conditions[i][1]](record[conditions[i][0]], conditions[i][2])) {
+                    shouldBeAdded = false;
+                }
+            }
+            if (shouldBeAdded && filteredRecords.length < limit) {
+                filteredRecords.push(record);
+            }
+        })
+        query.sortValues(filteredRecords, sort);
+        callback(undefined, filteredRecords);
+    }
     /*
       Insert a record, return error if already exists
     */
@@ -133,4 +191,4 @@ function SingleDSUStorageStrategy(){
     })
 }
 
-module.exports = SingleDSUStorageStrategy;
+module.exports = MemoryStorageStrategy;
