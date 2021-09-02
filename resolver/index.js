@@ -62,7 +62,7 @@ const createDSU = (templateKeySSI, options, callback) => {
         }
 
         const sc = require("opendsu").loadAPI("sc").getSecurityContext();
-        if (sc.enclaveInitialised()) {
+        if (sc.isInitialised()) {
             dsuInstance.getKeySSIAsObject((err, seedSSI) => {
                 if (err) {
                     return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to get seed SSI`, err));
@@ -175,12 +175,6 @@ const loadDSU = (keySSI, options, callback) => {
         }
     }
 
-    // const sc = require("opendsu").loadAPI("sc").getSecurityContext();
-    // sc.getCapableOfSigningKeySSI(keySSI, (err, capableOfSigningKeySSI) => {
-    //     if (err) {
-    //         return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to get capable of signing key ssi for ssi ${keySSI.getIdentifier()}`, err));
-    //     }
-    //
     const keySSIResolver = initializeResolver(options);
     keySSIResolver.loadDSU(keySSI, options, (err, dsuInstance) => {
         if (err) {
@@ -193,7 +187,6 @@ const loadDSU = (keySSI, options, callback) => {
 
         callback(undefined, dsuInstance);
     });
-    // });
 };
 
 /*

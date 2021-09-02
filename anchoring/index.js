@@ -45,8 +45,8 @@ const versions = (keySSI, authToken, callback) => {
         const fetchAnchor = (service) => {
             return fetch(`${service}/anchor/${dlDomain}/get-all-versions/${anchorId}`)
                 .then((response) => {
-                    return response.json().then(async(hlStrings) => {
-                        if(!hlStrings) {
+                    return response.json().then(async (hlStrings) => {
+                        if (!hlStrings) {
                             throw new Error(NO_VERSIONS_ERROR);
                         }
                         const hashLinks = hlStrings.map((hlString) => {
@@ -62,12 +62,12 @@ const versions = (keySSI, authToken, callback) => {
         };
 
         const runnerCallback = (error, result) => {
-            if(error && error.message === NO_VERSIONS_ERROR) {
+            if (error && error.message === NO_VERSIONS_ERROR) {
                 // the requested anchor doesn't exist on any of the queried anchoring services,
                 // so return an empty versions list in order to now break the existing code in this situation
-               return callback(null, []);
+                return callback(null, []);
             }
-            
+
             callback(error, result);
         }
 
@@ -121,7 +121,7 @@ const addVersion = (SSICapableOfSigning, newSSI, lastSSI, zkpValue, callback) =>
 
         const hashLinkIds = {
             last: lastSSI ? lastSSI.getIdentifier() : null,
-            new: newSSI ? newSSI.getIdentifier(): null
+            new: newSSI ? newSSI.getIdentifier() : null
         };
 
         createDigitalProof(SSICapableOfSigning, hashLinkIds.new, hashLinkIds.last, zkpValue, (err, digitalProof) => {
@@ -157,8 +157,8 @@ const addVersion = (SSICapableOfSigning, newSSI, lastSSI, zkpValue, callback) =>
 };
 
 function createDigitalProof(SSICapableOfSigning, newSSIIdentifier, lastSSIIdentifier, zkp, callback) {
-     // when the anchor is first created, no version is created yet
-    if(!newSSIIdentifier) {
+    // when the anchor is first created, no version is created yet
+    if (!newSSIIdentifier) {
         newSSIIdentifier = "";
     }
 
@@ -168,15 +168,11 @@ function createDigitalProof(SSICapableOfSigning, newSSIIdentifier, lastSSIIdenti
         dataToSign += lastSSIIdentifier;
     }
 
-    if (SSICapableOfSigning.canSign() === true) {
-        return SSICapableOfSigning.sign(dataToSign, callback);
-    }
-
-    if(SSICapableOfSigning.getTypeName() === constants.KEY_SSIS.CONST_SSI || SSICapableOfSigning.getTypeName() === constants.KEY_SSIS.ARRAY_SSI || SSICapableOfSigning.getTypeName() === constants.KEY_SSIS.WALLET_SSI){
+    if (SSICapableOfSigning.getTypeName() === constants.KEY_SSIS.CONST_SSI || SSICapableOfSigning.getTypeName() === constants.KEY_SSIS.ARRAY_SSI || SSICapableOfSigning.getTypeName() === constants.KEY_SSIS.WALLET_SSI) {
         return callback(undefined, {signature: "", publicKey: ""});
     }
 
-    callback(Error(`The provided SSI does not grant writing rights`));
+    return SSICapableOfSigning.sign(dataToSign, callback);
 }
 
 const getObservable = (keySSI, fromVersion, authToken, timeout) => {

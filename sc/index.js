@@ -213,17 +213,11 @@ function SecurityContext() {
         })
     };
 
-    this.sign = (keySSI, data, callback) => {
+    this.signForKeySSI = (forDID, keySSI, data, callback) => {
         // temporary solution until proper implementation
-        return callback(undefined, {signature: "", publicKey: ""});
-        if (!isInitialized) {
-            return this.addPendingCall(() => {
-                this.sign(keySSI, data, callback);
-            });
-        }
+        // return callback(undefined, {signature: "", publicKey: ""});
+        enclave.signForKeySSI(forDID, keySSI, data, callback);
 
-        const powerfulKeySSI = this.getKeySSI(keySSI);
-        crypto.sign(powerfulKeySSI, data, callback);
     }
 
     this.signAsDID = (didDocument, data, callback) => {
@@ -243,12 +237,12 @@ function SecurityContext() {
         enclave.decryptMessage(didDocument, didDocument, encryptedMessage, callback)
     }
 
-    this.enclaveInitialised = ()=>{
+    this.isInitialised = () => {
         return initialised;
     }
 
     this.getDb = (callback) => {
-        const dbApi = require("opendsu").loadAPI("db");
+        const dbApi = openDSU.loadAPI("db");
         getMainDSU((err, mainDSU) => {
             if (err) {
                 return callback(err);
@@ -340,9 +334,9 @@ const createSecurityContext = (callback) => {
     })
 }
 
-const getSecurityContext = (keySSI) => {
+const getSecurityContext = () => {
     if (typeof $$.sc === "undefined") {
-        $$.sc = new SecurityContext(keySSI);
+        $$.sc = new SecurityContext();
     }
 
     return $$.sc;

@@ -45,14 +45,14 @@ function Enclave_Mixin(target) {
                 return callback(createOpenDSUErrorWrapper(`No capable of signing keySSI found for keySSI ${keySSI.getIdentifier()}`, err));
             }
 
-            let keySSI;
+            let capableOfSigningKeySSI;
             try {
-                keySSI = keySSISpace.parse(record.capableOfSigningKeySSI);
+                capableOfSigningKeySSI = keySSISpace.parse(record.capableOfSigningKeySSI);
             } catch (e) {
                 return callback(createOpenDSUErrorWrapper(`Failed to parse keySSI ${record.capableOfSigningKeySSI}`, e))
             }
 
-            callback(undefined, keySSI);
+            callback(undefined, capableOfSigningKeySSI);
         });
     };
 
@@ -172,6 +172,9 @@ function Enclave_Mixin(target) {
         getCapableOfSigningKeySSI(keySSI, (err, capableOfSigningKeySSI) => {
             if (err) {
                 return callback(err);
+            }
+            if (typeof capableOfSigningKeySSI === "undefined") {
+                return callback(Error(`The provided SSI does not grant writing rights`));
             }
 
             capableOfSigningKeySSI.sign(hash, callback);
