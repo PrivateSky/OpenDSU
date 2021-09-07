@@ -20,7 +20,7 @@ function getPath(){
 }
 function getBaseURL(){
     const baseURL = require("../utils/getBaseURL");
-    return baseURL;
+    return baseURL();
 }
 module.exports = {
     getEnvironmentVariable,

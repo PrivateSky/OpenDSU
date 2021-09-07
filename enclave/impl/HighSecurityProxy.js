@@ -1,23 +1,23 @@
-const {bindAutoPendingFunctions} = require(".././../utils/BindAutoPendingFunctions");
 const {createCommandObject} = require("./lib/createCommandObject");
 
-function APIHUBProxy(domain,did) {
+function HighSecurityProxy(domain, did) {
     const openDSU = require("opendsu");
-    const http = openDSU.loadAPI("http");
     const system = openDSU.loadAPI("system");
     const w3cDID = openDSU.loadAPI("w3cdid");
+    const http = openDSU.loadAPI("http");
+    const crypto = openDSU.loadAPI("crypto");
+    let didDocument;
     const ProxyMixin = require("./ProxyMixin");
     ProxyMixin(this);
-    let didDocument;
-    let url;
-    const init = async ()=>{
+
+    const init = async () => {
         if (typeof did === "undefined") {
             didDocument = await $$.promisify(w3cDID.createIdentity)("key");
         } else {
             didDocument = await $$.promisify(w3cDID.resolveDID)(did);
         }
         did = didDocument.getIdentifier();
-        url = `${system.getBaseURL()}/runEnclaveCommand/${domain}/${did}`;
+        this.url = `${system.getBaseURL()}/runEnclaveEncryptedCommand/${domain}/${did}`;
         this.finishInitialisation();
     }
 
@@ -28,7 +28,15 @@ function APIHUBProxy(domain,did) {
     this.__putCommandObject = (commandName, ...args) => {
         const callback = args.pop();
         const command = createCommandObject(commandName, ...args);
-        http.doPut(url, JSON.stringify(command), callback);
+        didDocument.getPublicKey("raw", (err, publicKey)=>{
+            if (err) {
+                return callback(err);
+            }
+
+            const encryptionKey = crypto.deriveEncryptionKey(publicKey);
+            const encryptedCommand = crypto.encrypt(Buffer.from(JSON.stringify(command)), encryptionKey);
+            http.doPut(this.url, encryptedCommand, callback);
+        })
     }
 
     const bindAutoPendingFunctions = require(".././../utils/BindAutoPendingFunctions").bindAutoPendingFunctions;
@@ -36,4 +44,4 @@ function APIHUBProxy(domain,did) {
     init();
 }
 
-module.exports = APIHUBProxy;
+module.exports = HighSecurityProxy;

@@ -1,4 +1,5 @@
 const MemoryEnclave = require("./impl/MemoryEnclave");
+const APIHUBProxy = require("./impl/APIHUBProxy");
 
 function initialiseWalletDBEnclave() {
     const WalletDBEnclave = require("./impl/WalletDBEnclave");
@@ -10,12 +11,13 @@ function initialiseMemoryEnclave() {
     return new MemoryEnclave();
 }
 
-function initialiseAPIHUBProxy(adminDID) {
+function initialiseAPIHUBProxy(domain, did) {
     const APIHUBProxy = require("./impl/APIHUBProxy");
-    return new APIHUBProxy();}
+    return new APIHUBProxy(domain, did);}
 
-function initialiseHighSecurityProxy(adminDID) {
-    throw Error("Not implemented");
+function initialiseHighSecurityProxy(domain, did) {
+    const HighSecurityProxy = require("./impl/HighSecurityProxy");
+    return new HighSecurityProxy(domain, did)
 }
 
 function connectEnclave(forDID, enclaveDID, ...args) {

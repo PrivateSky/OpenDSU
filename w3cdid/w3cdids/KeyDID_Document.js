@@ -20,6 +20,9 @@ function KeyDID_Document(isInitialisation, publicKey) {
 
     this.getPublicKey = (format, callback) => {
         let pubKey = getRawPublicKey();
+        if (format === "raw") {
+            return callback(undefined, pubKey);
+        }
         try {
             pubKey = crypto.convertPublicKey(pubKey, format);
         } catch (e) {
