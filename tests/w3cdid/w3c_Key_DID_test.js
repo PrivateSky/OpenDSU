@@ -10,7 +10,7 @@ const resolver = openDSU.loadAPI("resolver");
 const scAPI = openDSU.loadAPI("sc");
 const w3cDID = openDSU.loadAPI("w3cdid");
 
-assert.callback('key DID SSI test', (testFinished) => {
+assert.callback('W3C Key DID test', (testFinished) => {
     const domain = 'default';
     let sc;
 
@@ -25,7 +25,7 @@ assert.callback('key DID SSI test', (testFinished) => {
         try {
             sc = scAPI.getSecurityContext();
             const seedSSI = await $$.promisify(keySSI.createSeedSSI)(domain);
-            const didDocument = await $$.promisify(w3cDID.createIdentity)("ssikey", seedSSI);
+            const didDocument = await $$.promisify(w3cDID.createIdentity)("key");
 
             const dataToSign = "someData";
             const signature = await $$.promisify(didDocument.sign)(dataToSign);
@@ -37,5 +37,5 @@ assert.callback('key DID SSI test', (testFinished) => {
             throw e;
         }
     });
-}, 5000);
+}, 20000);
 

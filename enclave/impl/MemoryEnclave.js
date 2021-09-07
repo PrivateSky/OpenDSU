@@ -1,10 +1,11 @@
 function MemoryEnclave() {
     const EnclaveMixin = require("./Enclave_Mixin");
     EnclaveMixin(this);
-    const db = require("opendsu").loadAPI("db");
+    const openDSU = require("opendsu");
+    const db = openDSU.loadAPI("db");
     const init = () => {
         this.storageDB = db.getInMemoryDB();
-        setTimeout(() => {
+        setTimeout(async () => {
             this.dispatchEvent("initialised");
         })
     }

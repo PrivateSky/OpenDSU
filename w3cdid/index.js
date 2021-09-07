@@ -27,6 +27,7 @@
 
 const OPENDSU_METHOD_NAME = "ssi";
 const KEY_SUBTYPE = "key";
+const SSI_KEY_SUBTYPE = "ssikey";
 const S_READ_SUBTYPE = "sread";
 const NAME_SUBTYPE = "name";
 const DEMO_METHOD_NAME = "demo";
@@ -54,6 +55,9 @@ function resolveDID(identifier, callback) {
     let method = tokens[1];
     if (tokens[1] === OPENDSU_METHOD_NAME) {
         method = tokens[2];
+        if(method === KEY_SUBTYPE){
+            method = SSI_KEY_SUBTYPE;
+        }
     }
     methodRegistry[method].resolve(tokens, callback);
 }
@@ -64,11 +68,12 @@ function registerDIDMethod(method, implementation) {
 
 
 registerDIDMethod(S_READ_SUBTYPE, require("./didssi/ssiMethods").create_SReadDID_Method());
-registerDIDMethod(KEY_SUBTYPE, require("./didssi/ssiMethods").create_KeyDID_Method());
+registerDIDMethod(SSI_KEY_SUBTYPE, require("./didssi/ssiMethods").create_KeyDID_Method());
 registerDIDMethod(NAME_SUBTYPE, require("./didssi/ssiMethods").create_NameDID_Method());
 
 registerDIDMethod(DEMO_METHOD_NAME, require("./demo/diddemo").create_demo_DIDMethod());
 registerDIDMethod(GROUP_METHOD_NAME, require("./didssi/ssiMethods").create_GroupDID_Method());
+registerDIDMethod(KEY_SUBTYPE, require("./w3cdids/didMethods").create_KeyDID_Method());
 
 
 module.exports = {

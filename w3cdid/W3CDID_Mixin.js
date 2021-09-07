@@ -260,6 +260,8 @@ function W3CDID_Mixin(target) {
   target.getControllerKey = function (callback) {};
 
   target.getPublicKeys = function (callback) {};
+
+  target.getDomain = function () {}
 }
 
 module.exports = W3CDID_Mixin;

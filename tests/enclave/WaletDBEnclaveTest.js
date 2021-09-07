@@ -22,6 +22,8 @@ assert.callback('WalletDBEnclave test', (testFinished) => {
         try {
             await $$.promisify(walletDBEnclave.insertRecord)("some_did", TABLE, "pk1", {data: "encrypted"}, addedRecord);
             const record = await $$.promisify(walletDBEnclave.getRecord)("some_did", TABLE, "pk1");
+            const enclaveDID = await $$.promisify(walletDBEnclave.getDID)();
+            console.log(enclaveDID.getIdentifier())
             assert.objectsAreEqual(record, addedRecord, "Records do not match");
         } catch (e) {
             return console.log(e);

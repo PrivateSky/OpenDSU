@@ -1,14 +1,15 @@
-
 function Enclave_Mixin(target) {
     const openDSU = require("opendsu");
     const keySSISpace = openDSU.loadAPI("keyssi")
+    const crypto = openDSU.loadAPI("crypto")
+    const scAPI = openDSU.loadAPI("sc")
+    const w3cDID = openDSU.loadAPI("w3cdid")
     const KEY_SSIS_TABLE = "keyssis";
     const SEED_SSIS_TABLE = "seedssis";
     const DIDS_PRIVATE_KEYS = "dids_private";
     const ObservableMixin = require("../../utils/ObservableMixin");
     ObservableMixin(target);
-
-    let enclaveDID;
+    let did;
 
     const getPrivateInfoForDID = (did, callback) => {
         target.storageDB.getRecord(DIDS_PRIVATE_KEYS, did, (err, record) => {
@@ -57,8 +58,17 @@ function Enclave_Mixin(target) {
     };
 
 
-    target.getEnclaveDID = () => {
-
+    target.getDID = (callback) => {
+        if (did) {
+            return callback(undefined, did);
+        }
+        w3cDID.createIdentity("key", (err, _did)=>{
+            if (err) {
+                return callback(err);
+            }
+            did = _did;
+            callback(undefined, did);
+        });
     }
 
     target.insertRecord = (forDID, table, pk, encryptedObject, indexableFieldsNotEncrypted, callback) => {
@@ -80,7 +90,6 @@ function Enclave_Mixin(target) {
     target.deleteRecord = (forDID, table, pk, callback) => {
         target.storageDB.deleteRecord(table, pk, callback);
     }
-
 
     target.storeSeedSSI = (forDID, seedSSI, alias, callback) => {
         if (typeof seedSSI === "string") {
@@ -160,11 +169,23 @@ function Enclave_Mixin(target) {
     }
 
     target.signForDID = (forDID, didThatIsSigning, hash, callback) => {
-        getPrivateInfoForDID(didThatIsSigning.getIdentifier(), (err, privateKey) => {
+        getPrivateInfoForDID(didThatIsSigning.getIdentifier(), async (err, privateKeys) => {
             if (err) {
                 return callback(createOpenDSUErrorWrapper(`Failed to get private info for did ${didThatIsSigning.getIdentifier()}`, err));
             }
-            didThatIsSigning.signImpl(privateKey, hash, callback);
+
+            let domain = didThatIsSigning.getDomain();
+            if (typeof domain === "undefined") {
+                try {
+                    domain = $$.promisify(scAPI.getVaultDomain)()
+                } catch (e) {
+                    return callback(e);
+                }
+            }
+            const keySSI = keySSISpace.createTemplateSeedSSI(domain);
+            const privateKey = privateKeys[privateKeys.length - 1];
+            keySSI.initialize(keySSI.getDLDomain(), privateKey);
+            crypto.sign(keySSI, hash, callback);
         });
     }
 
