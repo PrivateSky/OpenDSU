@@ -128,9 +128,9 @@ function SecurityContext() {
             case constants.ENCLAVE_TYPES.WALLET_DB_ENCLAVE:
                 return enclaveAPI.initialiseWalletDBEnclave();
             case constants.ENCLAVE_TYPES.APIHUB_ENCLAVE:
-                return enclaveAPI.initialiseAPIHUBEnclave();
+                return enclaveAPI.initialiseAPIHUBProxy();
             case constants.ENCLAVE_TYPES.HIGH_SECURITY_ENCLAVE:
-                return enclaveAPI.initialiseHighSecurityEnclave();
+                return enclaveAPI.initialiseHighSecurityProxy();
             case constants.ENCLAVE_TYPES.MEMORY_ENCLAVE:
                 return enclaveAPI.initialiseMemoryEnclave();
             default:
@@ -225,6 +225,7 @@ function SecurityContext() {
     }
 
     this.verifyForDID = (didDocument, data, signature, callback) => {
+        enclave.verifyForDID()
         didDocument.verifyImpl(data, signature, callback);
     }
 

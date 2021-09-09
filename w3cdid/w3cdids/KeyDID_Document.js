@@ -1,3 +1,5 @@
+const methodsNames = require("../didMethodsNames");
+
 function KeyDID_Document(isInitialisation, publicKey) {
     let mixin = require("../W3CDID_Mixin");
     mixin(this);
@@ -7,7 +9,7 @@ function KeyDID_Document(isInitialisation, publicKey) {
     const crypto = openDSU.loadAPI("crypto");
 
     const init = async () => {
-        if(isInitialisation){
+        if (isInitialisation) {
             let seedSSI = keySSISpace.createSeedSSI();
             privateKey = seedSSI.getPrivateKey();
             publicKey = crypto.encodeBase58(seedSSI.getPublicKey("raw"));
@@ -31,6 +33,10 @@ function KeyDID_Document(isInitialisation, publicKey) {
 
         callback(undefined, pubKey);
     };
+
+    this.getMethodName = () => {
+        return methodsNames.KEY_SUBTYPE;
+    }
 
     this.getIdentifier = () => {
         return `did:key:${publicKey}`;

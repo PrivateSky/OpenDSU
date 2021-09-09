@@ -1,3 +1,5 @@
+const methodsNames = require("../didMethodsNames");
+
 function SReadDID_Document(isInitialisation, seedSSI) {
     let DID_mixin = require("./ConstDID_Document_Mixin");
     let tokens;
@@ -63,6 +65,10 @@ function SReadDID_Document(isInitialisation, seedSSI) {
             this.dispatchEvent("initialised");
         }
     };
+
+    this.getMethodName = () => {
+        return methodsNames.S_READ_SUBTYPE;
+    }
 
     this.getDomain = () => {
         let domain;

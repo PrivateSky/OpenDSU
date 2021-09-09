@@ -1,3 +1,5 @@
+const methodsNames = require("../didMethodsNames");
+
 function KeyDID_Document(isInitialisation, seedSSI) {
     let mixin = require("../W3CDID_Mixin");
     mixin(this);
@@ -16,6 +18,10 @@ function KeyDID_Document(isInitialisation, seedSSI) {
         } catch (e) {
             throw createOpenDSUErrorWrapper(`Failed to parse ssi ${seedSSI}`);
         }
+    }
+
+    this.getMethodName = () => {
+        return methodsNames.SSI_KEY_SUBTYPE;
     }
 
     this.getDomain = () => {

@@ -1,3 +1,5 @@
+const methodsNames = require("../didMethodsNames");
+
 function NameDID_Document(domain, name) {
     if (typeof domain === "undefined" || typeof name === "undefined") {
         throw Error(`Invalid number of arguments. Expected blockchain domain and group name.`);
@@ -6,6 +8,10 @@ function NameDID_Document(domain, name) {
     let mixin = require("./ConstDID_Document_Mixin");
     mixin(this, domain, name);
     const bindAutoPendingFunctions = require("../../utils/BindAutoPendingFunctions").bindAutoPendingFunctions;
+
+    this.getMethodName = () => {
+        return methodsNames.NAME_SUBTYPE;
+    }
 
     this.getIdentifier = () => {
         return `did:ssi:name:${domain}:${name}`;

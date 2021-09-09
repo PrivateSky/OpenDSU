@@ -1,3 +1,5 @@
+const methodsNames = require("../didMethodsNames");
+
 function GroupDID_Document(domain, groupName) {
     if (typeof domain === "undefined" || typeof groupName === "undefined") {
         throw Error(`Invalid number of arguments. Expected blockchain domain and group name.`);
@@ -8,6 +10,10 @@ function GroupDID_Document(domain, groupName) {
     const bindAutoPendingFunctions = require("../../utils/BindAutoPendingFunctions").bindAutoPendingFunctions;
     const openDSU = require("opendsu");
     const MEMBERS_FILE = "members";
+
+    this.getMethodName = () => {
+        return methodsNames.GROUP_METHOD_NAME;
+    }
 
     this.addMember = (identity, memberInfo, callback) => {
         if (typeof memberInfo === "function") {
@@ -77,7 +83,7 @@ function GroupDID_Document(domain, groupName) {
         });
     };
 
-    this.getMembers = (callback)=>{
+    this.getMembers = (callback) => {
         readMembers(callback);
     }
 
@@ -147,11 +153,11 @@ function GroupDID_Document(domain, groupName) {
             info = identities;
         }
 
-        if(!Array.isArray(identities)){
+        if (!Array.isArray(identities)) {
             return callback(Error(`Invalid format for identities. Expected array.`));
         }
 
-        if(operation === "remove" && !Array.isArray(info)){
+        if (operation === "remove" && !Array.isArray(info)) {
             return callback(Error(`Invalid format for info. Expected array.`));
         }
 

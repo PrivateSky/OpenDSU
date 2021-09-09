@@ -9,6 +9,7 @@ function Enclave_Mixin(target) {
     const DIDS_PRIVATE_KEYS = "dids_private";
     const ObservableMixin = require("../../utils/ObservableMixin");
     ObservableMixin(target);
+    const CryptoSkills = w3cDID.CryptographicSkills;
     let did;
 
     const getPrivateInfoForDID = (did, callback) => {
@@ -57,12 +58,11 @@ function Enclave_Mixin(target) {
         });
     };
 
-
     target.getDID = (callback) => {
         if (did) {
             return callback(undefined, did);
         }
-        w3cDID.createIdentity("key", (err, _did)=>{
+        w3cDID.createIdentity("key", (err, _did) => {
             if (err) {
                 return callback(err);
             }
@@ -174,18 +174,19 @@ function Enclave_Mixin(target) {
                 return callback(createOpenDSUErrorWrapper(`Failed to get private info for did ${didThatIsSigning.getIdentifier()}`, err));
             }
 
-            let domain = didThatIsSigning.getDomain();
-            if (typeof domain === "undefined") {
-                try {
-                    domain = $$.promisify(scAPI.getVaultDomain)()
-                } catch (e) {
-                    return callback(e);
-                }
+            const signature = CryptoSkills.applySkill(didThatIsSigning, CryptoSkills.NAMES.SIGN, hash, privateKeys[privateKeys.length - 1]);
+            callback(undefined, signature);
+        });
+    }
+
+    target.verifyForDID = (forDID, didThatIsVerifying, hash, signature, callback)=>{
+        didThatIsVerifying.getPublicKey("pem", (err, publicKey) => {
+            if (err) {
+                return callback(createOpenDSUErrorWrapper(`Failed to read public key for did ${target.getIdentifier()}`, err));
             }
-            const keySSI = keySSISpace.createTemplateSeedSSI(domain);
-            const privateKey = privateKeys[privateKeys.length - 1];
-            keySSI.initialize(keySSI.getDLDomain(), privateKey);
-            crypto.sign(keySSI, hash, callback);
+
+            const verificationResult = CryptoSkills.applySkill(didThatIsVerifying, CryptoSkills.NAMES.VERIFY, hash, publicKey, signature);
+            callback(undefined, verificationResult);
         });
     }
 
@@ -212,7 +213,7 @@ function Enclave_Mixin(target) {
                 return callback(createOpenDSUErrorWrapper(`Failed to get private info for did ${didFrom.getIdentifier()}`, err));
             }
 
-            didFrom.encryptMessageImpl(privateKeys, didTo, message, callback);
+            CryptoSkills.applySkill(didFrom, CryptoSkills.NAMES.ENCRYPT_MESSAGE, privateKeys, didFrom, didTo, callback);
         });
     }
 
@@ -222,7 +223,7 @@ function Enclave_Mixin(target) {
                 return callback(createOpenDSUErrorWrapper(`Failed to get private info for did ${didTo.getIdentifier()}`, err));
             }
 
-            didTo.decryptMessageImpl(privateKeys, encryptedMessage, callback);
+            CryptoSkills.applySkill(didTo, CryptoSkills.NAMES.ENCRYPT_MESSAGE, privateKeys, didTo, encryptedMessage, callback);
         });
     };
 }

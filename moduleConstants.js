@@ -20,6 +20,7 @@ module.exports = {
 	SECURITY_CONTEXT_KEY_SSI: "scKeySSI",
 	VAULT_DOMAIN: "domain",
 	ENCLAVE_TYPE: "enclaveType",
+	ENCLAVE_DID: "enclaveDID",
 	ENCLAVE_TYPES: {
 		WALLET_DB_ENCLAVE: "WalletDBEnclave",
 		MEMORY_ENCLAVE: "MemoryEnclave",
