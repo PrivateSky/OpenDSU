@@ -140,6 +140,7 @@ function SecurityContext() {
 
     const init = async () => {
         let enclaveType;
+        let enclaveDID;
         let scDSUKeySSI;
         try {
             enclaveType = await $$.promisify(config.getEnv)(constants.ENCLAVE_TYPE);
@@ -148,12 +149,18 @@ function SecurityContext() {
         }
 
         if (typeof enclaveType === "undefined") {
-            enclaveType = constants.ENCLAVE_TYPES.MEMORY_ENCLAVE;
+            enclaveType = constants.ENCLAVE_TYPES.WALLET_DB_ENCLAVE;
             try {
                 await $$.promisify(config.setEnv)(constants.ENCLAVE_TYPE, enclaveType)
             } catch (e) {
                 throw createOpenDSUErrorWrapper(`Failed to set env enclaveType`, e);
             }
+        }
+
+        try {
+            enclaveDID = await $$.promisify(config.getEnv)(constants.ENCLAVE_DID);
+        } catch (e) {
+            throw createOpenDSUErrorWrapper(`Failed to get env enclaveDID`, e);
         }
 
         try {
@@ -182,7 +189,15 @@ function SecurityContext() {
         }
 
         enclave = getEnclaveInstance(enclaveType);
-        enclave.on("initialised", () => {
+        enclave.on("initialised", async () => {
+            if (typeof enclaveDID === "undefined") {
+                enclaveDID = enclave.getDID();
+                try {
+                    await $$.promisify(config.setEnv)(constants.ENCLAVE_DID, enclaveDID)
+                } catch (e) {
+                    throw createOpenDSUErrorWrapper(`Failed to set env enclaveDID`, e);
+                }
+            }
             initialised = true;
             this.finishInitialisation();
             this.dispatchEvent("initialised")
