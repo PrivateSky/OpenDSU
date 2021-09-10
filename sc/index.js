@@ -149,7 +149,7 @@ function SecurityContext() {
         }
 
         if (typeof enclaveType === "undefined") {
-            enclaveType = constants.ENCLAVE_TYPES.WALLET_DB_ENCLAVE;
+            enclaveType = constants.ENCLAVE_TYPES.MEMORY_ENCLAVE;
             try {
                 await $$.promisify(config.setEnv)(constants.ENCLAVE_TYPE, enclaveType)
             } catch (e) {
