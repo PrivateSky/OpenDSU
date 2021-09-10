@@ -24,7 +24,7 @@ assert.callback('ApihubProxy test', (testFinished) => {
             try {
                 await $$.promisify(apihubProxy.insertRecord)("some_did", TABLE, "pk1", addedRecord, addedRecord);
                 const record = await $$.promisify(apihubProxy.getRecord)("some_did", TABLE, "pk1");
-                const enclaveDID = await $$.promisify(apihubProxy.getDID)();
+                const enclaveDID = apihubProxy.getDID();
                 console.log(enclaveDID)
                 assert.objectsAreEqual(record, addedRecord, "Records do not match");
             } catch (e) {

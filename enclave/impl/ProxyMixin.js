@@ -7,7 +7,7 @@ function ProxyMixin(target) {
 
     target.insertRecord = (forDID, table, pk, plainRecord, encryptedRecord, callback) => {
         target.__putCommandObject(commandNames.INSERT_RECORD, forDID, table, pk, plainRecord, encryptedRecord, callback);
-    }
+    };
 
     target.updateRecord = (forDID, table, pk, plainRecord, encryptedRecord, callback) => {
         target.__putCommandObject(commandNames.UPDATE_RECORD, forDID, table, pk, plainRecord, encryptedRecord, callback);
