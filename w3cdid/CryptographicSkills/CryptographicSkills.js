@@ -10,8 +10,8 @@ const registerSkills = (didMethod, skills) => {
     cryptoSkillsRegistry[didMethod] = skills;
 }
 
-const applySkill = (did, skillName, ...args) => {
-    return cryptoSkillsRegistry[did.getMethodName()][skillName](...args);
+const applySkill = (didMethod, skillName, ...args) => {
+    return cryptoSkillsRegistry[didMethod][skillName](...args);
 }
 
 registerSkills(methodsNames.NAME_SUBTYPE, new NameDID_CryptographicSkills());

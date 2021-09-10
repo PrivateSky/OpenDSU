@@ -5,7 +5,7 @@ function WalletDBEnclave(did) {
     const w3cDID = openDSU.loadAPI("w3cdid");
     const DB_NAME = "walletdb_enclave";
     const EnclaveMixin = require("./Enclave_Mixin");
-    EnclaveMixin(this);
+    EnclaveMixin(this, did);
 
     const init = () => {
         scAPI.getMainDSU(async (err, mainDSU) => {
@@ -19,16 +19,6 @@ function WalletDBEnclave(did) {
                 throw createOpenDSUErrorWrapper(`Failed to get mainDSU's keySSI`, e);
             }
 
-            if (typeof did === "undefined") {
-                let didDocument;
-                try{
-                    didDocument = await $$.promisify(w3cDID.createIdentity)("key");
-                }catch (e) {
-                    throw createOpenDSUErrorWrapper(`Failed to create enclave DID`, e);
-                }
-                did = didDocument.getIdentifier();
-            }
-
             this.storageDB = db.getWalletDB(keySSI, DB_NAME);
             this.storageDB.on("initialised", () => {
                 this.finishInitialisation();
@@ -38,12 +28,8 @@ function WalletDBEnclave(did) {
 
     };
 
-    this.getDID = (callback) => {
-        callback(undefined, did);
-    }
-
     const bindAutoPendingFunctions = require("../../utils/BindAutoPendingFunctions").bindAutoPendingFunctions;
-    bindAutoPendingFunctions(this, ["on", "off"]);
+    bindAutoPendingFunctions(this, ["on", "off", "getDID"]);
 
     init();
 }

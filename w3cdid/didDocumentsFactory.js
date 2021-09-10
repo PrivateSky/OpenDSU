@@ -8,7 +8,7 @@ const createKeyDID_Document = require("./w3cdids/KeyDID_Document").initiateDIDDo
 const didsConstructors = {};
 
 const registerDID_Document_Constructor = (didMethod, didConstructor) => {
-    didConstructor[didMethod] = didConstructor;
+    didsConstructors[didMethod] = didConstructor;
 }
 
 const createDID_Document = (didMethod, ...args) => {

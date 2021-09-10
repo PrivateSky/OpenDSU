@@ -1,4 +1,4 @@
-function Enclave_Mixin(target) {
+function Enclave_Mixin(target, did) {
     const openDSU = require("opendsu");
     const keySSISpace = openDSU.loadAPI("keyssi")
     const crypto = openDSU.loadAPI("crypto")
@@ -10,8 +10,10 @@ function Enclave_Mixin(target) {
     const ObservableMixin = require("../../utils/ObservableMixin");
     ObservableMixin(target);
     const CryptoSkills = w3cDID.CryptographicSkills;
-    let did;
 
+    if (!did) {
+        did = CryptoSkills.applySkill("key", CryptoSkills.NAMES.CREATE_DID_DOCUMENT).getIdentifier();
+    }
     const getPrivateInfoForDID = (did, callback) => {
         target.storageDB.getRecord(DIDS_PRIVATE_KEYS, did, (err, record) => {
             if (err) {
@@ -27,7 +29,7 @@ function Enclave_Mixin(target) {
             });
             callback(undefined, privateKeysAsBuff);
         });
-    }
+    };
 
     const getCapableOfSigningKeySSI = (keySSI, callback) => {
         if (typeof keySSI === "undefined") {
@@ -58,17 +60,8 @@ function Enclave_Mixin(target) {
         });
     };
 
-    target.getDID = (callback) => {
-        if (did) {
-            return callback(undefined, did);
-        }
-        w3cDID.createIdentity("key", (err, _did) => {
-            if (err) {
-                return callback(err);
-            }
-            did = _did;
-            callback(undefined, did);
-        });
+    target.getDID = () => {
+        return did;
     }
 
     target.insertRecord = (forDID, table, pk, encryptedObject, indexableFieldsNotEncrypted, callback) => {
@@ -174,7 +167,7 @@ function Enclave_Mixin(target) {
                 return callback(createOpenDSUErrorWrapper(`Failed to get private info for did ${didThatIsSigning.getIdentifier()}`, err));
             }
 
-            const signature = CryptoSkills.applySkill(didThatIsSigning, CryptoSkills.NAMES.SIGN, hash, privateKeys[privateKeys.length - 1]);
+            const signature = CryptoSkills.applySkill(didThatIsSigning.getMethodName(), CryptoSkills.NAMES.SIGN, hash, privateKeys[privateKeys.length - 1]);
             callback(undefined, signature);
         });
     }
@@ -185,7 +178,7 @@ function Enclave_Mixin(target) {
                 return callback(createOpenDSUErrorWrapper(`Failed to read public key for did ${target.getIdentifier()}`, err));
             }
 
-            const verificationResult = CryptoSkills.applySkill(didThatIsVerifying, CryptoSkills.NAMES.VERIFY, hash, publicKey, signature);
+            const verificationResult = CryptoSkills.applySkill(didThatIsVerifying.getMethodName(), CryptoSkills.NAMES.VERIFY, hash, publicKey, signature);
             callback(undefined, verificationResult);
         });
     }
@@ -213,7 +206,7 @@ function Enclave_Mixin(target) {
                 return callback(createOpenDSUErrorWrapper(`Failed to get private info for did ${didFrom.getIdentifier()}`, err));
             }
 
-            CryptoSkills.applySkill(didFrom, CryptoSkills.NAMES.ENCRYPT_MESSAGE, privateKeys, didFrom, didTo, message, callback);
+            CryptoSkills.applySkill(didFrom.getMethodName(), CryptoSkills.NAMES.ENCRYPT_MESSAGE, privateKeys, didFrom, didTo, message, callback);
         });
     }
 
@@ -223,7 +216,7 @@ function Enclave_Mixin(target) {
                 return callback(createOpenDSUErrorWrapper(`Failed to get private info for did ${didTo.getIdentifier()}`, err));
             }
 
-            CryptoSkills.applySkill(didTo, CryptoSkills.NAMES.DECRYPT_MESSAGE, privateKeys, didTo, encryptedMessage, callback);
+            CryptoSkills.applySkill(didTo.getMethodName(), CryptoSkills.NAMES.DECRYPT_MESSAGE, privateKeys, didTo, encryptedMessage, callback);
         });
     };
 }
