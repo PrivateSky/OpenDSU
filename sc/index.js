@@ -225,8 +225,7 @@ function SecurityContext() {
     }
 
     this.verifyForDID = (didDocument, data, signature, callback) => {
-        enclave.verifyForDID()
-        didDocument.verifyImpl(data, signature, callback);
+        enclave.verifyForDID(didDocument, didDocument, data, signature, callback);
     }
 
 

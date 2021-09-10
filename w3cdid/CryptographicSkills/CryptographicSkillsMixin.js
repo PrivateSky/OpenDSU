@@ -1,10 +1,9 @@
-function CryptoAlgorithmsMixin(target) {
+function CryptographicSkillsMixin(target) {
     target = target || {};
     const crypto = require("pskcrypto");
     const openDSU = require("opendsu");
     const keySSISpace = openDSU.loadAPI("keyssi");
     const cryptoSpace = openDSU.loadAPI("crypto");
-    const securityContext = openDSU.loadAPI("sc").getSecurityContext();
 
     let config = {
         curveName: 'secp256k1',
@@ -89,6 +88,8 @@ function CryptoAlgorithmsMixin(target) {
     };
 
     const saveNewKeyPairInSC = async (didDocument, compatibleSSI) => {
+        const securityContext = openDSU.loadAPI("sc").getSecurityContext();
+
         try {
             await $$.promisify(securityContext.addPrivateKeyForDID)(
                 didDocument,
@@ -113,7 +114,7 @@ function CryptoAlgorithmsMixin(target) {
 
     target.encryptMessage = (privateKeys, didFrom, didTo, message, callback) => {
         const senderSeedSSI = keySSISpace.createTemplateSeedSSI(didFrom.getDomain());
-        senderSeedSSI.initialize(target.getDomain(), privateKeys[0]);
+        senderSeedSSI.initialize(didFrom.getDomain(), privateKeys[0]);
 
         didTo.getPublicKey("raw", async (err, receiverPublicKey) => {
             if (err) {
@@ -125,7 +126,7 @@ function CryptoAlgorithmsMixin(target) {
             const __encryptMessage = (senderKeySSI) => {
                 let encryptedMessage;
                 try {
-                    encryptedMessage = crypto.ecies_encrypt_ds(senderKeySSI, publicKeySSI, message);
+                    encryptedMessage = cryptoSpace.ecies_encrypt_ds(senderKeySSI, publicKeySSI, message);
                 } catch (e) {
                     return callback(createOpenDSUErrorWrapper(`Failed to encrypt message`, e));
                 }
@@ -141,7 +142,7 @@ function CryptoAlgorithmsMixin(target) {
             }
 
             try {
-                await saveNewKeyPairInSC(target, compatibleSSI);
+                await saveNewKeyPairInSC(didFrom, compatibleSSI);
             } catch (e) {
                 return callback(createOpenDSUErrorWrapper(`Failed to save compatible seed ssi`, e));
             }
@@ -161,7 +162,7 @@ function CryptoAlgorithmsMixin(target) {
             const receiverSeedSSI = keySSISpace.createTemplateSeedSSI(didTo.getDomain());
             receiverSeedSSI.initialize(didTo.getDomain(), privateKey);
             try {
-                decryptedMessageObj = crypto.ecies_decrypt_ds(receiverSeedSSI, encryptedMessage);
+                decryptedMessageObj = cryptoSpace.ecies_decrypt_ds(receiverSeedSSI, encryptedMessage);
             } catch (e) {
                 return decryptMessageRecursively(privateKeyIndex + 1);
             }
@@ -190,4 +191,4 @@ function CryptoAlgorithmsMixin(target) {
     return target;
 }
 
-module.exports = CryptoAlgorithmsMixin;
+module.exports = CryptographicSkillsMixin;

@@ -213,7 +213,7 @@ function Enclave_Mixin(target) {
                 return callback(createOpenDSUErrorWrapper(`Failed to get private info for did ${didFrom.getIdentifier()}`, err));
             }
 
-            CryptoSkills.applySkill(didFrom, CryptoSkills.NAMES.ENCRYPT_MESSAGE, privateKeys, didFrom, didTo, callback);
+            CryptoSkills.applySkill(didFrom, CryptoSkills.NAMES.ENCRYPT_MESSAGE, privateKeys, didFrom, didTo, message, callback);
         });
     }
 
@@ -223,7 +223,7 @@ function Enclave_Mixin(target) {
                 return callback(createOpenDSUErrorWrapper(`Failed to get private info for did ${didTo.getIdentifier()}`, err));
             }
 
-            CryptoSkills.applySkill(didTo, CryptoSkills.NAMES.ENCRYPT_MESSAGE, privateKeys, didTo, encryptedMessage, callback);
+            CryptoSkills.applySkill(didTo, CryptoSkills.NAMES.DECRYPT_MESSAGE, privateKeys, didTo, encryptedMessage, callback);
         });
     };
 }
