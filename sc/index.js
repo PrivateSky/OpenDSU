@@ -121,6 +121,8 @@ function SecurityContext() {
     const enclaveAPI = openDSU.loadAPI("enclave");
     let enclave;
     let storageDSU;
+    let scDSUKeySSI;
+
     let initialised = false;
 
     const getEnclaveInstance = (enclaveType) => {
@@ -141,7 +143,6 @@ function SecurityContext() {
     const init = async () => {
         let enclaveType;
         let enclaveDID;
-        let scDSUKeySSI;
         try {
             enclaveType = await $$.promisify(config.getEnv)(constants.ENCLAVE_TYPE);
         } catch (e) {
@@ -256,24 +257,12 @@ function SecurityContext() {
         return initialised;
     }
 
-    this.getDb = (callback) => {
+    this.getDB = (callback) => {
         const dbApi = openDSU.loadAPI("db");
-        getMainDSU((err, mainDSU) => {
-            if (err) {
-                return callback(err);
-            }
-
-            mainDSU.getKeySSIAsObject((err, keySSI) => {
-                if (err) {
-                    return callback(err);
-                }
-
-                const db = dbApi.getWalletDB(keySSI, "defaultDB")
-                db.on("initialised", () => {
-                    callback(undefined, db);
-                })
-            })
-        });
+        const db = dbApi.getWalletDB(scDSUKeySSI, "defaultDB")
+        db.on("initialised", () => {
+            callback(undefined, db);
+        })
     }
 
     const bindAutoPendingFunctions = require("../utils/BindAutoPendingFunctions").bindAutoPendingFunctions;
@@ -301,51 +290,6 @@ const getVaultDomain = (callback) => {
 
             callback(undefined, environment.domain);
         })
-    })
-}
-
-const loadSecurityContext = (callback) => {
-    getMainDSU((err, mainDSU) => {
-        if (err) {
-            return callback(err);
-        }
-
-        mainDSU.readFile(constants.SECURITY_CONTEXT, (err, securityContextKeySSI) => {
-            if (err) {
-                return callback(createOpenDSUErrorWrapper(`Failed to read security context keySSI`, err));
-            }
-
-            callback(undefined, securityContextKeySSI.toString());
-        })
-    })
-}
-
-const saveSecurityContext = (scKeySSI, callback) => {
-    if (typeof scKeySSI === "object") {
-        scKeySSI = scKeySSI.getIdentifier();
-    }
-    getMainDSU((err, mainDSU) => {
-        if (err) {
-            return callback(err);
-        }
-
-        mainDSU.writeFile(constants.SECURITY_CONTEXT, scKeySSI, (err) => {
-            if (err) {
-                return callback(createOpenDSUErrorWrapper(`Failed to save security context keySSI`, err));
-            }
-
-            callback(undefined);
-        })
-    })
-}
-
-const createSecurityContext = (callback) => {
-    getVaultDomain((err, vaultDomain) => {
-        if (err) {
-            return callback(createOpenDSUErrorWrapper(`Failed to get vault domain`, err));
-        }
-
-        keySSISpace.createSeedSSI(vaultDomain, callback);
     })
 }
 
