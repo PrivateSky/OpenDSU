@@ -8,7 +8,6 @@ function WalletDBEnclave(did) {
     const ENCLAVE_DSU_KEY_SSI_PATH = ".enclave";
     const EnclaveMixin = require("./Enclave_Mixin");
     EnclaveMixin(this, did);
-    //.enclave in mainDSU
     let enclaveDSU;
     let enclaveDSUKeySSI;
 
@@ -58,7 +57,7 @@ function WalletDBEnclave(did) {
     };
 
     const bindAutoPendingFunctions = require("../../utils/BindAutoPendingFunctions").bindAutoPendingFunctions;
-    bindAutoPendingFunctions(this, ["on", "off", "getDID"]);
+    bindAutoPendingFunctions(this, ["on", "off", "getDID", "beginBatch"]);
 
     init();
 }

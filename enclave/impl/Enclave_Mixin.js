@@ -1,8 +1,6 @@
 function Enclave_Mixin(target, did) {
     const openDSU = require("opendsu");
     const keySSISpace = openDSU.loadAPI("keyssi")
-    const crypto = openDSU.loadAPI("crypto")
-    const scAPI = openDSU.loadAPI("sc")
     const w3cDID = openDSU.loadAPI("w3cdid")
     const KEY_SSIS_TABLE = "keyssis";
     const SEED_SSIS_TABLE = "seedssis";
@@ -64,12 +62,20 @@ function Enclave_Mixin(target, did) {
         return did;
     }
 
-    target.insertRecord = (forDID, table, pk, encryptedObject, indexableFieldsNotEncrypted, callback) => {
-        target.storageDB.insertRecord(table, pk, indexableFieldsNotEncrypted, callback);
+    target.insertRecord = (forDID, table, pk, plainRecord, encryptedRecord, callback) => {
+        if (typeof encryptedRecord === "function") {
+            callback = encryptedRecord;
+            encryptedRecord = plainRecord;
+        }
+        target.storageDB.insertRecord(table, pk, encryptedRecord, callback);
     }
 
-    target.updateRecord = (forDID, table, pk, encryptedObject, indexableFieldsNotEncrypted, callback) => {
-        target.storageDB.updateRecord(table, pk, indexableFieldsNotEncrypted, callback);
+    target.updateRecord = (forDID, table, pk, plainRecord, encryptedRecord, callback) => {
+        if (typeof encryptedRecord === "function") {
+            callback = encryptedRecord;
+            encryptedRecord = plainRecord;
+        }
+        target.storageDB.updateRecord(table, pk, encryptedRecord, callback);
     }
 
     target.getRecord = (forDID, table, pk, callback) => {
@@ -82,6 +88,18 @@ function Enclave_Mixin(target, did) {
 
     target.deleteRecord = (forDID, table, pk, callback) => {
         target.storageDB.deleteRecord(table, pk, callback);
+    }
+
+    target.beginBatch = (forDID) => {
+        target.storageDB.beginBatch();
+    }
+
+    target.commitBatch = (forDID, callback) => {
+        target.storageDB.commitBatch(callback);
+    }
+
+    target.cancelBatch = (forDID, callback) => {
+        target.storageDB.cancelBatch(callback);
     }
 
     target.storeSeedSSI = (forDID, seedSSI, alias, callback) => {
@@ -172,7 +190,7 @@ function Enclave_Mixin(target, did) {
         });
     }
 
-    target.verifyForDID = (forDID, didThatIsVerifying, hash, signature, callback)=>{
+    target.verifyForDID = (forDID, didThatIsVerifying, hash, signature, callback) => {
         didThatIsVerifying.getPublicKey("pem", (err, publicKey) => {
             if (err) {
                 return callback(createOpenDSUErrorWrapper(`Failed to read public key for did ${target.getIdentifier()}`, err));
