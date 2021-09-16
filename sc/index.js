@@ -55,6 +55,7 @@ function getMainDSUForNode(callback) {
                 if (err) {
                     return callback(err);
                 }
+                setMainDSU(seedDSU);
 
                 seedDSU.writeFile("/environment.json", JSON.stringify({domain: "vault"}), (err) => {
                     if (err) {
@@ -66,6 +67,7 @@ function getMainDSUForNode(callback) {
                         }
 
                         fs.mkdirSync(BASE_DIR_PATH, {recursive: true});
+                        setMainDSU(seedDSU);
                         fs.writeFile(MAIN_DSU_PATH, seedSSI, (err) => callback(err, seedDSU));
                     });
                 })
@@ -74,7 +76,14 @@ function getMainDSUForNode(callback) {
             return;
         }
 
-        resolver.loadDSU(mainDSUSSI.toString(), callback);
+        resolver.loadDSU(mainDSUSSI.toString(), (err, dsu)=>{
+            if (err) {
+                return callback(err);
+            }
+
+            setMainDSU(dsu);
+            callback(undefined, dsu);
+        });
     })
 }
 
@@ -122,6 +131,7 @@ function SecurityContext() {
     let enclave;
     let storageDSU;
     let scDSUKeySSI;
+    let mainDID;
 
     let initialised = false;
 
@@ -230,10 +240,7 @@ function SecurityContext() {
     };
 
     this.signForKeySSI = (forDID, keySSI, data, callback) => {
-        // temporary solution until proper implementation
-        // return callback(undefined, {signature: "", publicKey: ""});
         enclave.signForKeySSI(forDID, keySSI, data, callback);
-
     }
 
     this.signAsDID = (didDocument, data, callback) => {
@@ -265,8 +272,24 @@ function SecurityContext() {
         })
     }
 
+    this.getDSU = (callback) => {
+        callback(undefined, storageDSU);
+    }
+
+    this.getMainEnclaveDB = () => {
+        const mainEnclaveDB = {};
+        let dbMethods = ["insertRecord", "updateRecord", "getRecord", "deleteRecord", "filter", "beginBatch", "commitBatch", "cancelBatch"];
+        for (let i = 0; i < dbMethods.length; i++) {
+            mainEnclaveDB[dbMethods[i]] = function (...args) {
+                enclave[dbMethods[i]](mainDID, ...args);
+            }
+        }
+
+        return mainEnclaveDB;
+    }
+
     const bindAutoPendingFunctions = require("../utils/BindAutoPendingFunctions").bindAutoPendingFunctions;
-    bindAutoPendingFunctions(this, ["on", "off", "enclaveInitialised"]);
+    bindAutoPendingFunctions(this, ["on", "off", "enclaveInitialised", "getMainEnclaveDB"]);
     init();
     return this;
 }
