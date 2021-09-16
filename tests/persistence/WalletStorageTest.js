@@ -15,7 +15,7 @@ assert.callback(
         const openDSU = require("opendsu");
         const resolver = openDSU.loadAPI("resolver");
         const sc = openDSU.loadAPI("sc");
-        const persistence = openDSU.loadAPI("persistence");
+        const persistence = openDSU.loadAPI("storage");
 
         // const mainDSU = await $$.promisify(resolver.createDSUx)(env.domain, "seed");
         // sc.setMainDSU(mainDSU);
