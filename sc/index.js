@@ -76,7 +76,7 @@ function getMainDSUForNode(callback) {
             return;
         }
 
-        resolver.loadDSU(mainDSUSSI.toString(), (err, dsu)=>{
+        resolver.loadDSU(mainDSUSSI.toString(), (err, dsu) => {
             if (err) {
                 return callback(err);
             }
@@ -278,13 +278,22 @@ function SecurityContext() {
 
     this.getMainEnclaveDB = () => {
         const mainEnclaveDB = {};
-        let dbMethods = ["insertRecord", "updateRecord", "getRecord", "deleteRecord", "filter", "beginBatch", "commitBatch", "cancelBatch"];
-        for (let i = 0; i < dbMethods.length; i++) {
-            mainEnclaveDB[dbMethods[i]] = function (...args) {
-                enclave[dbMethods[i]](mainDID, ...args);
+        let asyncDBMethods = ["insertRecord", "updateRecord", "getRecord", "deleteRecord", "filter", "commitBatch", "cancelBatch"];
+        let syncDBMethods = ["beginBatch"]
+        for (let i = 0; i < asyncDBMethods.length; i++) {
+            mainEnclaveDB[asyncDBMethods[i]] = function (...args) {
+                enclave[asyncDBMethods[i]](mainDID, ...args);
             }
+
+            mainEnclaveDB[`${asyncDBMethods[i]}Async`] = $$.promisify(mainEnclaveDB[asyncDBMethods[i]]);
         }
 
+
+        for (let i = 0; i < syncDBMethods.length; i++) {
+            mainEnclaveDB[syncDBMethods[i]] = function (...args) {
+                enclave[syncDBMethods[i]](mainDID, ...args);
+            }
+        }
         return mainEnclaveDB;
     }
 
