@@ -64,4 +64,5 @@ function verifySignature(keySSI, newSSI, lastSSI) {
 
 module.exports = {
     validateHashLinks,
+    verifySignature
 };
