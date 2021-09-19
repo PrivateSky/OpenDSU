@@ -94,7 +94,7 @@ class CommandSender {
             const latestBlockInfo = await $$.promisify(this.sendCommand.bind(this))("GET", "latest-block-info", domain);
             const { number: blockNumber } = latestBlockInfo;
 
-            const commandBody = getNoncedCommandBody(domain, contractName, methodName, params, blockNumber, timestamp, signerDID);
+            const commandBody = await getNoncedCommandBody(domain, contractName, methodName, params, blockNumber, timestamp, signerDID);
             this.sendCommand("POST", "nonced-command", domain, commandBody, callback);
         } catch (error) {
             callback(error);

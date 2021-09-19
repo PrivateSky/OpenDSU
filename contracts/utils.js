@@ -55,7 +55,7 @@ function getSafeCommandBody(domain, contractName, methodName, params) {
     };
 }
 
-function getNoncedCommandBody(domain, contract, method, params, blockNumber, timestamp, signerDID) {
+async function getNoncedCommandBody(domain, contract, method, params, blockNumber, timestamp, signerDID) {
     if (!signerDID) {
         // params field is optional
         signerDID = timestamp;
@@ -71,7 +71,7 @@ function getNoncedCommandBody(domain, contract, method, params, blockNumber, tim
     commandBody.signerDID = signerDID.getIdentifier();
 
     const hash = getCommandHash(commandBody);
-    const signature = signerDID.sign(hash);
+    const signature = await $$.promisify(signerDID.sign)(hash);
 
     commandBody.requesterSignature = signature;
 

@@ -2,6 +2,9 @@
 
 function DemoPKDocument(identifier){
     this.sign = function(hash, callback){
+        if (typeof callback === 'function') {
+            return callback(undefined, hash);
+        }
         return hash;
     };
 
