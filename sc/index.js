@@ -277,7 +277,7 @@ function SecurityContext() {
     }
 
     this.getMainEnclaveDB = (callback) => {
-        enclave.on("initialised", () => {
+        const __initMainEnclave = () => {
             const mainEnclaveDB = {};
             let asyncDBMethods = ["insertRecord", "updateRecord", "getRecord", "deleteRecord", "filter", "commitBatch", "cancelBatch"];
             let syncDBMethods = ["beginBatch"]
@@ -296,11 +296,18 @@ function SecurityContext() {
                 }
             }
             callback(undefined, mainEnclaveDB);
-        })
+        }
+        if (this.isInitialised()) {
+            __initMainEnclave();
+        } else {
+            enclave.on("initialised", () => {
+                __initMainEnclave()
+            })
+        }
     }
 
     const bindAutoPendingFunctions = require("../utils/BindAutoPendingFunctions").bindAutoPendingFunctions;
-    bindAutoPendingFunctions(this, ["on", "off", "enclaveInitialised"]);
+    bindAutoPendingFunctions(this, ["on", "off", "isInitialised"]);
     init();
     return this;
 }

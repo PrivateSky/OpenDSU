@@ -17,18 +17,16 @@ assert.callback(
         const sc = openDSU.loadAPI("sc").getSecurityContext();
         const dbAPI = openDSU.loadAPI("db");
 
-        setTimeout(async () => {
-            const testStorage = dbAPI.getMainEnclaveDB();
-            const table = "test-table";
-            const pk = "test-key";
-            const actualRecord = {value: 12345};
-            await testStorage.insertRecordAsync(table, pk, actualRecord);
-            const expectedRecord = await testStorage.getRecordAsync(table, pk);
-            assert.equal(expectedRecord.value, actualRecord.value);
-            assert.equal(expectedRecord.pk, pk);
+        const testStorage = await $$.promisify(dbAPI.getMainEnclaveDB)();
+        const table = "test-table";
+        const pk = "test-key";
+        const actualRecord = {value: 12345};
+        await testStorage.insertRecordAsync(table, pk, actualRecord);
+        const expectedRecord = await testStorage.getRecordAsync(table, pk);
+        assert.equal(expectedRecord.value, actualRecord.value);
+        assert.equal(expectedRecord.pk, pk);
 
-            testDone();
-        }, 1000);
+        testDone();
     },
-    5000
+    500000
 );
