@@ -6,7 +6,7 @@ const constants = require("../moduleConstants");
 const promiseRunner = require("../utils/promise-runner");
 const cachedAnchoring = require("./cachedAnchoring");
 const config = require("../config");
-const {validateHashLinks} = require("./anchoring-utils");
+const {validateHashLinks, verifySignature} = require("./anchoring-utils");
 
 const NO_VERSIONS_ERROR = "NO_VERSIONS_ERROR";
 
@@ -66,6 +66,75 @@ const versions = (keySSI, authToken, callback) => {
                 // the requested anchor doesn't exist on any of the queried anchoring services,
                 // so return an empty versions list in order to now break the existing code in this situation
                 return callback(null, []);
+            }
+
+            callback(error, result);
+        }
+
+        promiseRunner.runOneSuccessful(anchoringServicesArray, fetchAnchor, runnerCallback, new Error("get Anchoring Service"));
+    });
+};
+
+/**
+ * Get the latest version only
+ * @param {keySSI} keySSI
+ * @param {string} authToken
+ * @param {function} callback
+ */
+const latestVersion = (keySSI, authToken, callback) => {
+    if (typeof authToken === 'function') {
+        callback = authToken;
+        authToken = undefined;
+    }
+
+    const dlDomain = keySSI.getDLDomain();
+    const anchorId = keySSI.getAnchorId();
+
+    if (dlDomain === constants.DOMAINS.VAULT && isValidVaultCache()) {
+        return cachedAnchoring.latestVersion(anchorId, callback);
+    }
+
+    bdns.getAnchoringServices(dlDomain, (err, anchoringServicesArray) => {
+        if (err) {
+            return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to get anchoring services from bdns`, err));
+        }
+
+        if (!anchoringServicesArray.length) {
+            return callback('No anchoring service provided');
+        }
+
+        //TODO: security issue (which response we trust)
+        const fetchAnchor = (service) => {
+            return fetch(`${service}/anchor/${dlDomain}/get-all-versions/${anchorId}`)
+                .then((response) => {
+                    return response.json().then(async (hlStrings) => {
+                        if (!hlStrings || (Array.isArray(hlStrings) && !hlStrings.length)) {
+                            throw new Error(NO_VERSIONS_ERROR);
+                        }
+                        // We need the last two hash links in order to validate the last one
+                        const hashLinks = hlStrings.slice(-2).map((hlString) => {
+                            return keyssi.parse(hlString);
+                        });
+
+                        const latestHashLink = hashLinks.pop();
+                        const prevHashLink = hashLinks.pop();
+                        
+                        const validHL = verifySignature(keySSI, latestHashLink, prevHashLink);
+                        
+                        if (!validHL) {
+                            throw new Error('Failed to verify signature');
+                        }
+
+                        return latestHashLink;
+                    });
+                });
+        };
+
+        const runnerCallback = (error, result) => {
+            if (error && error.message === NO_VERSIONS_ERROR) {
+                // the requested anchor doesn't exist on any of the queried anchoring services,
+                // so return undefined in order to not break the existing code in this situation
+                return callback(null, undefined);
             }
 
             callback(error, result);
@@ -207,6 +276,12 @@ const getAllVersions = (keySSI, authToken, callback) => {
     versions(keySSI, authToken, callback);
 }
 
+// This should be called "getLatestVersion" but we already have
+// such a method
+const getLastVersion = (keySSI, authToken, callback) => {
+    latestVersion(keySSI, authToken, callback);
+}
+
 const getLatestVersion = (domain, ...args) => {
     // TODO: to be implemented
     callContractMethod(domain, "getLatestVersion", ...args);
@@ -218,5 +293,6 @@ module.exports = {
     appendToAnchor,
     transferTokenOwnership,
     getAllVersions,
+    getLastVersion,
     getLatestVersion
 }
