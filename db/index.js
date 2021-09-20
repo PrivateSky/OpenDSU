@@ -66,9 +66,9 @@ const getEnclaveDB = () => {
     throw Error("Not implemented");
 };
 
-const getMainEnclaveDB = () => {
+const getMainEnclaveDB = (callback) => {
     const sc = require("opendsu").loadAPI("sc").getSecurityContext();
-    return sc.getMainEnclaveDB();
+    sc.getMainEnclaveDB(callback);
 }
 
 module.exports = {

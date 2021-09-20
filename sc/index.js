@@ -276,29 +276,31 @@ function SecurityContext() {
         callback(undefined, storageDSU);
     }
 
-    this.getMainEnclaveDB = () => {
-        const mainEnclaveDB = {};
-        let asyncDBMethods = ["insertRecord", "updateRecord", "getRecord", "deleteRecord", "filter", "commitBatch", "cancelBatch"];
-        let syncDBMethods = ["beginBatch"]
-        for (let i = 0; i < asyncDBMethods.length; i++) {
-            mainEnclaveDB[asyncDBMethods[i]] = function (...args) {
-                enclave[asyncDBMethods[i]](mainDID, ...args);
+    this.getMainEnclaveDB = (callback) => {
+        enclave.on("initialised", () => {
+            const mainEnclaveDB = {};
+            let asyncDBMethods = ["insertRecord", "updateRecord", "getRecord", "deleteRecord", "filter", "commitBatch", "cancelBatch"];
+            let syncDBMethods = ["beginBatch"]
+            for (let i = 0; i < asyncDBMethods.length; i++) {
+                mainEnclaveDB[asyncDBMethods[i]] = function (...args) {
+                    enclave[asyncDBMethods[i]](mainDID, ...args);
+                }
+
+                mainEnclaveDB[`${asyncDBMethods[i]}Async`] = $$.promisify(mainEnclaveDB[asyncDBMethods[i]]);
             }
 
-            mainEnclaveDB[`${asyncDBMethods[i]}Async`] = $$.promisify(mainEnclaveDB[asyncDBMethods[i]]);
-        }
 
-
-        for (let i = 0; i < syncDBMethods.length; i++) {
-            mainEnclaveDB[syncDBMethods[i]] = function (...args) {
-                enclave[syncDBMethods[i]](mainDID, ...args);
+            for (let i = 0; i < syncDBMethods.length; i++) {
+                mainEnclaveDB[syncDBMethods[i]] = function (...args) {
+                    enclave[syncDBMethods[i]](mainDID, ...args);
+                }
             }
-        }
-        return mainEnclaveDB;
+            callback(undefined, mainEnclaveDB);
+        })
     }
 
     const bindAutoPendingFunctions = require("../utils/BindAutoPendingFunctions").bindAutoPendingFunctions;
-    bindAutoPendingFunctions(this, ["on", "off", "enclaveInitialised", "getMainEnclaveDB"]);
+    bindAutoPendingFunctions(this, ["on", "off", "enclaveInitialised"]);
     init();
     return this;
 }
