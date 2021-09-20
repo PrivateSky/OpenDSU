@@ -75,7 +75,7 @@ function runOneSuccessful(listEntries, executeEntry, callback, debugInfo) {
     return callback("EMPTY_LIST");
   }
 
-  availableListEntries = [...listEntries];
+  let availableListEntries = [...listEntries];
   arrayUtils.shuffle(availableListEntries);
 
   const entry = availableListEntries.shift();
