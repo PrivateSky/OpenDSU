@@ -4,45 +4,31 @@ const dc = require("double-check");
 const assert = dc.assert;
 
 assert.callback(
-    "Testing setObject, getObject, insertRecord and getRecord from WalletStorage",
+    "Testing insertRecord and getRecord from main enclave db",
     async (testDone) => {
         await tir.launchConfigurableApiHubTestNodeAsync();
 
         const env = {
-            domain: "default"
+            domain: "default",
         };
 
         const openDSU = require("opendsu");
         const resolver = openDSU.loadAPI("resolver");
-        const sc = openDSU.loadAPI("sc");
-        const persistence = openDSU.loadAPI("storage");
+        const sc = openDSU.loadAPI("sc").getSecurityContext();
+        const dbAPI = openDSU.loadAPI("db");
 
-        // const mainDSU = await $$.promisify(resolver.createDSUx)(env.domain, "seed");
-        // sc.setMainDSU(mainDSU);
+        setTimeout(async () => {
+            const testStorage = dbAPI.getMainEnclaveDB();
+            const table = "test-table";
+            const pk = "test-key";
+            const actualRecord = {value: 12345};
+            await testStorage.insertRecordAsync(table, pk, actualRecord);
+            const expectedRecord = await testStorage.getRecordAsync(table, pk);
+            assert.equal(expectedRecord.value, actualRecord.value);
+            assert.equal(expectedRecord.pk, pk);
 
-        const testStorage = persistence.getWalletStorage(env.domain, "testDB");
-
-        // {
-        //   const path = "/test-path";
-        //   const actualObject = { key: "value" };
-        //   await testStorage.setObjectAsync(path, actualObject);
-        //   const expectedObject = await testStorage.getObjectAsync(path);
-        //   assert.equal(
-        //     JSON.stringify(expectedObject),
-        //     JSON.stringify(actualObject)
-        //   );
-        // }
-
-    {
-      const table = "test-table";
-      const pk = "test-key";
-      const actualRecord = { value: 12345 };
-      await testStorage.insertRecordAsync(table, pk, actualRecord);
-      const expectedRecord = await testStorage.getRecordAsync(table, pk);
-      assert.equal(expectedRecord.value, actualRecord.value);
-      assert.equal(expectedRecord.pk, pk);
-    }
-
-    testDone();
-  }, 5000
+            testDone();
+        }, 1000);
+    },
+    5000
 );
