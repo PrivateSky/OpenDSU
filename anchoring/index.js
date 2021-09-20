@@ -1,6 +1,5 @@
 const bdns = require("../bdns");
 const keyssi = require("../keyssi");
-const crypto = require("../crypto");
 const {fetch, doPut} = require("../http");
 const constants = require("../moduleConstants");
 const promiseRunner = require("../utils/promise-runner");
@@ -8,71 +7,66 @@ const cachedAnchoring = require("./cachedAnchoring");
 const config = require("../config");
 const {validateHashLinks, verifySignature} = require("./anchoring-utils");
 
-const NO_VERSIONS_ERROR = "NO_VERSIONS_ERROR";
-
 const isValidVaultCache = () => {
     return typeof config.get(constants.CACHE.VAULT_TYPE) !== "undefined" && config.get(constants.CACHE.VAULT_TYPE) !== constants.CACHE.NO_CACHE;
 }
+
+const buildGetVersionFunction = function(processingFunction){
+    return function (keySSI, authToken, callback) {
+        if (typeof authToken === 'function') {
+            callback = authToken;
+            authToken = undefined;
+        }
+
+        const dlDomain = keySSI.getDLDomain();
+        const anchorId = keySSI.getAnchorId();
+
+        if (dlDomain === constants.DOMAINS.VAULT && isValidVaultCache()) {
+            return cachedAnchoring.versions(anchorId, callback);
+        }
+
+        bdns.getAnchoringServices(dlDomain, function (err, anchoringServicesArray) {
+            if (err) {
+                return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to get anchoring services from bdns`, err));
+            }
+
+            if (!anchoringServicesArray.length) {
+                return callback('No anchoring service provided');
+            }
+
+            //TODO: security issue (which response we trust)
+            const fetchAnchor = (service) => {
+                return fetch(`${service}/anchor/${dlDomain}/get-all-versions/${anchorId}`).then(processingFunction);
+            };
+
+            promiseRunner.runOneSuccessful(anchoringServicesArray, fetchAnchor, callback, new Error("get Anchoring Service"));
+        });
+    }
+}
+
 /**
  * Get versions
  * @param {keySSI} keySSI
  * @param {string} authToken
  * @param {function} callback
  */
-const versions = (keySSI, authToken, callback) => {
-    if (typeof authToken === 'function') {
-        callback = authToken;
-        authToken = undefined;
-    }
-
-    const dlDomain = keySSI.getDLDomain();
-    const anchorId = keySSI.getAnchorId();
-
-    if (dlDomain === constants.DOMAINS.VAULT && isValidVaultCache()) {
-        return cachedAnchoring.versions(anchorId, callback);
-    }
-
-    bdns.getAnchoringServices(dlDomain, (err, anchoringServicesArray) => {
-        if (err) {
-            return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to get anchoring services from bdns`, err));
-        }
-
-        if (!anchoringServicesArray.length) {
-            return callback('No anchoring service provided');
-        }
-
-        //TODO: security issue (which response we trust)
-        const fetchAnchor = (service) => {
-            return fetch(`${service}/anchor/${dlDomain}/get-all-versions/${anchorId}`)
-                .then((response) => {
-                    return response.json().then(async (hlStrings) => {
-                        if (!hlStrings) {
-                            throw new Error(NO_VERSIONS_ERROR);
-                        }
-                        const hashLinks = hlStrings.map((hlString) => {
-                            return keyssi.parse(hlString);
-                        });
-
-                        const validatedHashLinks = await $$.promisify(validateHashLinks)(keySSI, hashLinks);
-
-                        // cache.put(anchorId, hlStrings);
-                        return validatedHashLinks;
-                    });
-                });
-        };
-
-        const runnerCallback = (error, result) => {
-            if (error && error.message === NO_VERSIONS_ERROR) {
-                // the requested anchor doesn't exist on any of the queried anchoring services,
-                // so return an empty versions list in order to now break the existing code in this situation
-                return callback(null, []);
+const getAllVersions = (keySSI, authToken, callback) => {
+    const fnc = buildGetVersionFunction((response) => {
+        return response.json().then(async (hlStrings) => {
+            if (!hlStrings) {
+                return [];
             }
+            const hashLinks = hlStrings.map((hlString) => {
+                return keyssi.parse(hlString);
+            });
 
-            callback(error, result);
-        }
+            const validatedHashLinks = await $$.promisify(validateHashLinks)(keySSI, hashLinks);
 
-        promiseRunner.runOneSuccessful(anchoringServicesArray, fetchAnchor, runnerCallback, new Error("get Anchoring Service"));
+            // cache.put(anchorId, hlStrings);
+            return validatedHashLinks;
+        });
     });
+    return fnc(keySSI, authToken, callback);
 };
 
 /**
@@ -81,67 +75,31 @@ const versions = (keySSI, authToken, callback) => {
  * @param {string} authToken
  * @param {function} callback
  */
-const latestVersion = (keySSI, authToken, callback) => {
-    if (typeof authToken === 'function') {
-        callback = authToken;
-        authToken = undefined;
-    }
+const getLastVersion = (keySSI, authToken, callback) => {
+    const fnc = buildGetVersionFunction((response) => {
+        return response.json().then(async (hlStrings) => {
+            if (!hlStrings || (Array.isArray(hlStrings) && !hlStrings.length)) {
+                //no version found
+                return undefined;
+            }
+            // We need the last two hash links in order to validate the last one
+            const hashLinks = hlStrings.slice(-2).map((hlString) => {
+                return keyssi.parse(hlString);
+            });
 
-    const dlDomain = keySSI.getDLDomain();
-    const anchorId = keySSI.getAnchorId();
+            const latestHashLink = hashLinks.pop();
+            const prevHashLink = hashLinks.pop();
 
-    if (dlDomain === constants.DOMAINS.VAULT && isValidVaultCache()) {
-        return cachedAnchoring.latestVersion(anchorId, callback);
-    }
+            const validHL = verifySignature(keySSI, latestHashLink, prevHashLink);
 
-    bdns.getAnchoringServices(dlDomain, (err, anchoringServicesArray) => {
-        if (err) {
-            return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to get anchoring services from bdns`, err));
-        }
-
-        if (!anchoringServicesArray.length) {
-            return callback('No anchoring service provided');
-        }
-
-        //TODO: security issue (which response we trust)
-        const fetchAnchor = (service) => {
-            return fetch(`${service}/anchor/${dlDomain}/get-all-versions/${anchorId}`)
-                .then((response) => {
-                    return response.json().then(async (hlStrings) => {
-                        if (!hlStrings || (Array.isArray(hlStrings) && !hlStrings.length)) {
-                            throw new Error(NO_VERSIONS_ERROR);
-                        }
-                        // We need the last two hash links in order to validate the last one
-                        const hashLinks = hlStrings.slice(-2).map((hlString) => {
-                            return keyssi.parse(hlString);
-                        });
-
-                        const latestHashLink = hashLinks.pop();
-                        const prevHashLink = hashLinks.pop();
-                        
-                        const validHL = verifySignature(keySSI, latestHashLink, prevHashLink);
-                        
-                        if (!validHL) {
-                            throw new Error('Failed to verify signature');
-                        }
-
-                        return latestHashLink;
-                    });
-                });
-        };
-
-        const runnerCallback = (error, result) => {
-            if (error && error.message === NO_VERSIONS_ERROR) {
-                // the requested anchor doesn't exist on any of the queried anchoring services,
-                // so return undefined in order to not break the existing code in this situation
-                return callback(null, undefined);
+            if (!validHL) {
+                throw new Error('Failed to verify signature');
             }
 
-            callback(error, result);
-        }
-
-        promiseRunner.runOneSuccessful(anchoringServicesArray, fetchAnchor, runnerCallback, new Error("get Anchoring Service"));
+            return latestHashLink;
+        });
     });
+    return fnc(keySSI, authToken, callback);
 };
 
 /**
@@ -200,9 +158,10 @@ const addVersion = (SSICapableOfSigning, newSSI, lastSSI, zkpValue, callback) =>
                 zkp: zkpValue
             };
 
+            const anchorAction = newSSI ? "append-to-anchor" : "create-anchor";
+
             const addAnchor = (service) => {
                 return new Promise((resolve, reject) => {
-                    const anchorAction = newSSI ? "append-to-anchor" : "create-anchor";
                     const putResult = doPut(`${service}/anchor/${dlDomain}/${anchorAction}/${anchorId}`, JSON.stringify(body), (err, data) => {
                         if (err) {
                             return reject({
@@ -220,7 +179,7 @@ const addVersion = (SSICapableOfSigning, newSSI, lastSSI, zkpValue, callback) =>
                 })
             };
 
-            promiseRunner.runOneSuccessful(anchoringServicesArray, addAnchor, callback, new Error("Storing a brick"));
+            promiseRunner.runOneSuccessful(anchoringServicesArray, addAnchor, callback, new Error(`Failed during execution of ${anchorAction}`));
         });
     });
 };
@@ -270,16 +229,6 @@ const appendToAnchor = (dsuKeySSI, newShlSSI, previousShlSSI, zkpValue, callback
 const transferTokenOwnership = (nftKeySSI, ownershipSSI, callback) => {
     // TODO: to be implemented
     callContractMethod(domain, "transferTokenOwnership", ...args);
-}
-
-const getAllVersions = (keySSI, authToken, callback) => {
-    versions(keySSI, authToken, callback);
-}
-
-// This should be called "getLatestVersion" but we already have
-// such a method
-const getLastVersion = (keySSI, authToken, callback) => {
-    latestVersion(keySSI, authToken, callback);
 }
 
 const getLatestVersion = (domain, ...args) => {
