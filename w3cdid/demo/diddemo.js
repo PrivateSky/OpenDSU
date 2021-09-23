@@ -2,6 +2,9 @@
 
 function DemoPKDocument(identifier){
     this.sign = function(hash, callback){
+        // Convert the hash to a Buffer instance in order to
+        // remain compatible with the other DID document types
+        hash = Buffer.from(hash);
         if (typeof callback === 'function') {
             return callback(undefined, hash);
         }
@@ -9,6 +12,9 @@ function DemoPKDocument(identifier){
     };
 
     this.verify = function(hash, signature, callback){
+        if (Buffer.isBuffer(signature)) {
+            signature = signature.toString();
+        }
         callback(undefined, hash == signature);
     };
 
