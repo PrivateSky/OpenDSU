@@ -24,5 +24,5 @@ assert.callback('Initialise security context test', (testFinished) => {
 
         testFinished();
     });
-}, 5000);
+}, 5000000);
 

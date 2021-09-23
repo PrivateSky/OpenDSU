@@ -58,8 +58,8 @@ function Enclave_Mixin(target, did) {
         });
     };
 
-    target.getDID = () => {
-        return did;
+    target.getDID = (callback) => {
+        callback(undefined, did);
     }
 
     target.insertRecord = (forDID, table, pk, plainRecord, encryptedRecord, callback) => {

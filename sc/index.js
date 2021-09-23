@@ -202,7 +202,7 @@ function SecurityContext() {
         enclave = getEnclaveInstance(enclaveType);
         enclave.on("initialised", async () => {
             if (typeof enclaveDID === "undefined") {
-                enclaveDID = enclave.getDID();
+                enclaveDID = await $$.promisify(enclave.getDID)();
                 try {
                     await $$.promisify(config.setEnv)(constants.ENCLAVE_DID, enclaveDID)
                 } catch (e) {
@@ -342,9 +342,15 @@ const getSecurityContext = () => {
     return $$.sc;
 };
 
+const refreshSecurityContext = () => {
+    $$.sc = new SecurityContext();
+    return $$.sc;
+};
+
 module.exports = {
     getMainDSU,
     setMainDSU,
     getVaultDomain,
-    getSecurityContext
+    getSecurityContext,
+    refreshSecurityContext
 };

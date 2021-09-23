@@ -1,10 +1,9 @@
 const {createOpenDSUErrorWrapper} = require("../../error");
 
 function ProxyMixin(target) {
-    const openDSU = require("opendsu");
-    const commandNames = require("./lib/commandsNames");
-    const {createCommandObject} = require("./lib/createCommandObject");
-
+    const commandNames = require("./lib/commandsNames");` `
+    const ObservableMixin = require("../../utils/ObservableMixin");
+    ObservableMixin(target);
     target.insertRecord = (forDID, table, pk, plainRecord, encryptedRecord, callback) => {
         target.__putCommandObject(commandNames.INSERT_RECORD, forDID, table, pk, plainRecord, encryptedRecord, callback);
     };

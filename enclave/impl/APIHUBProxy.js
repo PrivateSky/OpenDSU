@@ -6,22 +6,28 @@ function APIHUBProxy(domain, did) {
     const http = openDSU.loadAPI("http");
     const system = openDSU.loadAPI("system");
     const w3cDID = openDSU.loadAPI("w3cdid");
+    const scAPI = openDSU.loadAPI("sc");
     const CryptoSkills = w3cDID.CryptographicSkills;
 
     const ProxyMixin = require("./ProxyMixin");
     ProxyMixin(this);
     let url;
     const init = async () => {
+        if (typeof domain === "undefined") {
+            domain = await $$.promisify(scAPI.getVaultDomain)();
+        }
+
         if (typeof did === "undefined") {
             did = CryptoSkills.applySkill("key", CryptoSkills.NAMES.CREATE_DID_DOCUMENT).getIdentifier();
         }
 
         url = `${system.getBaseURL()}/runEnclaveCommand/${domain}/${did}`;
         this.finishInitialisation();
+        this.dispatchEvent("initialised");
     }
 
-    this.getDID = () => {
-        return did;
+    this.getDID = (callback) => {
+        callback(undefined, did);
     }
 
     this.__putCommandObject = (commandName, ...args) => {
@@ -31,7 +37,7 @@ function APIHUBProxy(domain, did) {
     }
 
     const bindAutoPendingFunctions = require(".././../utils/BindAutoPendingFunctions").bindAutoPendingFunctions;
-    bindAutoPendingFunctions(this, "__putCommandObject", "getDID");
+    bindAutoPendingFunctions(this, "__putCommandObject");
     init();
 }
 

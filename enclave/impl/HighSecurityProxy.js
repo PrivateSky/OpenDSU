@@ -22,8 +22,8 @@ function HighSecurityProxy(domain, did) {
         this.finishInitialisation();
     }
 
-    this.getDID = () => {
-        return did;
+    this.getDID = (callback) => {
+        callback(undefined, did);
     }
 
     this.__putCommandObject = (commandName, ...args) => {
@@ -41,7 +41,7 @@ function HighSecurityProxy(domain, did) {
     }
 
     const bindAutoPendingFunctions = require(".././../utils/BindAutoPendingFunctions").bindAutoPendingFunctions;
-    bindAutoPendingFunctions(this, "__putCommandObject", "getDID");
+    bindAutoPendingFunctions(this, "__putCommandObject");
     init();
 }
 

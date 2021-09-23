@@ -20,19 +20,16 @@ assert.callback('ApihubProxy test', (testFinished) => {
         const apihubProxy = enclaveAPI.initialiseAPIHUBProxy("default");
         const TABLE = "test_table";
         const addedRecord = {data: 1};
-        setTimeout(async () => {
-            try {
-                await $$.promisify(apihubProxy.insertRecord)("some_did", TABLE, "pk1", addedRecord, addedRecord);
-                const record = await $$.promisify(apihubProxy.getRecord)("some_did", TABLE, "pk1");
-                const enclaveDID = apihubProxy.getDID();
-                console.log(enclaveDID)
-                assert.objectsAreEqual(record, addedRecord, "Records do not match");
-            } catch (e) {
-                return console.log(e);
-            }
-
+        try {
+            await $$.promisify(apihubProxy.insertRecord)("some_did", TABLE, "pk1", addedRecord, addedRecord);
+            const record = await $$.promisify(apihubProxy.getRecord)("some_did", TABLE, "pk1");
+            const enclaveDID = await $$.promisify(apihubProxy.getDID)();
+            console.log(enclaveDID)
+            assert.objectsAreEqual(record, addedRecord, "Records do not match");
             testFinished();
-        }, 1000)
+        } catch (e) {
+            return console.log(e);
+        }
     });
 }, 20000);
 

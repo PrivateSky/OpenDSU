@@ -3,9 +3,9 @@ function WalletDBEnclave(did) {
     const db = openDSU.loadAPI("db")
     const scAPI = openDSU.loadAPI("sc");
     const resolver = openDSU.loadAPI("resolver");
+    const config = openDSU.loadAPI("config");
     const w3cDID = openDSU.loadAPI("w3cdid");
     const DB_NAME = "walletdb_enclave";
-    const ENCLAVE_DSU_KEY_SSI_PATH = ".enclave";
     const EnclaveMixin = require("./Enclave_Mixin");
     EnclaveMixin(this, did);
     let enclaveDSU;
@@ -20,7 +20,7 @@ function WalletDBEnclave(did) {
         }
 
         try {
-            enclaveDSUKeySSI = await $$.promisify(mainDSU.readFile)(ENCLAVE_DSU_KEY_SSI_PATH);
+            enclaveDSUKeySSI = await $$.promisify(config.getEnv)(openDSU.constants.ENCLAVE_KEY_SSI);
             enclaveDSUKeySSI = enclaveDSUKeySSI.toString();
         } catch (e) {
             let vaultDomain;
@@ -43,7 +43,7 @@ function WalletDBEnclave(did) {
                 throw createOpenDSUErrorWrapper(`Failed to get enclave DSU KeySSI`, e);
             }
             try {
-                await $$.promisify(mainDSU.writeFile)(ENCLAVE_DSU_KEY_SSI_PATH, enclaveDSUKeySSI);
+                await $$.promisify(config.setEnv)(openDSU.constants.ENCLAVE_KEY_SSI, enclaveDSUKeySSI);
             } catch (e) {
                 throw createOpenDSUErrorWrapper(`Failed to store enclave DSU KeySSI`, e);
             }
@@ -56,8 +56,12 @@ function WalletDBEnclave(did) {
         })
     };
 
+    this.getKeySSI = (callback) => {
+        callback(undefined, enclaveDSUKeySSI);
+    }
+
     const bindAutoPendingFunctions = require("../../utils/BindAutoPendingFunctions").bindAutoPendingFunctions;
-    bindAutoPendingFunctions(this, ["on", "off", "getDID", "beginBatch"]);
+    bindAutoPendingFunctions(this, ["on", "off", "beginBatch"]);
 
     init();
 }
