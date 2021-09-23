@@ -71,7 +71,11 @@ async function getNoncedCommandBody(domain, contract, method, params, blockNumbe
     commandBody.signerDID = signerDID.getIdentifier();
 
     const hash = getCommandHash(commandBody);
-    const signature = await $$.promisify(signerDID.sign)(hash);
+    let signature = await $$.promisify(signerDID.sign)(hash);
+    
+    if (Buffer.isBuffer(signature)) {
+        signature = signature.toString('hex')
+    }
 
     commandBody.requesterSignature = signature;
 
