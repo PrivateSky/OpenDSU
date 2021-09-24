@@ -19,6 +19,7 @@ module.exports = {
 	ENVIRONMENT_PATH: "/environment.json",
 	SECURITY_CONTEXT_KEY_SSI: "scKeySSI",
 	VAULT_DOMAIN: "domain",
+	SUBDOMAIN: "subdomain",
 	ENCLAVE_TYPE: "enclaveType",
 	ENCLAVE_DID: "enclaveDID",
 	ENCLAVE_KEY_SSI: ".enclave",

@@ -6,6 +6,7 @@
 const constants = require("../moduleConstants");
 const openDSU = require("opendsu");
 const http = openDSU.loadAPI("http")
+const config = openDSU.loadAPI("config")
 const keySSISpace = openDSU.loadAPI("keyssi");
 const resolver = openDSU.loadAPI("resolver");
 const {getURLForSsappContext} = require("../utils/getURLForSsappContext");
@@ -313,27 +314,31 @@ function SecurityContext() {
 }
 
 const getVaultDomain = (callback) => {
-    getMainDSU((err, mainDSU) => {
-        if (err) {
-            return callback(err);
-        }
-
-        mainDSU.readFile(constants.ENVIRONMENT_PATH, (err, environment) => {
-            if (err) {
-                return callback(createOpenDSUErrorWrapper(`Failed to read environment file`, err));
-            }
-
-            try {
-                environment = JSON.parse(environment.toString())
-            } catch (e) {
-                return callback(createOpenDSUErrorWrapper(`Failed to parse environment data`, e));
-            }
-
-            callback(undefined, environment.domain);
-        })
-    })
+    config.getEnv(constants.VAULT_DOMAIN, callback);
+    // getMainDSU((err, mainDSU) => {
+    //     if (err) {
+    //         return callback(err);
+    //     }
+    //
+    //     mainDSU.readFile(constants.ENVIRONMENT_PATH, (err, environment) => {
+    //         if (err) {
+    //             return callback(createOpenDSUErrorWrapper(`Failed to read environment file`, err));
+    //         }
+    //
+    //         try {
+    //             environment = JSON.parse(environment.toString())
+    //         } catch (e) {
+    //             return callback(createOpenDSUErrorWrapper(`Failed to parse environment data`, e));
+    //         }
+    //
+    //         callback(undefined, environment.domain);
+    //     })
+    // })
 }
 
+const getSubdomain = (callback) => {
+    config.getEnv(constants.SUBDOMAIN, callback);
+}
 const getSecurityContext = () => {
     if (typeof $$.sc === "undefined") {
         $$.sc = new SecurityContext();
@@ -352,5 +357,6 @@ module.exports = {
     setMainDSU,
     getVaultDomain,
     getSecurityContext,
-    refreshSecurityContext
+    refreshSecurityContext,
+    getSubdomain
 };
