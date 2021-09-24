@@ -21,9 +21,9 @@ const buildGetVersionFunction = function(processingFunction){
         const dlDomain = keySSI.getDLDomain();
         const anchorId = keySSI.getAnchorId();
 
-        if (dlDomain === constants.DOMAINS.VAULT && isValidVaultCache()) {
-            return cachedAnchoring.versions(anchorId, callback);
-        }
+        // if (dlDomain === constants.DOMAINS.VAULT && isValidVaultCache()) {
+        //     return cachedAnchoring.versions(anchorId, callback);
+        // }
 
         bdns.getAnchoringServices(dlDomain, function (err, anchoringServicesArray) {
             if (err) {
@@ -133,9 +133,9 @@ const addVersion = (SSICapableOfSigning, newSSI, lastSSI, zkpValue, callback) =>
     const dlDomain = SSICapableOfSigning.getDLDomain();
     const anchorId = SSICapableOfSigning.getAnchorId();
 
-    if (dlDomain === constants.DOMAINS.VAULT && isValidVaultCache()) {
-        return cachedAnchoring.addVersion(anchorId, newSSI ? newSSI.getIdentifier() : undefined, callback);
-    }
+    // if (dlDomain === constants.DOMAINS.VAULT && isValidVaultCache()) {
+    //     return cachedAnchoring.addVersion(anchorId, newSSI ? newSSI.getIdentifier() : undefined, callback);
+    // }
 
     bdns.getAnchoringServices(dlDomain, (err, anchoringServicesArray) => {
         if (err) {
