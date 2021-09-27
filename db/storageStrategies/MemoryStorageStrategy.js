@@ -186,6 +186,18 @@ function MemoryStorageStrategy(){
         }
     };
 
+    this.beginBatch = () => {
+
+    }
+
+    this.commitBatch = (callback) => {
+        callback(undefined);
+    }
+
+    this.cancelBatch = (callback) => {
+        callback(undefined);
+    }
+
     setTimeout(()=>{
         this.dispatchEvent("initialised");
     })
