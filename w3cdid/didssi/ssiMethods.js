@@ -1,3 +1,5 @@
+const GroupDIDDocument = require("./GroupDID_Document");
+
 function SReadDID_Method() {
     let SReadDID_Document = require("./SReadDID_Document");
     this.create = (seedSSI, callback) => {
@@ -73,11 +75,23 @@ function GroupDID_Method() {
     const GroupDIDDocument = require("./GroupDID_Document");
 
     this.create = (domain, groupName, callback) => {
-        callback(null, GroupDIDDocument.initiateDIDDocument(domain, groupName));
+        const groupDIDDocument = GroupDIDDocument.initiateDIDDocument(domain, groupName);
+        groupDIDDocument.on("error", (err) => {
+            return callback(err);
+        })
+        groupDIDDocument.on("initialised", () => {
+            return callback(undefined, groupDIDDocument);
+        })
     }
 
     this.resolve = (tokens, callback) => {
-        callback(null, GroupDIDDocument.createDIDDocument(tokens))
+        const groupDIDDocument = GroupDIDDocument.createDIDDocument(tokens);
+        groupDIDDocument.on("error", (err) => {
+            return callback(err);
+        })
+        groupDIDDocument.on("initialised", () => {
+            return callback(undefined, groupDIDDocument);
+        })
     }
 }
 

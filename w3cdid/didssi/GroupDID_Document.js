@@ -1,12 +1,12 @@
 const methodsNames = require("../didMethodsNames");
 
-function GroupDID_Document(domain, groupName) {
+function GroupDID_Document(domain, groupName, isInitialisation) {
     if (typeof domain === "undefined" || typeof groupName === "undefined") {
         throw Error(`Invalid number of arguments. Expected blockchain domain and group name.`);
     }
 
     let mixin = require("./ConstDID_Document_Mixin");
-    mixin(this, domain, groupName);
+    mixin(this, domain, groupName, isInitialisation);
     const bindAutoPendingFunctions = require("../../utils/BindAutoPendingFunctions").bindAutoPendingFunctions;
     const openDSU = require("opendsu");
     const MEMBERS_FILE = "members";
@@ -187,7 +187,8 @@ function GroupDID_Document(domain, groupName) {
         });
     };
 
-    bindAutoPendingFunctions(this, ["init", "getIdentifier", "getGroupName", "on", "off", "addPublicKey"]);
+    bindAutoPendingFunctions(this, ["init", "getIdentifier", "getGroupName", "addPublicKey", "on", "off", "dispatchEvent", "removeAllObservers"]);
+
     this.init();
     return this;
 }
@@ -198,6 +199,6 @@ module.exports = {
         return new GroupDID_Document(domain, groupName)
     },
     createDIDDocument: function (tokens) {
-        return new GroupDID_Document(tokens[3], tokens[4]);
+        return new GroupDID_Document(tokens[3], tokens[4], false);
     }
 };
