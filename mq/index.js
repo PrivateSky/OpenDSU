@@ -6,6 +6,7 @@ let http = require("../http");
 let bdns = require("../bdns")
 
 function send(keySSI, message, callback) {
+    console.log("Send method from OpenDSU.loadApi('mq') is absolute. Adapt you code to use the new getMQHandlerForDID");
     bdns.getAnchoringServices(keySSI, (err, endpoints) => {
         if (err) {
             return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to get anchoring services from bdns`, err));
@@ -26,6 +27,7 @@ function send(keySSI, message, callback) {
 let requests = {};
 
 function getHandler(keySSI, timeout) {
+    console.log("getHandler method from OpenDSU.loadApi('mq') is absolute. Adapt you code to use the new getMQHandlerForDID");
     let obs = require("../utils/observable").createObservable();
     bdns.getMQEndpoints(keySSI, (err, endpoints) => {
         if (err || endpoints.length === 0) {
@@ -69,13 +71,16 @@ function getHandler(keySSI, timeout) {
 }
 
 function unsubscribe(keySSI, observable) {
+    console.log("unsubscribe method from OpenDSU.loadApi('mq') is absolute. Adapt you code to use the new getMQHandlerForDID");
     http.unpoll(requests[observable]);
 }
 
-function MQHandler(didDocument, domain) {
+function MQHandler(didDocument, domain, pollingTimeout) {
+    let timeout = pollingTimeout || 1000;
     let token;
     let expiryTime;
     let queueName = didDocument.getHash();
+
     domain = domain || didDocument.getDomain();
 
     function getURL(queueName, action, signature, messageID, callback) {
@@ -160,12 +165,20 @@ function MQHandler(didDocument, domain) {
 
     }
 
-    function consumeMessage(action, callback) {
+    function consumeMessage(action, waitForMore, callback) {
+        if(typeof waitForMore === "function"){
+            callback = waitForMore;
+            waitForMore = false;
+        }
+        callback.__requestInProgress = true;
         ensureAuth((err, token) => {
             if (err) {
                 return callback(err);
             }
-
+            //somebody called abort before the ensureAuth resolved
+            if(!callback.__requestInProgress){
+                return;
+            }
             didDocument.sign(token, (err, signature) => {
                 if (err) {
                     return callback(createOpenDSUErrorWrapper(`Failed to sign token`, err));
@@ -175,11 +188,31 @@ function MQHandler(didDocument, domain) {
                     if (err) {
                         return callback(err);
                     }
+                    let originalCb = callback;
                     callback = $$.makeSaneCallback(callback);
-                    http.fetch(url, {headers: {Authorization: token}})
-                        .then(response => response.json())
-                        .then(data => callback(undefined, data))
-                        .catch(err => callback(err));
+
+                    let options = {headers: {Authorization: token}};
+                    function makeRequest(){
+                        let request = http.poll(url, options, timeout);
+                        originalCb.__requestInProgress = request;
+
+                        request.then(response => response.json())
+                            .then((response) => {
+                                //the return value of the listing callback helps to stop the polling mechanism in case that
+                                //we need to stop to listen for more messages
+                                let stop = callback(undefined, response);
+                                if(waitForMore && !stop){
+                                    makeRequest();
+                                }
+                            }).catch((err) => {
+                                callback(err);
+                            });
+                    }
+                    //somebody called abort before we arrived here
+                    if(!originalCb.__requestInProgress){
+                        return;
+                    }
+                    makeRequest();
                 })
             })
         })
@@ -187,19 +220,40 @@ function MQHandler(didDocument, domain) {
 
     this.previewMessage = (callback) => {
         consumeMessage("get", callback);
-    }
+    };
 
     this.readMessage = (callback) => {
         consumeMessage("take", callback);
     };
 
+    this.readAndWaitForMessages = (callback) => {
+        consumeMessage("take", true, callback);
+    };
+
+    this.abort = (callback)=>{
+        let request = callback.__requestInProgress;
+        //if we have an object it means that a http.poll request is in progress
+        if(typeof request === "object"){
+            request.abort();
+            callback.__requestInProgress = undefined;
+            delete callback.__requestInProgress;
+            console.log("A request was aborted programmatically");
+        }else{
+            //if we have true value it means that an ensureAuth is in progress
+            if(request){
+                callback.__requestInProgress = false;
+                console.log("A request was aborted programmatically");
+            }
+        }
+    }
+
     this.deleteMessage = (messageID, callback) => {
         throw Error("Not implemented");
-    }
+    };
 }
 
-function getMQHandlerForDID(didDocument, domain) {
-    return new MQHandler(didDocument, domain);
+function getMQHandlerForDID(didDocument, domain, timeout) {
+    return new MQHandler(didDocument, domain, timeout);
 }
 
 module.exports = {
