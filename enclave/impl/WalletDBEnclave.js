@@ -4,7 +4,6 @@ function WalletDBEnclave(did) {
     const scAPI = openDSU.loadAPI("sc");
     const resolver = openDSU.loadAPI("resolver");
     const config = openDSU.loadAPI("config");
-    const w3cDID = openDSU.loadAPI("w3cdid");
     const DB_NAME = "walletdb_enclave";
     const EnclaveMixin = require("./Enclave_Mixin");
     EnclaveMixin(this, did);
@@ -12,13 +11,6 @@ function WalletDBEnclave(did) {
     let enclaveDSUKeySSI;
 
     const init = async () => {
-        let mainDSU;
-        try {
-            mainDSU = await $$.promisify(scAPI.getMainDSU)();
-        } catch (e) {
-            throw createOpenDSUErrorWrapper(`Failed to get main DSU`, e);
-        }
-
         try {
             enclaveDSUKeySSI = await $$.promisify(config.getEnv)(openDSU.constants.ENCLAVE_KEY_SSI);
             enclaveDSUKeySSI = enclaveDSUKeySSI.toString();
@@ -35,7 +27,6 @@ function WalletDBEnclave(did) {
             } catch (e) {
                 throw createOpenDSUErrorWrapper(`Failed to create Seed DSU`, e);
             }
-
 
             try {
                 enclaveDSUKeySSI = await $$.promisify(enclaveDSU.getKeySSIAsString)();

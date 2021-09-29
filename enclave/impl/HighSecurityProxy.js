@@ -6,12 +6,16 @@ function HighSecurityProxy(domain, did) {
     const w3cDID = openDSU.loadAPI("w3cdid");
     const http = openDSU.loadAPI("http");
     const crypto = openDSU.loadAPI("crypto");
+    const scAPI = openDSU.loadAPI("sc");
     const CryptoSkills = w3cDID.CryptographicSkills;
     let didDocument;
     const ProxyMixin = require("./ProxyMixin");
     ProxyMixin(this);
 
     const init = async () => {
+        if (typeof domain === "undefined") {
+            domain = await $$.promisify(scAPI.getVaultDomain)();
+        }
         if (typeof did === "undefined") {
             didDocument = CryptoSkills.applySkill("key", CryptoSkills.NAMES.CREATE_DID_DOCUMENT);
             did = didDocument.getIdentifier();

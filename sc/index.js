@@ -58,7 +58,7 @@ function getMainDSUForNode(callback) {
                 }
                 setMainDSU(seedDSU);
 
-                seedDSU.writeFile("/environment.json", JSON.stringify({domain: "vault"}), (err) => {
+                seedDSU.writeFile("/environment.json", JSON.stringify({vaultDomain: "vault", didDomain: "vault"}), (err) => {
                     if (err) {
                         return callback(err);
                     }
@@ -315,29 +315,10 @@ function SecurityContext() {
 
 const getVaultDomain = (callback) => {
     config.getEnv(constants.VAULT_DOMAIN, callback);
-    // getMainDSU((err, mainDSU) => {
-    //     if (err) {
-    //         return callback(err);
-    //     }
-    //
-    //     mainDSU.readFile(constants.ENVIRONMENT_PATH, (err, environment) => {
-    //         if (err) {
-    //             return callback(createOpenDSUErrorWrapper(`Failed to read environment file`, err));
-    //         }
-    //
-    //         try {
-    //             environment = JSON.parse(environment.toString())
-    //         } catch (e) {
-    //             return callback(createOpenDSUErrorWrapper(`Failed to parse environment data`, e));
-    //         }
-    //
-    //         callback(undefined, environment.domain);
-    //     })
-    // })
 }
 
-const getSubdomain = (callback) => {
-    config.getEnv(constants.SUBDOMAIN, callback);
+const getDIDDomain = (callback) => {
+    config.getEnv(constants.DID_DOMAIN, callback);
 }
 const getSecurityContext = () => {
     if (typeof $$.sc === "undefined") {
@@ -358,5 +339,5 @@ module.exports = {
     getVaultDomain,
     getSecurityContext,
     refreshSecurityContext,
-    getSubdomain
+    getDIDDomain
 };
