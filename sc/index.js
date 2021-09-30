@@ -314,7 +314,14 @@ function SecurityContext() {
 }
 
 const getVaultDomain = (callback) => {
-    config.getEnv(constants.VAULT_DOMAIN, callback);
+    config.getEnv(constants.VAULT_DOMAIN, (err, vaultDomain)=>{
+        if (err || !vaultDomain) {
+            console.log(`The property <${constants.DOMAIN}> is deprecated in environment.js. Use the property <${constants.VAULT_DOMAIN}> instead`)
+            return config.getEnv(constants.DOMAIN, callback);
+        }
+
+        callback(undefined, vaultDomain);
+    });
 }
 
 const getDIDDomain = (callback) => {
