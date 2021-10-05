@@ -80,7 +80,7 @@ function W3CDID_Mixin(target) {
         const mqHandler = require("opendsu")
             .loadAPI("mq")
             .getMQHandlerForDID(target);
-        mqHandler.readMessage((err, encryptedMessage) => {
+        mqHandler.previewMessage((err, encryptedMessage) => {
             if (err) {
                 return callback(
                     createOpenDSUErrorWrapper(`Failed to read message`, err)
@@ -93,7 +93,13 @@ function W3CDID_Mixin(target) {
             } catch (e) {
                 return callback(e);
             }
-            target.decryptMessage(message, callback);
+
+            mqHandler.deleteMessage(encryptedMessage.messageId, (err) => {
+                if (err) {
+                    return callback(createOpenDSUErrorWrapper(`Failed to read message`, err));
+                }
+                target.decryptMessage(message, callback);
+            })
         });
     };
 

@@ -166,7 +166,7 @@ function MQHandler(didDocument, domain, pollingTimeout) {
     }
 
     function consumeMessage(action, waitForMore, callback) {
-        if(typeof waitForMore === "function"){
+        if (typeof waitForMore === "function") {
             callback = waitForMore;
             waitForMore = false;
         }
@@ -176,7 +176,7 @@ function MQHandler(didDocument, domain, pollingTimeout) {
                 return callback(err);
             }
             //somebody called abort before the ensureAuth resolved
-            if(!callback.__requestInProgress){
+            if (!callback.__requestInProgress) {
                 return;
             }
             didDocument.sign(token, (err, signature) => {
@@ -192,7 +192,8 @@ function MQHandler(didDocument, domain, pollingTimeout) {
                     callback = $$.makeSaneCallback(callback);
 
                     let options = {headers: {Authorization: token}};
-                    function makeRequest(){
+
+                    function makeRequest() {
                         let request = http.poll(url, options, timeout);
                         originalCb.__requestInProgress = request;
 
@@ -201,15 +202,16 @@ function MQHandler(didDocument, domain, pollingTimeout) {
                                 //the return value of the listing callback helps to stop the polling mechanism in case that
                                 //we need to stop to listen for more messages
                                 let stop = callback(undefined, response);
-                                if(waitForMore && !stop){
+                                if (waitForMore && !stop) {
                                     makeRequest();
                                 }
                             }).catch((err) => {
-                                callback(err);
-                            });
+                            callback(err);
+                        });
                     }
+
                     //somebody called abort before we arrived here
-                    if(!originalCb.__requestInProgress){
+                    if (!originalCb.__requestInProgress) {
                         return;
                     }
                     makeRequest();
@@ -230,17 +232,17 @@ function MQHandler(didDocument, domain, pollingTimeout) {
         consumeMessage("take", true, callback);
     };
 
-    this.abort = (callback)=>{
+    this.abort = (callback) => {
         let request = callback.__requestInProgress;
         //if we have an object it means that a http.poll request is in progress
-        if(typeof request === "object"){
+        if (typeof request === "object") {
             request.abort();
             callback.__requestInProgress = undefined;
             delete callback.__requestInProgress;
             console.log("A request was aborted programmatically");
-        }else{
+        } else {
             //if we have true value it means that an ensureAuth is in progress
-            if(request){
+            if (request) {
                 callback.__requestInProgress = false;
                 console.log("A request was aborted programmatically");
             }
@@ -248,7 +250,29 @@ function MQHandler(didDocument, domain, pollingTimeout) {
     }
 
     this.deleteMessage = (messageID, callback) => {
-        throw Error("Not implemented");
+        ensureAuth((err, token) => {
+            if (err) {
+                return callback(err);
+            }
+            didDocument.sign(token, (err, signature) => {
+                if (err) {
+                    return callback(createOpenDSUErrorWrapper(`Failed to sign token`, err));
+                }
+
+                getURL(queueName, "delete", signature.toString("hex"), messageID, (err, url) => {
+                    if (err) {
+                        return callback(err);
+                    }
+
+                    http.fetch(url, {
+                        method: "DELETE",
+                        headers: {"Authorization": token}
+                    })
+                        .then(response => callback())
+                        .catch(e => callback(e));
+                });
+            });
+        });
     };
 }
 
