@@ -58,7 +58,10 @@ function getMainDSUForNode(callback) {
                 }
                 setMainDSU(seedDSU);
 
-                seedDSU.writeFile("/environment.json", JSON.stringify({vaultDomain: "vault", didDomain: "vault"}), (err) => {
+                seedDSU.writeFile("/environment.json", JSON.stringify({
+                    vaultDomain: "vault",
+                    didDomain: "vault"
+                }), (err) => {
                     if (err) {
                         return callback(err);
                     }
@@ -130,90 +133,84 @@ function SecurityContext() {
     const config = openDSU.loadAPI("config");
     const enclaveAPI = openDSU.loadAPI("enclave");
     let enclave;
+    let sharedEnclave;
     let storageDSU;
     let scDSUKeySSI;
     let mainDID;
 
     let initialised = false;
 
-    const getEnclaveInstance = (enclaveType) => {
-        switch (enclaveType) {
-            case constants.ENCLAVE_TYPES.WALLET_DB_ENCLAVE:
-                return enclaveAPI.initialiseWalletDBEnclave();
-            case constants.ENCLAVE_TYPES.APIHUB_ENCLAVE:
-                return enclaveAPI.initialiseAPIHUBProxy();
-            case constants.ENCLAVE_TYPES.HIGH_SECURITY_ENCLAVE:
-                return enclaveAPI.initialiseHighSecurityProxy();
-            case constants.ENCLAVE_TYPES.MEMORY_ENCLAVE:
-                return enclaveAPI.initialiseMemoryEnclave();
-            default:
-                throw Error(`Invalid enclave type ${enclaveType}`)
+    const initSharedEnclave = async () => {
+        let sharedEnclaveType;
+        let sharedEnclaveKeySSI;
+        try {
+            sharedEnclaveType = await $$.promisify(config.getEnv)(constants.SHARED_ENCLAVE.TYPE);
+        } catch (e) {
+            return;
         }
-    };
+        if (!sharedEnclaveType) {
+            return;
+        }
+        try {
+            sharedEnclaveKeySSI = await $$.promisify(config.getEnv)(constants.SHARED_ENCLAVE.KEY_SSI);
+        } catch (e) {
+            if (sharedEnclaveType === constants.ENCLAVE_TYPES.WALLET_DB_ENCLAVE) {
+                throw Error(`A key SSI should be provided when creating a WalletDB enclave`);
+            }
+        }
+
+        sharedEnclave = enclaveAPI.createEnclave(sharedEnclaveType, sharedEnclaveKeySSI);
+        return sharedEnclave;
+    }
 
     const init = async () => {
         let enclaveType;
         let enclaveDID;
         try {
-            enclaveType = await $$.promisify(config.getEnv)(constants.ENCLAVE_TYPE);
+            enclaveType = await $$.promisify(config.getEnv)(constants.MAIN_ENCLAVE.TYPE);
         } catch (e) {
             throw createOpenDSUErrorWrapper(`Failed to get env enclaveType`, e);
         }
 
         if (typeof enclaveType === "undefined") {
             enclaveType = constants.ENCLAVE_TYPES.MEMORY_ENCLAVE;
-            try {
-                await $$.promisify(config.setEnv)(constants.ENCLAVE_TYPE, enclaveType)
-            } catch (e) {
-                throw createOpenDSUErrorWrapper(`Failed to set env enclaveType`, e);
-            }
         }
 
         try {
-            enclaveDID = await $$.promisify(config.getEnv)(constants.ENCLAVE_DID);
+            enclaveDID = await $$.promisify(config.getEnv)(constants.MAIN_ENCLAVE.DID);
         } catch (e) {
             throw createOpenDSUErrorWrapper(`Failed to get env enclaveDID`, e);
         }
 
-        try {
-            scDSUKeySSI = await $$.promisify(config.getEnv)(constants.SECURITY_CONTEXT_KEY_SSI);
-        } catch (e) {
-            throw createOpenDSUErrorWrapper(`Failed to get env scKeySSI`, e);
-        }
-
-
-        if (typeof scDSUKeySSI === "undefined") {
-            try {
-                const vaultDomain = await $$.promisify(getVaultDomain)();
-                const seedDSU = await $$.promisify(resolver.createSeedDSU)(vaultDomain);
-                scDSUKeySSI = await $$.promisify(seedDSU.getKeySSIAsString)();
-                storageDSU = seedDSU;
-                await $$.promisify(config.setEnv)(constants.SECURITY_CONTEXT_KEY_SSI, scDSUKeySSI)
-            } catch (e) {
-                throw createOpenDSUErrorWrapper(`Failed to create SeedDSU for sc`, e);
-            }
-        } else {
-            try {
-                storageDSU = await $$.promisify(resolver.loadDSU)(scDSUKeySSI);
-            } catch (e) {
-                throw createOpenDSUErrorWrapper(`Failed to load sc DSU`, e);
-            }
-        }
-
-        enclave = getEnclaveInstance(enclaveType);
+        enclave = enclaveAPI.createEnclave(enclaveType);
+        await initSharedEnclave();
         enclave.on("initialised", async () => {
             if (typeof enclaveDID === "undefined") {
                 enclaveDID = await $$.promisify(enclave.getDID)();
                 try {
-                    await $$.promisify(config.setEnv)(constants.ENCLAVE_DID, enclaveDID)
+                    await $$.promisify(config.setEnv)(constants.MAIN_ENCLAVE.DID, enclaveDID)
                 } catch (e) {
                     throw createOpenDSUErrorWrapper(`Failed to set env enclaveDID`, e);
                 }
             }
-            initialised = true;
-            this.finishInitialisation();
-            this.dispatchEvent("initialised")
+
+            if (!sharedEnclave) {
+                return finishInit();
+            }
+            if (!sharedEnclave.isInitialised()) {
+                sharedEnclave.on("initialised", () => {
+                    finishInit();
+                });
+            } else {
+                finishInit();
+            }
         });
+    }
+
+    const finishInit = () => {
+        initialised = true;
+        this.finishInitialisation();
+        this.dispatchEvent("initialised")
     }
 
     this.registerDID = (didDocument, callback) => {
@@ -231,13 +228,23 @@ function SecurityContext() {
     this.registerKeySSI = (forDID, keySSI, callback) => {
         const generateUid = require("swarmutils").generateUid;
         const alias = generateUid(10).toString("hex");
-        enclave.storeSeedSSI(forDID, keySSI, alias, err => {
-            if (err) {
-                return callback(err);
-            }
+        if (sharedEnclave) {
+            sharedEnclave.storeSeedSSI(forDID, keySSI, alias, err => {
+                if (err) {
+                    return callback(err);
+                }
 
-            callback(undefined, alias);
-        })
+                callback(undefined, alias);
+            })
+        } else {
+            enclave.storeSeedSSI(forDID, keySSI, alias, err => {
+                if (err) {
+                    return callback(err);
+                }
+
+                callback(undefined, alias);
+            })
+        }
     };
 
     this.signForKeySSI = (forDID, keySSI, data, callback) => {
@@ -277,32 +284,54 @@ function SecurityContext() {
         callback(undefined, storageDSU);
     }
 
-    this.getMainEnclaveDB = (callback) => {
-        const __initMainEnclave = () => {
-            const mainEnclaveDB = {};
-            let asyncDBMethods = ["insertRecord", "updateRecord", "getRecord", "deleteRecord", "filter", "commitBatch", "cancelBatch"];
-            let syncDBMethods = ["beginBatch"]
-            for (let i = 0; i < asyncDBMethods.length; i++) {
-                mainEnclaveDB[asyncDBMethods[i]] = function (...args) {
-                    enclave[asyncDBMethods[i]](mainDID, ...args);
-                }
-
-                mainEnclaveDB[`${asyncDBMethods[i]}Async`] = $$.promisify(mainEnclaveDB[asyncDBMethods[i]]);
+    const wrapEnclave = (enclave) => {
+        const enclaveDB = {};
+        let asyncDBMethods = ["insertRecord", "updateRecord", "getRecord", "deleteRecord", "filter", "commitBatch", "cancelBatch", "getKeySSI"];
+        let syncDBMethods = ["beginBatch"]
+        for (let i = 0; i < asyncDBMethods.length; i++) {
+            enclaveDB[asyncDBMethods[i]] = function (...args) {
+                enclave[asyncDBMethods[i]](mainDID, ...args);
             }
 
-
-            for (let i = 0; i < syncDBMethods.length; i++) {
-                mainEnclaveDB[syncDBMethods[i]] = function (...args) {
-                    enclave[syncDBMethods[i]](mainDID, ...args);
-                }
-            }
-            callback(undefined, mainEnclaveDB);
+            enclaveDB[`${asyncDBMethods[i]}Async`] = $$.promisify(enclaveDB[asyncDBMethods[i]]);
         }
+
+
+        for (let i = 0; i < syncDBMethods.length; i++) {
+            enclaveDB[syncDBMethods[i]] = function (...args) {
+                enclave[syncDBMethods[i]](mainDID, ...args);
+            }
+        }
+
+        return enclaveDB;
+    }
+    this.getMainEnclaveDB = (callback) => {
+        let mainEnclaveDB;
         if (this.isInitialised()) {
-            __initMainEnclave();
+            mainEnclaveDB = wrapEnclave(enclave);
+            callback(undefined, mainEnclaveDB);
         } else {
             enclave.on("initialised", () => {
-                __initMainEnclave()
+                mainEnclaveDB = wrapEnclave(enclave);
+                callback(undefined, mainEnclaveDB);
+            })
+        }
+    }
+
+    this.getSharedEnclaveDB = (callback) => {
+        let sharedEnclaveDB;
+        const __getWrappedEnclave = () => {
+            if (!sharedEnclave) {
+                return callback(Error(`No shared db found`))
+            }
+            sharedEnclaveDB = wrapEnclave(sharedEnclave);
+            callback(undefined, sharedEnclaveDB);
+        }
+        if (this.isInitialised()) {
+            __getWrappedEnclave();
+        } else {
+            enclave.on("initialised", () => {
+                __getWrappedEnclave();
             })
         }
     }
@@ -314,7 +343,7 @@ function SecurityContext() {
 }
 
 const getVaultDomain = (callback) => {
-    config.getEnv(constants.VAULT_DOMAIN, (err, vaultDomain)=>{
+    config.getEnv(constants.VAULT_DOMAIN, (err, vaultDomain) => {
         if (err || !vaultDomain) {
             console.log(`The property <${constants.DOMAIN}> is deprecated in environment.js. Use the property <${constants.VAULT_DOMAIN}> instead`)
             return config.getEnv(constants.DOMAIN, callback);
