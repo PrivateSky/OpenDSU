@@ -30,5 +30,5 @@ assert.callback('WalletDBEnclave test', (testFinished) => {
             return console.log(e);
         }
     });
-}, 5000);
+}, 5000000);
 

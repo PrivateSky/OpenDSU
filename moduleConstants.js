@@ -21,9 +21,16 @@ module.exports = {
 	VAULT_DOMAIN: "vaultDomain",
 	DOMAIN: "domain",
 	DID_DOMAIN: "didDomain",
-	ENCLAVE_TYPE: "enclaveType",
-	ENCLAVE_DID: "enclaveDID",
-	ENCLAVE_KEY_SSI: "enclaveKeySSI",
+	MAIN_ENCLAVE: {
+		TYPE: "enclaveType",
+		DID: "enclaveDID",
+		KEY_SSI: "enclaveKeySSI"
+	},
+	SHARED_ENCLAVE: {
+		TYPE: "sharedEnclaveType",
+		DID: "sharedEnclaveDID",
+		KEY_SSI: "sharedEnclaveKeySSI",
+	},
 	ENCLAVE_TYPES: {
 		WALLET_DB_ENCLAVE: "WalletDBEnclave",
 		MEMORY_ENCLAVE: "MemoryEnclave",

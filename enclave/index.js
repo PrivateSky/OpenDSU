@@ -1,9 +1,8 @@
-const MemoryEnclave = require("./impl/MemoryEnclave");
-const APIHUBProxy = require("./impl/APIHUBProxy");
+const constants = require("../moduleConstants");
 
-function initialiseWalletDBEnclave() {
+function initialiseWalletDBEnclave(keySSI, did) {
     const WalletDBEnclave = require("./impl/WalletDBEnclave");
-    return new WalletDBEnclave();
+    return new WalletDBEnclave(keySSI);
 }
 
 function initialiseMemoryEnclave() {
@@ -24,10 +23,33 @@ function connectEnclave(forDID, enclaveDID, ...args) {
     throw Error("Not implemented");
 }
 
+const enclaveConstructors = {};
+function createEnclave(enclaveType, ...args) {
+    if (typeof enclaveConstructors[enclaveType] !== "function") {
+        throw Error(`No constructor function registered for enclave type ${enclaveType}`);
+    }
+
+    return enclaveConstructors[enclaveType](...args);
+}
+
+function registerEnclave(enclaveType, enclaveConstructor) {
+    if (typeof enclaveConstructors[enclaveType] !== "undefined") {
+        throw Error(`A constructor function already registered for enclave type ${enclaveType}`);
+    }
+    enclaveConstructors[enclaveType] = enclaveConstructor;
+}
+
+registerEnclave(constants.ENCLAVE_TYPES.MEMORY_ENCLAVE, initialiseMemoryEnclave);
+registerEnclave(constants.ENCLAVE_TYPES.WALLET_DB_ENCLAVE, initialiseWalletDBEnclave);
+registerEnclave(constants.ENCLAVE_TYPES.APIHUB_ENCLAVE, initialiseAPIHUBProxy);
+registerEnclave(constants.ENCLAVE_TYPES.HIGH_SECURITY_ENCLAVE, initialiseHighSecurityProxy);
+
 module.exports = {
     initialiseWalletDBEnclave,
     initialiseMemoryEnclave,
     initialiseAPIHUBProxy,
     initialiseHighSecurityProxy,
-    connectEnclave
+    connectEnclave,
+    createEnclave,
+    registerEnclave
 }

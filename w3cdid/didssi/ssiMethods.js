@@ -1,19 +1,30 @@
 const GroupDIDDocument = require("./GroupDID_Document");
 
+function storeDIDInSC(didDocument, callback) {
+    const securityContext = require("opendsu").loadAPI("sc").getSecurityContext();
+        const __registerDID = ()=>{
+            securityContext.registerDID(didDocument, (err) => {
+                if (err) {
+                    return callback(createOpenDSUErrorWrapper(`failed to register did ${didDocument.getIdentifier()} in security context`, err));
+                }
+
+                callback(null, didDocument);
+            })
+        }
+        if(securityContext.isInitialised()){
+            __registerDID();
+        }else {
+            securityContext.on("initialised", ()=>{
+                __registerDID()
+            })
+        }
+}
 function SReadDID_Method() {
     let SReadDID_Document = require("./SReadDID_Document");
     this.create = (seedSSI, callback) => {
         const sReadDIDDocument = SReadDID_Document.initiateDIDDocument(seedSSI);
         sReadDIDDocument.on("initialised", () => {
-            const securityContext = require("opendsu").loadAPI("sc").getSecurityContext();
-
-            securityContext.registerDID(sReadDIDDocument, (err) => {
-                if (err) {
-                    return callback(createOpenDSUErrorWrapper(`failed to register did ${sReadDIDDocument.getIdentifier()} in security context`, err));
-                }
-
-                callback(null, sReadDIDDocument);
-            })
+            storeDIDInSC(sReadDIDDocument, callback);
         });
     }
     this.resolve = function (tokens, callback) {
@@ -28,15 +39,7 @@ function KeyDID_Method() {
     let KeyDIDDocument = require("./KeyDID_Document");
     this.create = function (seedSSI, callback) {
         const keyDIDDocument = KeyDIDDocument.initiateDIDDocument(seedSSI);
-        const securityContext = require("opendsu").loadAPI("sc").getSecurityContext();
-
-        securityContext.registerDID(keyDIDDocument, (err) => {
-            if (err) {
-                return callback(createOpenDSUErrorWrapper(`failed to register did ${keyDIDDocument.getIdentifier()} in security context`, err));
-            }
-
-            callback(null, keyDIDDocument);
-        })
+        storeDIDInSC(keyDIDDocument, callback);
     }
 
     this.resolve = function (tokens, callback) {
@@ -50,22 +53,13 @@ function NameDID_Method() {
     this.create = (domain, publicName, callback) => {
         const nameDIDDocument = NameDIDDocument.initiateDIDDocument(domain, publicName);
         nameDIDDocument.on("initialised", () => {
-            const securityContext = require("opendsu").loadAPI("sc").getSecurityContext();
-
-            securityContext.registerDID(nameDIDDocument, (err) => {
-                if (err) {
-                    return callback(createOpenDSUErrorWrapper(`failed to register did ${nameDIDDocument.getIdentifier()} in security context`, err));
-                }
-
-                callback(null, nameDIDDocument);
-            })
+            storeDIDInSC(nameDIDDocument, callback);
         });
     }
 
     this.resolve = (tokens, callback) => {
         const nameDIDDocument = NameDIDDocument.createDIDDocument(tokens);
         nameDIDDocument.on("initialised", () => {
-            const securityContext = require("opendsu").loadAPI("sc").getSecurityContext();
             callback(null, nameDIDDocument)
         });
     }
@@ -79,16 +73,19 @@ function GroupDID_Method() {
         groupDIDDocument.on("error", (err) => {
             return callback(err);
         })
+
         groupDIDDocument.on("initialised", () => {
-            return callback(undefined, groupDIDDocument);
+            storeDIDInSC(groupDIDDocument, callback);
         })
     }
 
     this.resolve = (tokens, callback) => {
         const groupDIDDocument = GroupDIDDocument.createDIDDocument(tokens);
+
         groupDIDDocument.on("error", (err) => {
             return callback(err);
         })
+
         groupDIDDocument.on("initialised", () => {
             return callback(undefined, groupDIDDocument);
         })
