@@ -102,6 +102,14 @@ function Enclave_Mixin(target, did) {
         target.storageDB.cancelBatch(callback);
     }
 
+    target.readKey = (forDID, key, callback)=>{
+        target.storageDB.readKey(key, callback);
+    }
+
+    target.writeKey = (forDID, key, value, callback)=>{
+        target.storageDB.writeKey(key, value, callback);
+    }
+
     target.storeSeedSSI = (forDID, seedSSI, alias, callback) => {
         if (typeof seedSSI === "string") {
             try {

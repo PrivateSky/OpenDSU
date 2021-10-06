@@ -52,6 +52,11 @@ function NameDID_Method() {
 
     this.create = (domain, publicName, callback) => {
         const nameDIDDocument = NameDIDDocument.initiateDIDDocument(domain, publicName);
+
+        nameDIDDocument.on("error", (err) => {
+            return callback(err);
+        })
+
         nameDIDDocument.on("initialised", () => {
             storeDIDInSC(nameDIDDocument, callback);
         });
@@ -59,6 +64,10 @@ function NameDID_Method() {
 
     this.resolve = (tokens, callback) => {
         const nameDIDDocument = NameDIDDocument.createDIDDocument(tokens);
+        nameDIDDocument.on("error", (err) => {
+            return callback(err);
+        })
+
         nameDIDDocument.on("initialised", () => {
             callback(null, nameDIDDocument)
         });
@@ -70,6 +79,7 @@ function GroupDID_Method() {
 
     this.create = (domain, groupName, callback) => {
         const groupDIDDocument = GroupDIDDocument.initiateDIDDocument(domain, groupName);
+
         groupDIDDocument.on("error", (err) => {
             return callback(err);
         })

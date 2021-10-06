@@ -1,12 +1,12 @@
 const methodsNames = require("../didMethodsNames");
 
-function NameDID_Document(domain, name) {
+function NameDID_Document(domain, name, isInitialisation) {
     if (typeof domain === "undefined" || typeof name === "undefined") {
         throw Error(`Invalid number of arguments. Expected blockchain domain and group name.`);
     }
 
     let mixin = require("./ConstDID_Document_Mixin");
-    mixin(this, domain, name);
+    mixin(this, domain, name, isInitialisation);
     const bindAutoPendingFunctions = require("../../utils/BindAutoPendingFunctions").bindAutoPendingFunctions;
 
     this.getMethodName = () => {
@@ -21,7 +21,7 @@ function NameDID_Document(domain, name) {
         return name;
     };
 
-    bindAutoPendingFunctions(this, ["init", "getIdentifier", "getName", "on", "off", "addPublicKey", "readMessage", "getDomain", "getHash"]);
+    bindAutoPendingFunctions(this, ["init", "getIdentifier", "getName", "on", "off", "dispatchEvent", "removeAllObservers", "addPublicKey", "readMessage", "getDomain", "getHash"]);
     this.init();
     return this;
 }
@@ -32,6 +32,6 @@ module.exports = {
         return new NameDID_Document(domain, name)
     },
     createDIDDocument: function (tokens) {
-        return new NameDID_Document(tokens[3], tokens[4]);
+        return new NameDID_Document(tokens[3], tokens[4], false);
     }
 };
