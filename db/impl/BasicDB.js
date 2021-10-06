@@ -40,6 +40,10 @@ function BasicDB(storageStrategy) {
         this.dispatchEvent("initialised");
     });
 
+    this.getAllRecords = (tableName, callback) => {
+        storageStrategy.getAllRecords(tableName, callback);
+    }
+
     this.addIndex = function (tableName, fieldName, forceReindex, callback) {
         if (typeof forceReindex === "function") {
             callback = forceReindex;

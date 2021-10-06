@@ -26,6 +26,16 @@ function SingleDSUStorageStrategy() {
         storageDSU.commitBatch(callback);
     }
 
+    this.getAllRecords = (tableName, callback)=>{
+        readTheWholeTable(tableName, (err, tbl)=>{
+            if (err) {
+                return callback(err);
+            }
+
+            return callback(undefined, Object.values(tbl));
+        })
+    }
+
     function readTheWholeTable(tableName, callback) {
         getPrimaryKeys(tableName, (err, recordKeys) => {
             if (err) {
@@ -49,6 +59,7 @@ function SingleDSUStorageStrategy() {
             })
         });
     }
+
 
     /*
        Get the whole content of the table and asynchronously returns an array with all the  records satisfying the condition tested by the filterFunction

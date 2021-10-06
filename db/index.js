@@ -71,6 +71,10 @@ const getMainEnclaveDB = (callback) => {
     sc.getMainEnclaveDB(callback);
 }
 
+const getSharedEnclaveDB = (callback) => {
+    const sc = require("opendsu").loadAPI("sc").getSecurityContext();
+    sc.getSharedEnclaveDB(callback);
+}
 module.exports = {
     getBasicDB,
     getWalletDB(keySSI, dbName) {
@@ -82,5 +86,6 @@ module.exports = {
     getSharedDB,
     getInMemoryDB,
     getEnclaveDB,
-    getMainEnclaveDB
+    getMainEnclaveDB,
+    getSharedEnclaveDB
 }
