@@ -134,18 +134,18 @@ function CryptographicSkillsMixin(target) {
                 callback(undefined, encryptedMessage);
             };
 
-            let compatibleSSI;
-            try {
-                compatibleSSI = await $$.promisify(publicKeySSI.generateCompatiblePowerfulKeySSI)();
-            } catch (e) {
-                return callback(createOpenDSUErrorWrapper(`Failed to create compatible seed ssi`, e));
-            }
-
-            try {
-                await saveNewKeyPairInSC(didFrom, compatibleSSI);
-            } catch (e) {
-                return callback(createOpenDSUErrorWrapper(`Failed to save compatible seed ssi`, e));
-            }
+            // let compatibleSSI;
+            // try {
+            //     compatibleSSI = await $$.promisify(publicKeySSI.generateCompatiblePowerfulKeySSI)();
+            // } catch (e) {
+            //     return callback(createOpenDSUErrorWrapper(`Failed to create compatible seed ssi`, e));
+            // }
+            //
+            // try {
+            //     await saveNewKeyPairInSC(didFrom, compatibleSSI);
+            // } catch (e) {
+            //     return callback(createOpenDSUErrorWrapper(`Failed to save compatible seed ssi`, e));
+            // }
 
             __encryptMessage(senderSeedSSI);
         });
