@@ -198,6 +198,52 @@ function MemoryStorageStrategy(){
         callback(undefined);
     }
 
+    const READ_WRITE_KEY_TABLE = "KeyValueTable";
+    this.writeKey =  (key, value, callback) => {
+        let valueObject = {
+            type: typeof value,
+            value: value
+        };
+
+        if (typeof value === "object") {
+            if (Buffer.isBuffer(value)) {
+                valueObject = {
+                    type: "buffer",
+                    value: value.toString()
+                }
+            } else {
+                valueObject = {
+                    type: "object",
+                    value: JSON.stringify(value)
+                }
+            }
+        }
+
+        this.insertRecord(READ_WRITE_KEY_TABLE, key, valueObject, callback);
+    };
+
+    this.readKey =  (key, callback) => {
+        this.getRecord(READ_WRITE_KEY_TABLE, key, (err, record) => {
+            if (err) {
+                return callback(createOpenDSUErrorWrapper(`Failed to read key ${key}`, err));
+            }
+
+            let value;
+            switch (record.type) {
+                case "buffer":
+                    value = Buffer.from(record.value);
+                    break;
+                case "object":
+                    value = JSON.parse(record.value);
+                    break;
+                default:
+                    value = record.value;
+            }
+
+            callback(undefined, value);
+        });
+    }
+
     setTimeout(()=>{
         this.dispatchEvent("initialised");
     })
