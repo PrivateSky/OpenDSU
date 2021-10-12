@@ -1,20 +1,5 @@
-const http = require("http");
-const https = require("https");
-const URL = require("url");
 
-const userAgent = 'PSK NodeAgent/0.0.1';
-const signatureHeaderName = process.env.vmq_signature_header_name || "x-signature";
-
-function getNetworkForOptions(options) {
-	if(options.protocol === 'http:') {
-		return http;
-	} else if(options.protocol === 'https:') {
-		return https;
-	} else {
-		throw new Error(`Can't handle protocol ${options.protocol}`);
-	}
-
-}
+const {setContentTypeByData,buildOptions,getNetworkForOptions} = require("./utils");
 
 function generateMethodForRequestWithData(httpMethod) {
 	return function (url, data, reqOptions, callback) {
@@ -22,33 +7,11 @@ function generateMethodForRequestWithData(httpMethod) {
 			callback = reqOptions;
 			reqOptions = {};
 		}
-		const innerUrl = URL.parse(url);
 
-		const options = {
-			hostname: innerUrl.hostname,
-			path: innerUrl.pathname,
-			port: parseInt(innerUrl.port),
-			headers: {
-				'User-Agent': userAgent,
-				[signatureHeaderName]: 'replaceThisPlaceholderSignature'
-			},
-			method: httpMethod
-		};
+		const options = buildOptions(url, httpMethod, reqOptions);
+		const network = getNetworkForOptions(options);
 
-		for(let name in reqOptions.headers){
-			options.headers[name] = reqOptions.headers[name];
-		}
-
-		const network = getNetworkForOptions(innerUrl);
-
-		if (ArrayBuffer.isView(data) || $$.Buffer.isBuffer(data) || data instanceof ArrayBuffer) {
-			if (!$$.Buffer.isBuffer(data)) {
-				data = $$.Buffer.from(data);
-			}
-
-			options.headers['Content-Type'] = 'application/octet-stream';
-			options.headers['Content-Length'] = data.length;
-		}
+		setContentTypeByData(options, data);
 
 		const req = network.request(options, (res) => {
 			const {statusCode} = res;
@@ -107,8 +70,13 @@ function generateMethodForRequestWithData(httpMethod) {
 	};
 }
 
+const {doGetWithProxy, doPutWithProxy, doPostWithProxy} = require("./proxy");
+
 module.exports = {
 	fetch: require("./fetch").fetch,
 	doPost: generateMethodForRequestWithData('POST'),
-	doPut: generateMethodForRequestWithData('PUT')
+	doPut: generateMethodForRequestWithData('PUT'),
+	doGetWithProxy,
+	doPutWithProxy,
+	doPostWithProxy
 }
