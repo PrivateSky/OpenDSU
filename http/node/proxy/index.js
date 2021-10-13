@@ -1,4 +1,4 @@
-const {setContentTypeByData,buildOptions,getNetworkForOptions} = require("../utils");
+const {setContentTypeByData,buildOptions,getNetworkForOptions} = require("../common");
 
 function generateMethodForRequestViaProxy(httpMethod) {
 	return function (proxyUrl, url, data, opts, callback) {

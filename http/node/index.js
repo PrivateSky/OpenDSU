@@ -1,5 +1,5 @@
 
-const {setContentTypeByData,buildOptions,getNetworkForOptions} = require("./utils");
+const {setContentTypeByData,buildOptions,getNetworkForOptions} = require("./common.js");
 
 function generateMethodForRequestWithData(httpMethod) {
 	return function (url, data, reqOptions, callback) {
