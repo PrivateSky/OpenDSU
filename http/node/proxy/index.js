@@ -44,6 +44,8 @@ function generateMethodForRequestViaProxy(httpMethod) {
 
 				//if data is stream
 				if (data && data.pipe && typeof data.pipe === "function") {
+					//we need to signal that the body of the request will be written
+					socketConnection.write("\r\n");
 					data.on("data", function (chunk) {
 						socketConnection.write(chunk);
 					});
@@ -56,13 +58,16 @@ function generateMethodForRequestViaProxy(httpMethod) {
 
 				//if data is object we serialize it as JSON
 				if (typeof data !== "undefined" && typeof data !== 'string' && !$$.Buffer.isBuffer(data) && !ArrayBuffer.isView(data)) {
-					socketConnection.write(JSON.stringify(data));
+					//we need to signal that the body of the request will be written
 					socketConnection.write("\r\n");
+					socketConnection.write(JSON.stringify(data)+"\r\n");
 					return;
 				}
 
 				//if buffer type just write it into the socket
 				if (data) {
+					//we need to signal that the body of the request will be written
+					socketConnection.write("\r\n");
 					socketConnection.write(data);
 				}
 
@@ -73,12 +78,12 @@ function generateMethodForRequestViaProxy(httpMethod) {
 				if(err){
 					return callback(err);
 				}
-
-				if(res.statusCode > 400){
+				//not sure if we should treat redirects as errors...
+				if (res.statusCode < 200 || res.statusCode >= 300){
 					return callback(res);
 				}
-
-				callback(undefined, response.body);
+				//TODO: document the last argument... providing response.headers to the callback
+				callback(undefined, response.body, response.headers);
 			});
 		});
 

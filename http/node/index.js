@@ -65,7 +65,9 @@ function generateMethodForRequestWithData(httpMethod) {
 			data = JSON.stringify(data);
 		}
 
-		req.write(data);
+		if(data){
+			req.write(data);
+		}
 		req.end();
 	};
 }
@@ -74,6 +76,7 @@ const {doGetWithProxy, doPutWithProxy, doPostWithProxy} = require("./proxy");
 
 module.exports = {
 	fetch: require("./fetch").fetch,
+	doGet: generateMethodForRequestWithData('GET'),
 	doPost: generateMethodForRequestWithData('POST'),
 	doPut: generateMethodForRequestWithData('PUT'),
 	doGetWithProxy,
