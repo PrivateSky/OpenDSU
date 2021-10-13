@@ -24,12 +24,15 @@ assert.callback('ApihubProxy test', (testFinished) => {
             await $$.promisify(apihubProxy.insertRecord)("some_did", TABLE, "pk1", addedRecord, addedRecord);
             const record = await $$.promisify(apihubProxy.getRecord)("some_did", TABLE, "pk1");
             const enclaveDID = await $$.promisify(apihubProxy.getDID)();
-            console.log(enclaveDID)
             assert.objectsAreEqual(record, addedRecord, "Records do not match");
+
+            await $$.promisify(apihubProxy.writeKey)("someDID", "key", "value");
+            const value = await $$.promisify(apihubProxy.readKey)("someDID", "key");
+            assert.equal(value, "value", "Values do not match");
             testFinished();
         } catch (e) {
             return console.log(e);
         }
     });
-}, 20000);
+}, 2000000);
 

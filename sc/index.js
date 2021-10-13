@@ -184,7 +184,7 @@ function SecurityContext() {
 
         enclave = enclaveAPI.createEnclave(enclaveType);
         await initSharedEnclave();
-        enclave.on("initialised", async () => {
+        const __saveEnclaveDIDAndFinishInit =async ()=>{
             if (typeof enclaveDID === "undefined") {
                 enclaveDID = await $$.promisify(enclave.getDID)();
                 try {
@@ -204,7 +204,15 @@ function SecurityContext() {
             } else {
                 finishInit();
             }
-        });
+        }
+
+        if(enclave.isInitialised()){
+            __saveEnclaveDIDAndFinishInit()
+        }else{
+            enclave.on("initialised", async () => {
+                __saveEnclaveDIDAndFinishInit();
+            });
+        }
     }
 
     const finishInit = () => {
