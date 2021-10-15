@@ -1,6 +1,6 @@
 process.env.NO_LOGS = true;
 
-const { fork } = require('child_process');
+const {fork} = require('child_process');
 
 require("../../../../../psknode/bundles/testsRuntime");
 
@@ -8,12 +8,13 @@ const tir = require("../../../../../psknode/tests/util/tir");
 
 
 const dc = require("double-check");
+const testIntegration = require("../../../../../psknode/tests/util/tir");
 const assert = dc.assert;
 
 const keyssi = require('opendsu').loadApi('keyssi');
 const resolver = require('opendsu').loadApi('resolver');
 
-const argParser = function(defaultOpts, args){
+const argParser = function (defaultOpts, args) {
     let config = JSON.parse(JSON.stringify(defaultOpts));
     if (!args)
         return config;
@@ -21,7 +22,7 @@ const argParser = function(defaultOpts, args){
     const recognized = Object.keys(config);
     const notation = recognized.map(r => '--' + r);
     args.forEach(arg => {
-        if (arg.includes('=')){
+        if (arg.includes('=')) {
             let splits = arg.split('=');
             if (notation.indexOf(splits[0]) !== -1) {
                 let result
@@ -58,7 +59,7 @@ const mockOrder = {
     data: "some data"
 }
 
-const createMockOrderDSU = function(callback){
+const createMockOrderDSU = function (callback) {
     const orderKey = keyssi.createTemplateSeedSSI('default');
     resolver.createDSU(orderKey, (err, orderDSU) => {
         if (err)
@@ -76,7 +77,7 @@ const createMockOrderDSU = function(callback){
     });
 }
 
-const updateMockOrderDSU = function(shipmentSSI, orderSSI, callback){
+const updateMockOrderDSU = function (shipmentSSI, orderSSI, callback) {
     resolver.loadDSU(orderSSI, (err, orderDSU) => {
         if (err)
             return callback(err);
@@ -103,8 +104,8 @@ const updateMockOrderDSU = function(shipmentSSI, orderSSI, callback){
     });
 }
 
-const cb = function(err, fork, ...results){
-    if (err){
+const cb = function (err, fork, ...results) {
+    if (err) {
         if (fork)
             fork.send({terminate: err.message || err});
         throw err;
@@ -118,7 +119,7 @@ const cb = function(err, fork, ...results){
     }, 1000)
 }
 
-const testStatus = function(orderSSI, expectedStatus, callback){
+const testStatus = function (orderSSI, expectedStatus, callback) {
     resolver.loadDSU(orderSSI, (err, orderDSU) => {
         if (err)
             return callback(err);
@@ -126,7 +127,7 @@ const testStatus = function(orderSSI, expectedStatus, callback){
         orderDSU.readFile(`${SHIPMENT_PATH}${STATUS_PATH}${INFO_PATH}`, (err, orderStatus) => {
             if (err)
                 return callback(err);
-            try{
+            try {
                 orderStatus = JSON.parse(orderStatus);
             } catch (e) {
                 return callback(e);
@@ -143,40 +144,42 @@ const testStatus = function(orderSSI, expectedStatus, callback){
 }
 
 assert.callback('DSU cache Test', (testFinished) => {
-    tir.launchVirtualMQNode(function (err, port) {
-        if (err)
-            return cb(err);
-        const forked = fork('dsuCacheTestChild.js');
-
-        let orderSSI;
-
-        forked.on('message', (args) => {
-            const {shipmentSSI, err, status} = args;
+    dc.createTestFolder('createDSU', (err, folder) => {
+        tir.launchApiHubTestNode(10, folder, (err) => {
             if (err)
-                return cb(err, forked);
-            console.log(`Received ShipmentSSI: ${shipmentSSI}`);
+                return cb(err);
+            const forked = fork('dsuCacheTestChild.js');
 
-            updateMockOrderDSU(shipmentSSI, orderSSI, err => {
+            let orderSSI;
+
+            forked.on('message', (args) => {
+                const {shipmentSSI, err, status} = args;
                 if (err)
                     return cb(err, forked);
-                testStatus(orderSSI, status, (err) => {
-                   if (err)
-                       return cb(err, forked);
-                   if (status === `status${config.updates}`)
-                       cb(undefined, forked, testFinished);
+                console.log(`Received ShipmentSSI: ${shipmentSSI}`);
+
+                updateMockOrderDSU(shipmentSSI, orderSSI, err => {
+                    if (err)
+                        return cb(err, forked);
+                    testStatus(orderSSI, status, (err) => {
+                        if (err)
+                            return cb(err, forked);
+                        if (status === `status${config.updates}`)
+                            cb(undefined, forked, testFinished);
+                    });
                 });
             });
-        });
 
-        createMockOrderDSU((err, orderKeySSI) => {
-            if (err)
-                return cb(err, forked);
-            orderSSI = orderKeySSI;
-            forked.send({
-                id: mockOrder.id,
-                updates: config.updates,
-                updateTimeout: config.updateTimeout
-            })
+            createMockOrderDSU((err, orderKeySSI) => {
+                if (err)
+                    return cb(err, forked);
+                orderSSI = orderKeySSI;
+                forked.send({
+                    id: mockOrder.id,
+                    updates: config.updates,
+                    updateTimeout: config.updateTimeout
+                })
+            });
         });
     });
 }, config.assertTimeout);

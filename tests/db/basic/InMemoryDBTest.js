@@ -1,5 +1,6 @@
 require("../../../../../psknode/bundles/testsRuntime");
-const assert = require("double-check").assert;
+const double_check = require("double-check");
+const assert = double_check.assert;
 const db = require("../../../db");
 const tir = require("../../../../../psknode/tests/util/tir");
 const keySSIApis = require("../../../keyssi");
@@ -11,11 +12,13 @@ $$.flows.describe("FilterDB", {
     start: function (callback) {
         this.callback = callback;
 
-        tir.launchVirtualMQNode((err, port) => {
-            assert.true(err === null || typeof err === "undefined", "Failed to create server.");
+        double_check.createTestFolder('AddFilesBatch', async (err, folder) => {
+            tir.launchApiHubTestNode(100, folder, async err => {
+                assert.true(err === null || typeof err === "undefined", "Failed to create server.");
 
-            this.db = db.getInMemoryDB();
-            this.insertRecords();
+                this.db = db.getInMemoryDB();
+                this.insertRecords();
+            });
         });
 
     },
