@@ -38,6 +38,11 @@ function buildOptions(url, method, opts){
 		method
 	};
 
+	//if no port is specified we need to set the default ones
+	if(!options.port){
+		options.port = innerUrl.protocol === "http:" ? 80 : 443
+	}
+
 	for(let name in opts.headers){
 		options.headers[name] = opts.headers[name];
 	}
