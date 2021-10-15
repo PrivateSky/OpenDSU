@@ -77,14 +77,9 @@ function doGet(url, options, callback) {
 	return fnc(url, undefined, options, callback);
 }
 
-const {doGetWithProxy, doPutWithProxy, doPostWithProxy} = require("./proxy");
-
 module.exports = {
 	fetch: require("./fetch").fetch,
 	doGet,
 	doPost: generateMethodForRequestWithData('POST'),
-	doPut: generateMethodForRequestWithData('PUT'),
-	doGetWithProxy,
-	doPutWithProxy,
-	doPostWithProxy
+	doPut: generateMethodForRequestWithData('PUT')
 }

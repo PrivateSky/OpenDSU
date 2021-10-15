@@ -44,6 +44,22 @@ function buildOptions(url, method, opts){
 	}
 
 	if(opts){
+		if(opts.useProxy){
+			let proxy = URL.parse(opts.useProxy);
+			//setting proxy hostname
+			options.hostname = proxy.hostname;
+
+			//setting proxy port
+			if(Number.isNaN(proxy.port)){
+				options.port = proxy.protocol === "http:" ? 80 : 443;
+			}else{
+				options.port = proxy.port;
+			}
+
+			//updating the path
+			options.path = url;
+		}
+
 		for(let name in opts.headers){
 			options.headers[name] = opts.headers[name];
 		}
