@@ -17,6 +17,8 @@ assert.callback('Trying to alter BrickMap of a DSU', async (testDone) => {
     const dsu0 = await $$.promisify(resolver.createDSUx)(env.domain, 'seed', { addLog: false });
     const dsu0_keySSI = await $$.promisify(dsu0.getKeySSIAsObject)();
     dsu0.beginBatch();
+    try{
+
     await $$.promisify(dsu0.writeFile)('/example0.txt', '0 | lorem data 0', { encrypt: false });
     await $$.promisify(dsu0.writeFile)('/example1.txt', '0 | lorem data 1', { encrypt: false });
     await $$.promisify(dsu0.writeFile)('/example2.txt', '0 | lorem data 2', { encrypt: false });
@@ -28,6 +30,7 @@ assert.callback('Trying to alter BrickMap of a DSU', async (testDone) => {
     // it creates and writes in dsu1 (in batch mode)
     const dsu1 = await $$.promisify(resolver.createDSUx)(env.domain, 'seed', { addLog: false });
     const dsu1_keySSIString = await $$.promisify(dsu1.getKeySSIAsString)();
+
     dsu1.beginBatch();
     await $$.promisify(dsu1.writeFile)('/example0.txt', '1 | lorem data 0', { encrypt: false });
     await $$.promisify(dsu1.writeFile)('/example1.txt', '1 | lorem data 1', { encrypt: false });
@@ -48,7 +51,9 @@ assert.callback('Trying to alter BrickMap of a DSU', async (testDone) => {
     // it removes dsu0 and dsu1 from cache
     env.vault.put(dsu0_keySSI.getIdentifier(), undefined);
     env.vault.put(dsu1_keySSIString, undefined);
-
+    }catch (e) {
+        console.trace(e);
+    }
     // commented for optimisation reasons, but now BrickMaps are still cached in psk-cache
     // await utils.fillCacheEntirely(env);
 
