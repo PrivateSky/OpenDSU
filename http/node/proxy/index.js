@@ -79,8 +79,8 @@ function generateMethodForRequestViaProxy(httpMethod) {
 					return callback(err);
 				}
 				//not sure if we should treat redirects as errors...
-				if (res.statusCode < 200 || res.statusCode >= 300){
-					return callback(res);
+				if (response.statusCode < 200 || response.statusCode >= 300){
+					return callback(response);
 				}
 				//TODO: document the last argument... providing response.headers to the callback
 				callback(undefined, response.body, response.headers);
