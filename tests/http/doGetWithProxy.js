@@ -17,7 +17,7 @@ function createProxyForTest(callback){
 
 	proxy.on('connect', (req, clientSocket, head) => {
 		// Connect to an origin server
-		const { port, hostname } = new URL(`${req.url}`);
+		const { port, hostname } = new URL(`http://${req.url}`);
 		const serverSocket = net.connect(port || 80, hostname, () => {
 			clientSocket.write('HTTP/1.1 200 Connection Established\r\n' +
 				'Proxy-agent: Node.js-Proxy\r\n' +
