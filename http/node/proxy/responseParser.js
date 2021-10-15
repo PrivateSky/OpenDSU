@@ -1,5 +1,6 @@
 module.exports = function(responseStream, callback){
 	responseStream.on("error", function (err) {
+		console.log("Caught an error while reading the response", err);
 		return callback(err);
 	});
 
@@ -21,6 +22,7 @@ module.exports = function(responseStream, callback){
 	let expectedContentLength;
 
 	responseStream.on('data', function (data) {
+		console.log("Received", data.toString());
 		let convertedToString = false;
 		if(!headerRead){
 			receivedDataAsString += data.toString();

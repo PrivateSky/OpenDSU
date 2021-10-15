@@ -43,8 +43,10 @@ function buildOptions(url, method, opts){
 		options.port = innerUrl.protocol === "http:" ? 80 : 443
 	}
 
-	for(let name in opts.headers){
-		options.headers[name] = opts.headers[name];
+	if(opts){
+		for(let name in opts.headers){
+			options.headers[name] = opts.headers[name];
+		}
 	}
 
 	return options;
