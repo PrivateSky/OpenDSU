@@ -32,7 +32,7 @@ function buildOptions(url, method, opts){
 		protocol: innerUrl.protocol,
 		port: parseInt(innerUrl.port),
 		headers: {
-			/*'User-Agent': userAgent,*/
+			'User-Agent': userAgent,
 			[signatureHeaderName]: 'replaceThisPlaceholderSignature'
 		},
 		method

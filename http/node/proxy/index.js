@@ -35,7 +35,10 @@ function generateMethodForRequestViaProxy(httpMethod) {
 			let socketConnection = connectMethod(targetOpts, function () {
 				console.log("Host connection OK");
 				//now that we are connected to the proxy we need to prepare the request that needs to be done by the proxy for us
-				let request = `${httpMethod} ${options.path} HTTP/1.1\r\nHost: ${options.hostname}\r\n`;
+				let request = `${httpMethod} ${url} HTTP/1.1\r\nHost: ${options.hostname}\r\n`;
+				//injecting supplementary headers to ensure proxy connection doesn't close
+				options.headers["Accept"] = "*/*";
+				options.headers["Proxy-Connection"] = "Keep-Alive";
 				//handling headers
 				for (let headerName in options.headers) {
 					let headerValue = options.headers[headerName];
