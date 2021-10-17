@@ -67,6 +67,7 @@ registerDIDMethod(methodsNames.NAME_SUBTYPE, require("./didssi/ssiMethods").crea
 registerDIDMethod(methodsNames.DEMO_METHOD_NAME, require("./demo/diddemo").create_demo_DIDMethod());
 registerDIDMethod(methodsNames.GROUP_METHOD_NAME, require("./didssi/ssiMethods").create_GroupDID_Method());
 registerDIDMethod(methodsNames.KEY_SUBTYPE, require("./w3cdids/didMethods").create_KeyDID_Method());
+registerDIDMethod(methodsNames.SMART_CONTRACT_KEY_SUBTYPE, require("./didssi/ssiMethods").create_SCKeyDID_Method());
 
 
 module.exports = {
