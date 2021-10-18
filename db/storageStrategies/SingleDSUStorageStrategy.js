@@ -42,6 +42,10 @@ function SingleDSUStorageStrategy() {
                 return callback(createOpenDSUErrorWrapper(`Failed to read the records in table ${tableName}`, err));
             }
             const table = {};
+            if (recordKeys.length === 0) {
+                return callback(undefined, table);
+            }
+
             const TaskCounter = require("swarmutils").TaskCounter;
             const tc = new TaskCounter(() => {
                 return callback(undefined, table);
