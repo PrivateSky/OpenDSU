@@ -46,7 +46,7 @@ function getMainDSUForNode(callback) {
     const uid = crypto.generateRandom(5).toString("hex");
     const BASE_DIR_PATH = path.join(require("os").tmpdir(), uid);
     const MAIN_DSU_PATH = path.join(BASE_DIR_PATH, "wallet");
-    const DOMAIN = "vault";
+    const DOMAIN = process.env.VAULT_DOMAIN || "vault";
     const fs = require("fs");
     const resolver = require("opendsu").loadAPI("resolver");
 
@@ -59,8 +59,8 @@ function getMainDSUForNode(callback) {
                 setMainDSU(seedDSU);
 
                 seedDSU.writeFile("/environment.json", JSON.stringify({
-                    vaultDomain: "vault",
-                    didDomain: "vault"
+                    vaultDomain: DOMAIN,
+                    didDomain: DOMAIN
                 }), (err) => {
                     if (err) {
                         return callback(err);
