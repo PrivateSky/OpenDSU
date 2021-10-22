@@ -5,6 +5,7 @@ const AuthorizationCodeGrant = require('./grants/AuthorizationCode');
 const RefreshTokenGrant = require('./grants/RefreshToken');
 
 const Browser = require('../util/Browser');
+const Crypto = require('../util/Crypto');
 const Storage = require('../util/Storage');
 const Issuer = require('./Issuer');
 const Client = require('./Client');
@@ -291,8 +292,8 @@ class OIDC {
         }
         const [header, payload, signature] = token.split('.');
         return {
-            header: JSON.parse(atob(header)),
-            payload: JSON.parse(atob(payload)),
+            header: JSON.parse(Crypto.decodeBase64EncodedData(header)),
+            payload: JSON.parse(Crypto.decodeBase64EncodedData(payload)),
             signature
         }
     }

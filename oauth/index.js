@@ -1,6 +1,5 @@
-const createOIDC = (issuer, client, storage) => {
+const createOIDC = (options) => {
     const OIDC = require("./src/oidc/OIDC");
-    const options = {issuer, client, storage}
     return new OIDC(options);
 }
 
