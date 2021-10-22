@@ -56,10 +56,6 @@ const convertDerSignatureToASN1 = (derSignature) => {
     return require('pskcrypto').decodeDerToASN1ETH(derSignature);
 };
 
-const convertASN1SignatureToDer = (ans1Signature) => {
-
-};
-
 const sign = (keySSI, data, callback) => {
     const sign = cryptoRegistry.getSignFunction(keySSI);
     if (typeof sign !== "function") {
@@ -276,6 +272,17 @@ function createBloomFilter(options) {
     return new BloomFilter(options);
 }
 
+const sha256JOSE = (data) => {
+    const pskCrypto = require("pskcrypto");
+    return pskCrypto.hash("sha256", data);
+}
+
+const base64UrlEncodeJOSE = (data) => {
+    if (typeof data === "string") {
+        data = $$.Buffer.from(data);
+    }
+    return data.toString("base64").replaceAll('+', '-').replaceAll('/', '_').replaceAll('=', '');
+}
 
 module.exports = {
     getCryptoFunctionForKeySSI,
@@ -312,5 +319,7 @@ module.exports = {
     verifyDID_JWT,
     verifyDIDAuthToken,
     createAuthTokenForDID,
-    createCredentialForDID
+    createCredentialForDID,
+    base64UrlEncodeJOSE,
+    sha256JOSE
 };
