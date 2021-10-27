@@ -4,5 +4,8 @@ const createOIDC = (options) => {
 }
 
 module.exports = {
-    createOIDC
+    createOIDC,
+    getStorage: require("./src/util/Storage").getStorage,
+    constants: require("./src/oidc/constants"),
+
 }

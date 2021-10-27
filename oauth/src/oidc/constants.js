@@ -1,0 +1,16 @@
+module.exports = {
+    ID_TOKEN: 'session.idToken',
+    ACCESS_TOKEN: 'session.accessToken',
+    REFRESH_TOKEN: 'session.refreshToken',
+    EXPIRATION_TIMESTAMP: 'session.expirationTimestamp',
+    AUTHORIZATION_CODE_VERIFIER: 'session.codeVerifier',
+    AUTHORIZATION_STATE: 'session.state',
+    INTERACTION: 'session.interaction',
+    INTERACTION_IFRAME: 'iframe',
+    INTERACTION_POPUP: 'popup',
+    INTERACTION_REDIRECT: 'redirect',
+    INTERACTION_REFRESH: 'refresh',
+    BROWSER_LOCATION: 'browser.current.location',
+    TOKEN_CHECK_INTERVAL: 1000 * 30,
+    TOKEN_EXPIRATION_THRESHOLD: 1000 * 60,
+}

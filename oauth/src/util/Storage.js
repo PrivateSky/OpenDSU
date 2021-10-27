@@ -1,3 +1,5 @@
+const {prettyByte} = require("@msgpack/msgpack/dist/utils/prettyByte");
+
 class Storage {
     get(key) {
         return localStorage.getItem(key);
@@ -24,5 +26,14 @@ class Storage {
     }
 }
 
+const getStorage = () => {
+    if (!$$.storage) {
+        $$.storage = new Storage();
+    }
 
-module.exports = Storage;
+    return $$.storage;
+}
+
+module.exports = {
+    getStorage
+};

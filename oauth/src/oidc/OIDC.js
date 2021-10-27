@@ -36,16 +36,16 @@ class OIDC {
 
 
     constructor(options) {
-        this.storage = options.storage || new Storage();
+        this.storage = options.storage || Storage.getStorage();
         this.issuer = new Issuer(options.issuer);
         this.client = new Client(options.client);
-
+        this.options = options;
         this.setPeriodicRefreshTimeout();
     }
 
 
     setPeriodicRefreshTimeout() {
-        setTimeout(() => this.periodicRefresh(), options.tokenCheckInterval || TOKEN_CHECK_INTERVAL);
+        setTimeout(() => this.periodicRefresh(), this.options.tokenCheckInterval || TOKEN_CHECK_INTERVAL);
     }
 
 
