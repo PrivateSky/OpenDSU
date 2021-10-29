@@ -41,6 +41,7 @@ function getMainDSU(callback) {
 }
 
 function getMainDSUForNode(callback) {
+    let mainDSU;
     const path = require("path");
     const crypto = require("opendsu").loadAPI("crypto");
     const uid = crypto.generateRandom(5).toString("hex");
@@ -127,9 +128,6 @@ function SecurityContext() {
     const ObservableMixin = require("../utils/ObservableMixin");
     ObservableMixin(this);
     const openDSU = require("opendsu");
-    const crypto = openDSU.loadAPI("crypto");
-    const keySSISpace = openDSU.loadAPI("keyssi")
-    const resolver = openDSU.loadAPI("resolver")
     const config = openDSU.loadAPI("config");
     const enclaveAPI = openDSU.loadAPI("enclave");
     let enclave;
