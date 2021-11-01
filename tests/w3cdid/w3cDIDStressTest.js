@@ -1,6 +1,6 @@
 process.env.NO_LOGS = true;
 
-const { fork } = require('child_process');
+const {fork} = require('child_process');
 
 require("../../../../psknode/bundles/testsRuntime");
 
@@ -10,7 +10,7 @@ const assert = dc.assert;
 
 const w3cDID = require('../../w3cdid');
 
-const argParser = function(defaultOpts, args){
+const argParser = function (defaultOpts, args) {
     let config = JSON.parse(JSON.stringify(defaultOpts));
     if (!args)
         return config;
@@ -18,7 +18,7 @@ const argParser = function(defaultOpts, args){
     const recognized = Object.keys(config);
     const notation = recognized.map(r => '--' + r);
     args.forEach(arg => {
-        if (arg.includes('=')){
+        if (arg.includes('=')) {
             let splits = arg.split('=');
             if (notation.indexOf(splits[0]) !== -1) {
                 let result
@@ -62,72 +62,74 @@ const someData = {
 const assertTimeout = 1000 * config.messages + (config.kill ? 30000 : 0);
 
 assert.callback('w3cDID MQ Stress test', (testFinished) => {
-    tir.launchVirtualMQNode(function (err, port) {
-        if (err) {
-            throw err;
-        }
-        w3cDID.createIdentity(config.didMethod, config.sender, (err, senderDID) => {
-            if (err)
+    dc.createTestFolder('AddFilesBatch', async (err, folder) => {
+        tir.launchApiHubTestNode(100, folder, async err => {
+            if (err) {
                 throw err;
-            const forked = fork('w3cDIDStressTestChild.js');
-            forked.on('message', (receiverDID) => {
-                console.log(`PRODUCER: received created and listening`);
+            }
+            w3cDID.createIdentity(config.didMethod, config.sender, (err, senderDID) => {
+                if (err)
+                    throw err;
+                const forked = fork('w3cDIDStressTestChild.js');
+                forked.on('message', (receiverDID) => {
+                    console.log(`PRODUCER: received created and listening`);
 
-                const sendMessage = function () {
-                    console.log("PRODUCER: Sending message", JSON.stringify(someData), " to receiver ", config.receiver);
-                    senderDID.sendMessage(JSON.stringify(someData), receiverDID, (err) => {
-                        if (err)
-                            return console.log(`PRODUCER: Error sending message`, err);
-                        msgCount++;
-                        console.log(`PRODUCER: Message successfully sent ${msgCount}`);
-                        if (msgCount === config.messages) {
-                            timeMessagesSent = Date.now();
-                            console.log(`PRODUCER: all messages sent in ${timeMessagesSent - timeAfterMessages}ms. closing test in 1 second`)
-                            setTimeout(testFinished, 1000);
-                        }
-                    });
-                }
-
-                const runTest = function () {
-                    timeBeforeMessages = Date.now();
-                    console.log(`PROCUCER: Before Messages: ${timeBeforeMessages}`);
-
-                    if (!config.messageTimeout) {
-                        for (let i = 0; i < config.messages; i++)
-                            sendMessage();
-
-                    } else {
-                        let counter = 0;
-                        const iterator = function () {
-                            console.log(`PRODUCER: sending message ${++counter}`);
-                            sendMessage();
-                            if (counter < config.messages)
-                                setTimeout(() => iterator(), config.messageTimeout);
-                            else {
-                                timeAfterMessages = Date.now();
-                                console.log(`PRODUCER: After Messages: ${timeAfterMessages}. Elapsed: ${timeAfterMessages - timeBeforeMessages}`);
-                                setTimeout(() => console.log('PRODUCER: 10 seconds since messages sent...'), 10000);
+                    const sendMessage = function () {
+                        console.log("PRODUCER: Sending message", JSON.stringify(someData), " to receiver ", config.receiver);
+                        senderDID.sendMessage(JSON.stringify(someData), receiverDID, (err) => {
+                            if (err)
+                                return console.log(`PRODUCER: Error sending message`, err);
+                            msgCount++;
+                            console.log(`PRODUCER: Message successfully sent ${msgCount}`);
+                            if (msgCount === config.messages) {
+                                timeMessagesSent = Date.now();
+                                console.log(`PRODUCER: all messages sent in ${timeMessagesSent - timeAfterMessages}ms. closing test in 1 second`)
+                                setTimeout(testFinished, 1000);
                             }
-                        }
-                        setTimeout(() => iterator(), config.timeout);
+                        });
                     }
 
+                    const runTest = function () {
+                        timeBeforeMessages = Date.now();
+                        console.log(`PROCUCER: Before Messages: ${timeBeforeMessages}`);
 
-                }
+                        if (!config.messageTimeout) {
+                            for (let i = 0; i < config.messages; i++)
+                                sendMessage();
 
-                if (config.kill) {
-                    forked.send({terminate: true});
-                    return setTimeout(() => runTest(), 100); // on a timer just to allow the child to properly terminate
-                }
+                        } else {
+                            let counter = 0;
+                            const iterator = function () {
+                                console.log(`PRODUCER: sending message ${++counter}`);
+                                sendMessage();
+                                if (counter < config.messages)
+                                    setTimeout(() => iterator(), config.messageTimeout);
+                                else {
+                                    timeAfterMessages = Date.now();
+                                    console.log(`PRODUCER: After Messages: ${timeAfterMessages}. Elapsed: ${timeAfterMessages - timeBeforeMessages}`);
+                                    setTimeout(() => console.log('PRODUCER: 10 seconds since messages sent...'), 10000);
+                                }
+                            }
+                            setTimeout(() => iterator(), config.timeout);
+                        }
 
-                runTest();
-            });
 
-            forked.send({
-                id: config.receiver,
-                didMethod: config.didMethod,
-                messages: config.messages,
-                timeout: config.timeout
+                    }
+
+                    if (config.kill) {
+                        forked.send({terminate: true});
+                        return setTimeout(() => runTest(), 100); // on a timer just to allow the child to properly terminate
+                    }
+
+                    runTest();
+                });
+
+                forked.send({
+                    id: config.receiver,
+                    didMethod: config.didMethod,
+                    messages: config.messages,
+                    timeout: config.timeout
+                });
             });
         });
     });

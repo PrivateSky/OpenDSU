@@ -6,7 +6,8 @@
  */
 
 require("../../../../../psknode/bundles/testsRuntime");
-const assert = require("double-check").assert;
+const double_check = require("double-check");
+const assert = double_check.assert;
 const db = require("../../../db");
 const tir = require("../../../../../psknode/tests/util/tir");
 
@@ -17,13 +18,15 @@ $$.flows.describe("FilterDB", {
     start: function (callback) {
         this.callback = callback;
 
-        tir.launchVirtualMQNode((err, port) => {
-            assert.true(err === null || typeof err === "undefined", "Failed to create server.");
+        double_check.createTestFolder('AddFilesBatch', async (err, folder) => {
+            tir.launchApiHubTestNode(100, folder, async err => {
+                assert.true(err === null || typeof err === "undefined", "Failed to create server.");
 
-            let keySSIApis = require("../../../keyssi");
-            let storageSSI = keySSIApis.createSeedSSI("default");
-            this.db = db.getWalletDB(storageSSI, "testDb");
-            this.addIndexes();
+                let keySSIApis = require("../../../keyssi");
+                let storageSSI = keySSIApis.createSeedSSI("default");
+                this.db = db.getWalletDB(storageSSI, "testDb");
+                this.addIndexes();
+            });
         });
 
     },
@@ -71,8 +74,8 @@ $$.flows.describe("FilterDB", {
             if (err) {
                 throw err;
             }
-            
-            
+
+
             assert.true(res.length === 1, `Expected to receive 1 record, but got ${res.length}`);
             assert.arraysMatch(res.map(el => el.value), [1]);
             this.db.filter("test", "value <= 2", "dsc", (err, res) => {
@@ -131,7 +134,7 @@ $$.flows.describe("FilterDB", {
             });
         });
     },
-    
+
     showAllValues: function () {
         this.db.filter("test", (err, res) => {
             if (err) {

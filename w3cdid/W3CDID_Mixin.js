@@ -82,9 +82,7 @@ function W3CDID_Mixin(target) {
             .getMQHandlerForDID(target);
         mqHandler.previewMessage((err, encryptedMessage) => {
             if (err) {
-                return callback(
-                    createOpenDSUErrorWrapper(`Failed to read message`, err)
-                );
+                return mqHandler.deleteMessage(encryptedMessage.messageId, () => callback(err));
             }
 
             let message;
@@ -96,7 +94,7 @@ function W3CDID_Mixin(target) {
 
             mqHandler.deleteMessage(encryptedMessage.messageId, (err) => {
                 if (err) {
-                    return callback(createOpenDSUErrorWrapper(`Failed to read message`, err));
+                    return callback(createOpenDSUErrorWrapper(`Failed to delete message`, err));
                 }
                 target.decryptMessage(message, callback);
             })

@@ -31,7 +31,7 @@ function BDNS() {
             }
 
             if(typeof bdnsCache[dlDomain] === "undefined"){
-                return callback(Error(`The provided domain ${dlDomain} is not configured`));
+                return callback(Error(`BDNS: The provided domain <${dlDomain}> is not configured. Check if the domain name is correct and if BDNS contains info for this specific domain.`));
             }
 
             const config = bdnsCache[dlDomain][section] ? bdnsCache[dlDomain][section] : [getBaseURL()];
