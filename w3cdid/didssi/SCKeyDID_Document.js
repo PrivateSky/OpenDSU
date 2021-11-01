@@ -40,6 +40,7 @@ function SCKeyDID_Document(isInitialisation, publicKey) {
     };
 
     this.sign = (hash, callback) => {
+        // TODO: add an 'expire' property
         memoryDb.insertRecord(TABLE_NAME, publicKey, { hash }, (err, result) => {
             if (err) {
                 return callback(err);
