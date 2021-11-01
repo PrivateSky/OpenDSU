@@ -121,28 +121,39 @@ const createDSUForExistingSSI = (ssi, options, callback) => {
  * If a new anchor is detected refresh the DSU
  */
 const getLatestDSUVersion = (dsu, callback) => {
-    const current = dsu.getCurrentAnchoredHashLink();
-    dsu.getLatestAnchoredHashLink((err, latest) => {
+    dsu.getCurrentAnchoredHashLink((err, current) => {
         if (err) {
             return callback(err);
         }
 
-        if (current.getHash() === latest.getHash()) {
-            // No new version detected
-            return callback(undefined, dsu);
-        }
-
-        if (dsu.hasUnanchoredChanges()) {
-            // The DSU is in the process of anchoring - don't refresh it
-            return callback(undefined, dsu);
-        }
-
-        // A new version is detected, refresh the DSU content
-        dsu.refresh((err) => {
+        dsu.getLatestAnchoredHashLink((err, latest) => {
             if (err) {
                 return callback(err);
             }
-            return callback(undefined, dsu);
+
+            if (current.getHash() === latest.getHash()) {
+                // No new version detected
+                return callback(undefined, dsu);
+            }
+
+            dsu.hasUnanchoredChanges((err, result) => {
+                if (err) {
+                    return callback(err);
+                }
+
+                if (result) {
+                    // The DSU is in the process of anchoring - don't refresh it
+                    return callback(undefined, dsu);
+                }
+
+                // A new version is detected, refresh the DSU content
+                dsu.refresh((err) => {
+                    if (err) {
+                        return callback(err);
+                    }
+                    return callback(undefined, dsu);
+                });
+            })
         });
     });
 }
