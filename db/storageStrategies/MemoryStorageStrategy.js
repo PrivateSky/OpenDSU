@@ -1,4 +1,4 @@
-function MemoryStorageStrategy(){
+function MemoryStorageStrategy() {
     const ObservableMixin = require("../../utils/ObservableMixin");
     const operators = require("./operators");
     let volatileMemory = {}
@@ -7,9 +7,10 @@ function MemoryStorageStrategy(){
     let dbName;
 
     ObservableMixin(this);
-    function getTable(tableName){
+
+    function getTable(tableName) {
         let table = volatileMemory[tableName];
-        if(!table){
+        if (!table) {
             table = volatileMemory[tableName] = {};
         }
         return table;
@@ -18,17 +19,17 @@ function MemoryStorageStrategy(){
     /*
        Get the whole content of the table and asynchronously returns an array with all the  records satisfying the condition tested by the filterFunction
     */
-    this.filterTable = function(tableName, filterFunction, callback){
+    this.filterTable = function (tableName, filterFunction, callback) {
         let tbl = getTable(tableName);
         let result = [];
-        for(let n in tbl){
+        for (let n in tbl) {
             let item = tbl[n];
-            if(filterFunction(item)){
+            if (filterFunction(item)) {
                 item.__key = n;
                 result.push(item);
             }
         }
-        callback(undefined,result);
+        callback(undefined, result);
     };
 
     this.filter = function (tableName, conditionsArray, sort, limit, callback) {
@@ -91,7 +92,7 @@ function MemoryStorageStrategy(){
     /*
       Insert a record, return error if already exists
     */
-    this.insertRecord = function(tableName, key, record, callback, reInsert = false){
+    this.insertRecord = function (tableName, key, record, callback, reInsert = false) {
         let currentParent = getTable(tableName)
 
         function _insertRecord(currentParent, currentKey) {
@@ -105,18 +106,16 @@ function MemoryStorageStrategy(){
 
         if (typeof key === 'string') {
             _insertRecord(currentParent, key)
-        }
-        else {
+        } else {
             let currentKey = key[0];
             for (let i = 1; i <= key.length; i++) {
-                if (currentParent[currentKey] == undefined){
+                if (currentParent[currentKey] == undefined) {
                     currentParent[currentKey] = i === key.length ? undefined : {}
                 }
 
                 if (i === key.length) {
                     break
-                }
-                else {
+                } else {
                     currentParent = currentParent[currentKey]
                     currentKey = key[i];
                 }
@@ -129,7 +128,7 @@ function MemoryStorageStrategy(){
     /*
         Update a record, return error if does not exists
      */
-    this.updateRecord = function(tableName, key, record, currentRecord, callback){
+    this.updateRecord = function (tableName, key, record, currentRecord, callback) {
         function _updateRecord(record, previousRecord, callback) {
             if (!previousRecord) {
                 return callback(new Error("Can't update a record for key " + key))
@@ -148,8 +147,7 @@ function MemoryStorageStrategy(){
                 }
                 _updateRecord(record, previousRecord, callback)
             })
-        }
-        else {
+        } else {
             _updateRecord(record, currentRecord, callback)
         }
     };
@@ -157,27 +155,25 @@ function MemoryStorageStrategy(){
     /*
         Get a single row from a table
      */
-    this.getRecord = function(tableName, key, callback){
+    this.getRecord = function (tableName, key, callback) {
         let tbl = getTable(tableName);
         let record;
         if (typeof key === 'string') {
             record = tbl[key];
-            if( record == undefined){
+            if (record == undefined) {
                 return callback(new Error("Can't retrieve a record for key " + key))
             }
             callback(undefined, record);
-        }
-        else {
+        } else {
             record = tbl[key[0]]
             for (let i = 1; i <= key.length; i++) {
-                if (record == undefined){
+                if (record == undefined) {
                     return callback(new Error("Can't retrieve a record for key " + key.concat(".")))
                 }
 
                 if (i === key.length) {
                     break
-                }
-                else {
+                } else {
                     record = record[key[i]];
                 }
             }
@@ -199,7 +195,7 @@ function MemoryStorageStrategy(){
     }
 
     const READ_WRITE_KEY_TABLE = "KeyValueTable";
-    this.writeKey =  (key, value, callback) => {
+    this.writeKey = (key, value, callback) => {
         let valueObject = {
             type: typeof value,
             value: value
@@ -219,10 +215,16 @@ function MemoryStorageStrategy(){
             }
         }
 
-        this.insertRecord(READ_WRITE_KEY_TABLE, key, valueObject, callback);
+        this.getRecord(READ_WRITE_KEY_TABLE, key, (err, existingValue) => {
+            if (err || !existingValue) {
+                this.insertRecord(READ_WRITE_KEY_TABLE, key, valueObject, callback);
+            } else {
+                this.updateRecord(READ_WRITE_KEY_TABLE, key, valueObject, existingValue, callback);
+            }
+        })
     };
 
-    this.readKey =  (key, callback) => {
+    this.readKey = (key, callback) => {
         this.getRecord(READ_WRITE_KEY_TABLE, key, (err, record) => {
             if (err) {
                 return callback(createOpenDSUErrorWrapper(`Failed to read key ${key}`, err));
@@ -244,7 +246,7 @@ function MemoryStorageStrategy(){
         });
     }
 
-    setTimeout(()=>{
+    setTimeout(() => {
         this.dispatchEvent("initialised");
     })
 }
