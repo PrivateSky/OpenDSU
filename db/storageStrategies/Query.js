@@ -1,6 +1,8 @@
 function Query(queryArray) {
     let conditions = [];
     const operators = require("./operators");
+    const {getCompareFunction} = require("./utils");
+
     function queryParser(query) {
         query.forEach(fieldQuery => {
             const splitQuery = fieldQuery.split(" ");
@@ -90,40 +92,6 @@ function Query(queryArray) {
 
     this.getConditions = () => {
         return conditions;
-    }
-
-    function getCompareFunction(sortOrder) {
-        if (sortOrder === "asc" || sortOrder === "ascending") {
-            return function (a, b) {
-                if (a < b) {
-                    return -1;
-                }
-
-                if (a === b) {
-                    return 0
-                }
-
-                if (a > b) {
-                    return 1;
-                }
-            }
-        } else if (sortOrder === "dsc" || sortOrder === "descending") {
-            return function (a, b) {
-                if (a > b) {
-                    return -1;
-                }
-
-                if (a === b) {
-                    return 0
-                }
-
-                if (a < b) {
-                    return 1;
-                }
-            }
-        } else {
-            throw Error(`Invalid sort order provided <${sortOrder}>`);
-        }
     }
 
     queryParser(queryArray);

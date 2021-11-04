@@ -1,4 +1,5 @@
 const ObservableMixin = require("../../utils/ObservableMixin");
+const Query = require("./Query");
 
 function SingleDSUStorageStrategy() {
     let volatileMemory = {}
@@ -26,8 +27,8 @@ function SingleDSUStorageStrategy() {
         storageDSU.commitBatch(callback);
     }
 
-    this.getAllRecords = (tableName, callback)=>{
-        readTheWholeTable(tableName, (err, tbl)=>{
+    this.getAllRecords = (tableName, callback) => {
+        readTheWholeTable(tableName, (err, tbl) => {
             if (err) {
                 return callback(err);
             }
@@ -68,20 +69,32 @@ function SingleDSUStorageStrategy() {
     /*
        Get the whole content of the table and asynchronously returns an array with all the  records satisfying the condition tested by the filterFunction
     */
-    this.filterTable = function (tableName, filterFunction, callback) {
-        readTheWholeTable(tableName, function (err, tbl) {
+    const filterTable = function (tableName, conditionsArray, sort, limit, callback) {
+        readTheWholeTable(tableName, (err, tbl) => {
             if (err) {
                 return callback(createOpenDSUErrorWrapper(`Failed to read table ${tableName}`, err));
             }
-            let result = [];
-            for (let n in tbl) {
-                let item = tbl[n];
-                if (filterFunction(item)) {
-                    item.__key = n;
-                    result.push(item);
+
+            const operators = require("./operators");
+            const filteredRecords = [];
+            Object.values(tbl).forEach(record=>{
+                let recordIsValid = true;
+                for (let i = 0; i < conditionsArray.length; i++) {
+                    const condition = conditionsArray[i];
+                    const [field, operator, value] = condition.split(" ");
+                    if (!operators[operator](record[field], value)) {
+                        recordIsValid = false;
+                        break;
+                    }
                 }
-            }
-            callback(undefined, result);
+
+                if (recordIsValid) {
+                    filteredRecords.push(record);
+                }
+            })
+            const {getCompareFunctionForObjects} = require("./utils");
+            filteredRecords.sort(getCompareFunctionForObjects(sort, conditionsArray[0].split(" ")[0]))
+            callback(undefined, filteredRecords.slice(0, limit));
         });
     };
 
@@ -136,33 +149,43 @@ function SingleDSUStorageStrategy() {
 
         const indexName = query.getIndexName();
 
-        this.addIndex(tableName, indexName, (err) => {
+        checkFieldIsIndexed(tableName, indexName, (err, status) => {
             if (err) {
                 return callback(createOpenDSUErrorWrapper(`Failed to add index for fields ${indexName} in table ${tableName}`, err));
             }
 
-            storageDSU.listFiles(getIndexPath(tableName, indexName), (err, values) => {
-                if (err) {
-                    return callback(createOpenDSUErrorWrapper(`Failed read values for field ${indexName}`, err));
-                }
-
-                const pks = [];
-                const uniqueIndexedValues = [];
-                values.forEach(value => {
-                    const splitValue = value.split("/");
-                    if (pks.indexOf(splitValue[1]) === -1) {
-                        pks.push(splitValue[1]);
-                        uniqueIndexedValues.push(splitValue[0]);
-                    } else {
-                        console.warn(`Record with pk ${splitValue[1]} already indexed on field ${indexName}`);
+            const __filterIndexedTable = () => {
+                storageDSU.listFiles(getIndexPath(tableName, indexName), (err, values) => {
+                    if (err) {
+                        return callback(createOpenDSUErrorWrapper(`Failed read values for field ${indexName}`, err));
                     }
-                })
 
-                let filteredValues = query.filterValuesForIndex(uniqueIndexedValues);
-                query.sortValues(filteredValues, sort);
-                const getNextRecordForValue = getNextRecordFunction(tableName, indexName)
-                query.filter(filteredValues, getNextRecordForValue, limit, callback);
-            });
+                    const pks = [];
+                    const uniqueIndexedValues = [];
+                    values.forEach(value => {
+                        const splitValue = value.split("/");
+                        if (pks.indexOf(splitValue[1]) === -1) {
+                            pks.push(splitValue[1]);
+                            uniqueIndexedValues.push(splitValue[0]);
+                        } else {
+                            console.warn(`Record with pk ${splitValue[1]} already indexed on field ${indexName}`);
+                        }
+                    })
+
+                    let filteredValues = query.filterValuesForIndex(uniqueIndexedValues);
+                    query.sortValues(filteredValues, sort);
+                    const getNextRecordForValue = getNextRecordFunction(tableName, indexName)
+                    query.filter(filteredValues, getNextRecordForValue, limit, callback);
+                });
+            }
+
+
+            if (status) {
+                return __filterIndexedTable;
+            }
+
+            console.warn("Warning - Performing a filter on a not indexed table can be slow. Try calling addIndex first.");
+            filterTable(tableName, conditionsArray, sort, limit, callback);
         });
     }
 
