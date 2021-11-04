@@ -17,7 +17,7 @@ assert.callback('Create DSU on partial supported domain will fail', (testfinishe
             prepareBDNSContext(folder);
             createDSU(domain, (err, dsu) => {
                 assert.notEqual(typeof err, 'undefined', "DSU should not be created");
-                assert.true(err.message.indexOf(`The provided domain ${domain} is not configured`) !== -1, "Error message should reflect unsupported domain");
+                assert.true(err.message.indexOf(`The provided domain <${domain}> is not configured`) !== -1, "Error message should reflect unsupported domain");
 
                 testfinished();
             });
