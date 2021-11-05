@@ -1,5 +1,6 @@
 const ObservableMixin = require("../../utils/ObservableMixin");
 const Query = require("./Query");
+const operators = require("./operators");
 
 function SingleDSUStorageStrategy() {
     let volatileMemory = {}
@@ -77,7 +78,12 @@ function SingleDSUStorageStrategy() {
 
             const operators = require("./operators");
             const filteredRecords = [];
-            Object.values(tbl).forEach(record=>{
+            const records = Object.values(tbl);
+            for (let i = 0; i < records.length; i++) {
+                const record = records[i];
+                if (record.__deleted) {
+                    continue;
+                }
                 let recordIsValid = true;
                 for (let i = 0; i < conditionsArray.length; i++) {
                     const condition = conditionsArray[i];
@@ -91,7 +97,22 @@ function SingleDSUStorageStrategy() {
                 if (recordIsValid) {
                     filteredRecords.push(record);
                 }
-            })
+            }
+            // Object.values(tbl).forEach(record => {
+            //     let recordIsValid = true;
+            //     for (let i = 0; i < conditionsArray.length; i++) {
+            //         const condition = conditionsArray[i];
+            //         const [field, operator, value] = condition.split(" ");
+            //         if (!operators[operator](record[field], value) || record.__deleted) {
+            //             recordIsValid = false;
+            //             break;
+            //         }
+            //     }
+            //
+            //     if (recordIsValid) {
+            //         filteredRecords.push(record);
+            //     }
+            // })
             const {getCompareFunctionForObjects} = require("./utils");
             filteredRecords.sort(getCompareFunctionForObjects(sort, conditionsArray[0].split(" ")[0]))
             callback(undefined, filteredRecords.slice(0, limit));
@@ -184,7 +205,7 @@ function SingleDSUStorageStrategy() {
                 return __filterIndexedTable();
             }
 
-            console.warn("Warning - Performing a filter on a not indexed table can be slow. Try calling addIndex first.");
+            console.log(`Warning - You tried filtering the table <${tableName}> on field <${conditionsArray[0].split(' ')[0]}> which is not indexed. This operation can be slow. Try calling addIndex on field <${conditionsArray[0].split(' ')[0]}> first.`);
             filterTable(tableName, conditionsArray, sort, limit, callback);
         });
     }
@@ -260,12 +281,23 @@ function SingleDSUStorageStrategy() {
                 return callback(createOpenDSUErrorWrapper(`Failed to get primary keys for table ${tableName}`, err));
             }
 
-            function createIndexFilesRecursively(index) {
-                if (index === primaryKeys.length) {
-                    return callback(undefined);
-                }
+            const TaskCounter = require("swarmutils").TaskCounter;
+            const taskCounter = new TaskCounter(() => {
+                return callback();
+            })
 
-                const pk = primaryKeys[index];
+            if (primaryKeys.length === 0) {
+                return storageDSU.createFolder(getIndexPath(tableName, fieldName), (err) => {
+                    if (err) {
+                        return callback(createOpenDSUErrorWrapper(`Failed to create empty index for field ${fieldName} in table ${tableName}`, err));
+                    }
+
+                    callback();
+                });
+            }
+
+            taskCounter.increment(primaryKeys.length);
+            primaryKeys.forEach(pk => {
                 self.getRecord(tableName, pk, (err, record) => {
                     if (err) {
                         return callback(createOpenDSUErrorWrapper(`Failed to get record ${pk} from table ${tableName}`));
@@ -276,23 +308,11 @@ function SingleDSUStorageStrategy() {
                             return callback(createOpenDSUErrorWrapper(`Failed to create index for field ${fieldName} in table ${tableName}`, err));
                         }
 
-                        createIndexFilesRecursively(index + 1);
+                        taskCounter.decrement();
                     });
                 });
-            }
+            })
 
-            if (primaryKeys.length === 0) {
-                storageDSU.createFolder(getIndexPath(tableName, fieldName), (err) => {
-
-                    if (err) {
-                        return callback(createOpenDSUErrorWrapper(`Failed to create empty index for field ${fieldName} in table ${tableName}`, err));
-                    }
-
-                    callback(undefined)
-                });
-            } else {
-                createIndexFilesRecursively(0);
-            }
         });
     }
 
@@ -322,25 +342,25 @@ function SingleDSUStorageStrategy() {
                 return callback();
             }
 
-            function updateIndexesRecursively(index) {
-                const field = fields[index];
-                if (typeof field === "undefined") {
-                    return callback();
-                }
+            const TaskCounter = require("swarmutils").TaskCounter;
+            const taskCounter = new TaskCounter(() => {
+                return callback();
+            })
+
+            taskCounter.increment(fields.length);
+            fields.forEach(field => {
                 if (indexedFields.findIndex(indexedField => indexedField === field) !== -1) {
                     createIndexEntry(tableName, field, pk, record[field], (err) => {
                         if (err) {
                             return callback(createOpenDSUErrorWrapper(`Failed to update index for field ${field} in table ${tableName}`, err));
                         }
 
-                        updateIndexesRecursively(index + 1);
+                        taskCounter.decrement();
                     });
                 } else {
-                    updateIndexesRecursively(index + 1);
+                    taskCounter.decrement();
                 }
-            }
-
-            updateIndexesRecursively(0);
+            })
         });
     }
 
@@ -366,8 +386,6 @@ function SingleDSUStorageStrategy() {
             //TODO handle error type
             //ignoring error on purpose
             callback(undefined);
-
-
         });
     }
 
@@ -381,6 +399,26 @@ function SingleDSUStorageStrategy() {
             if (indexedFields.length === 0) {
                 return callback();
             }
+
+            const TaskCounter = require("swarmutils").TaskCounter;
+            const taskCounter = new TaskCounter(() => {
+                return callback();
+            })
+
+            taskCounter.increment(fields.length);
+            fields.forEach(field => {
+                if (indexedFields.findIndex(indexedField => indexedField === field) !== -1) {
+                    deleteIndex(tableName, field, pk, record[field], (err) => {
+                        if (err) {
+                            return callback(createOpenDSUErrorWrapper(`Failed to delete index for field ${field} in table ${tableName}`, err));
+                        }
+
+                        taskCounter.decrement();
+                    });
+                } else {
+                    taskCounter.decrement();
+                }
+            })
 
             function deleteIndexesRecursively(index) {
                 const field = fields[index];
@@ -399,8 +437,6 @@ function SingleDSUStorageStrategy() {
                     deleteIndexesRecursively(index + 1);
                 }
             }
-
-            deleteIndexesRecursively(0);
         });
     }
 
