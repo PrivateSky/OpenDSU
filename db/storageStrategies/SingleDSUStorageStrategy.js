@@ -181,7 +181,7 @@ function SingleDSUStorageStrategy() {
 
 
             if (status) {
-                return __filterIndexedTable;
+                return __filterIndexedTable();
             }
 
             console.warn("Warning - Performing a filter on a not indexed table can be slow. Try calling addIndex first.");
