@@ -1,4 +1,6 @@
 const ObservableMixin = require("../../utils/ObservableMixin");
+const Query = require("./Query");
+const operators = require("./operators");
 
 function SingleDSUStorageStrategy() {
     let volatileMemory = {}
@@ -26,8 +28,8 @@ function SingleDSUStorageStrategy() {
         storageDSU.commitBatch(callback);
     }
 
-    this.getAllRecords = (tableName, callback)=>{
-        readTheWholeTable(tableName, (err, tbl)=>{
+    this.getAllRecords = (tableName, callback) => {
+        readTheWholeTable(tableName, (err, tbl) => {
             if (err) {
                 return callback(err);
             }
@@ -42,6 +44,10 @@ function SingleDSUStorageStrategy() {
                 return callback(createOpenDSUErrorWrapper(`Failed to read the records in table ${tableName}`, err));
             }
             const table = {};
+            if (recordKeys.length === 0) {
+                return callback(undefined, table);
+            }
+
             const TaskCounter = require("swarmutils").TaskCounter;
             const tc = new TaskCounter(() => {
                 return callback(undefined, table);
@@ -64,20 +70,52 @@ function SingleDSUStorageStrategy() {
     /*
        Get the whole content of the table and asynchronously returns an array with all the  records satisfying the condition tested by the filterFunction
     */
-    this.filterTable = function (tableName, filterFunction, callback) {
-        readTheWholeTable(tableName, function (err, tbl) {
+    const filterTable = function (tableName, conditionsArray, sort, limit, callback) {
+        readTheWholeTable(tableName, (err, tbl) => {
             if (err) {
                 return callback(createOpenDSUErrorWrapper(`Failed to read table ${tableName}`, err));
             }
-            let result = [];
-            for (let n in tbl) {
-                let item = tbl[n];
-                if (filterFunction(item)) {
-                    item.__key = n;
-                    result.push(item);
+
+            const operators = require("./operators");
+            const filteredRecords = [];
+            const records = Object.values(tbl);
+            for (let i = 0; i < records.length; i++) {
+                const record = records[i];
+                if (record.__deleted) {
+                    continue;
+                }
+                let recordIsValid = true;
+                for (let i = 0; i < conditionsArray.length; i++) {
+                    const condition = conditionsArray[i];
+                    const [field, operator, value] = condition.split(" ");
+                    if (!operators[operator](record[field], value)) {
+                        recordIsValid = false;
+                        break;
+                    }
+                }
+
+                if (recordIsValid) {
+                    filteredRecords.push(record);
                 }
             }
-            callback(undefined, result);
+            // Object.values(tbl).forEach(record => {
+            //     let recordIsValid = true;
+            //     for (let i = 0; i < conditionsArray.length; i++) {
+            //         const condition = conditionsArray[i];
+            //         const [field, operator, value] = condition.split(" ");
+            //         if (!operators[operator](record[field], value) || record.__deleted) {
+            //             recordIsValid = false;
+            //             break;
+            //         }
+            //     }
+            //
+            //     if (recordIsValid) {
+            //         filteredRecords.push(record);
+            //     }
+            // })
+            const {getCompareFunctionForObjects} = require("./utils");
+            filteredRecords.sort(getCompareFunctionForObjects(sort, conditionsArray[0].split(" ")[0]))
+            callback(undefined, filteredRecords.slice(0, limit));
         });
     };
 
@@ -132,33 +170,43 @@ function SingleDSUStorageStrategy() {
 
         const indexName = query.getIndexName();
 
-        this.addIndex(tableName, indexName, (err) => {
+        checkFieldIsIndexed(tableName, indexName, (err, status) => {
             if (err) {
                 return callback(createOpenDSUErrorWrapper(`Failed to add index for fields ${indexName} in table ${tableName}`, err));
             }
 
-            storageDSU.listFiles(getIndexPath(tableName, indexName), (err, values) => {
-                if (err) {
-                    return callback(createOpenDSUErrorWrapper(`Failed read values for field ${indexName}`, err));
-                }
-
-                const pks = [];
-                const uniqueIndexedValues = [];
-                values.forEach(value => {
-                    const splitValue = value.split("/");
-                    if (pks.indexOf(splitValue[1]) === -1) {
-                        pks.push(splitValue[1]);
-                        uniqueIndexedValues.push(splitValue[0]);
-                    } else {
-                        console.warn(`Record with pk ${splitValue[1]} already indexed on field ${indexName}`);
+            const __filterIndexedTable = () => {
+                storageDSU.listFiles(getIndexPath(tableName, indexName), (err, values) => {
+                    if (err) {
+                        return callback(createOpenDSUErrorWrapper(`Failed read values for field ${indexName}`, err));
                     }
-                })
 
-                let filteredValues = query.filterValuesForIndex(uniqueIndexedValues);
-                query.sortValues(filteredValues, sort);
-                const getNextRecordForValue = getNextRecordFunction(tableName, indexName)
-                query.filter(filteredValues, getNextRecordForValue, limit, callback);
-            });
+                    const pks = [];
+                    const uniqueIndexedValues = [];
+                    values.forEach(value => {
+                        const splitValue = value.split("/");
+                        if (pks.indexOf(splitValue[1]) === -1) {
+                            pks.push(splitValue[1]);
+                            uniqueIndexedValues.push(splitValue[0]);
+                        } else {
+                            console.warn(`Record with pk ${splitValue[1]} already indexed on field ${indexName}`);
+                        }
+                    })
+
+                    let filteredValues = query.filterValuesForIndex(uniqueIndexedValues);
+                    query.sortValues(filteredValues, sort);
+                    const getNextRecordForValue = getNextRecordFunction(tableName, indexName)
+                    query.filter(filteredValues, getNextRecordForValue, limit, callback);
+                });
+            }
+
+
+            if (status) {
+                return __filterIndexedTable();
+            }
+
+            console.log(`Warning - You tried filtering the table <${tableName}> on field <${conditionsArray[0].split(' ')[0]}> which is not indexed. This operation can be slow. Try calling addIndex on field <${conditionsArray[0].split(' ')[0]}> first.`);
+            filterTable(tableName, conditionsArray, sort, limit, callback);
         });
     }
 
@@ -233,12 +281,23 @@ function SingleDSUStorageStrategy() {
                 return callback(createOpenDSUErrorWrapper(`Failed to get primary keys for table ${tableName}`, err));
             }
 
-            function createIndexFilesRecursively(index) {
-                if (index === primaryKeys.length) {
-                    return callback(undefined);
-                }
+            const TaskCounter = require("swarmutils").TaskCounter;
+            const taskCounter = new TaskCounter(() => {
+                return callback();
+            })
 
-                const pk = primaryKeys[index];
+            if (primaryKeys.length === 0) {
+                return storageDSU.createFolder(getIndexPath(tableName, fieldName), (err) => {
+                    if (err) {
+                        return callback(createOpenDSUErrorWrapper(`Failed to create empty index for field ${fieldName} in table ${tableName}`, err));
+                    }
+
+                    callback();
+                });
+            }
+
+            taskCounter.increment(primaryKeys.length);
+            primaryKeys.forEach(pk => {
                 self.getRecord(tableName, pk, (err, record) => {
                     if (err) {
                         return callback(createOpenDSUErrorWrapper(`Failed to get record ${pk} from table ${tableName}`));
@@ -249,23 +308,11 @@ function SingleDSUStorageStrategy() {
                             return callback(createOpenDSUErrorWrapper(`Failed to create index for field ${fieldName} in table ${tableName}`, err));
                         }
 
-                        createIndexFilesRecursively(index + 1);
+                        taskCounter.decrement();
                     });
                 });
-            }
+            })
 
-            if (primaryKeys.length === 0) {
-                storageDSU.createFolder(getIndexPath(tableName, fieldName), (err) => {
-
-                    if (err) {
-                        return callback(createOpenDSUErrorWrapper(`Failed to create empty index for field ${fieldName} in table ${tableName}`, err));
-                    }
-
-                    callback(undefined)
-                });
-            } else {
-                createIndexFilesRecursively(0);
-            }
         });
     }
 
@@ -295,25 +342,25 @@ function SingleDSUStorageStrategy() {
                 return callback();
             }
 
-            function updateIndexesRecursively(index) {
-                const field = fields[index];
-                if (typeof field === "undefined") {
-                    return callback();
-                }
+            const TaskCounter = require("swarmutils").TaskCounter;
+            const taskCounter = new TaskCounter(() => {
+                return callback();
+            })
+
+            taskCounter.increment(fields.length);
+            fields.forEach(field => {
                 if (indexedFields.findIndex(indexedField => indexedField === field) !== -1) {
                     createIndexEntry(tableName, field, pk, record[field], (err) => {
                         if (err) {
                             return callback(createOpenDSUErrorWrapper(`Failed to update index for field ${field} in table ${tableName}`, err));
                         }
 
-                        updateIndexesRecursively(index + 1);
+                        taskCounter.decrement();
                     });
                 } else {
-                    updateIndexesRecursively(index + 1);
+                    taskCounter.decrement();
                 }
-            }
-
-            updateIndexesRecursively(0);
+            })
         });
     }
 
@@ -339,8 +386,6 @@ function SingleDSUStorageStrategy() {
             //TODO handle error type
             //ignoring error on purpose
             callback(undefined);
-
-
         });
     }
 
@@ -354,6 +399,26 @@ function SingleDSUStorageStrategy() {
             if (indexedFields.length === 0) {
                 return callback();
             }
+
+            const TaskCounter = require("swarmutils").TaskCounter;
+            const taskCounter = new TaskCounter(() => {
+                return callback();
+            })
+
+            taskCounter.increment(fields.length);
+            fields.forEach(field => {
+                if (indexedFields.findIndex(indexedField => indexedField === field) !== -1) {
+                    deleteIndex(tableName, field, pk, record[field], (err) => {
+                        if (err) {
+                            return callback(createOpenDSUErrorWrapper(`Failed to delete index for field ${field} in table ${tableName}`, err));
+                        }
+
+                        taskCounter.decrement();
+                    });
+                } else {
+                    taskCounter.decrement();
+                }
+            })
 
             function deleteIndexesRecursively(index) {
                 const field = fields[index];
@@ -372,8 +437,6 @@ function SingleDSUStorageStrategy() {
                     deleteIndexesRecursively(index + 1);
                 }
             }
-
-            deleteIndexesRecursively(0);
         });
     }
 

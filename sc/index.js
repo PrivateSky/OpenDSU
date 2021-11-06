@@ -41,12 +41,13 @@ function getMainDSU(callback) {
 }
 
 function getMainDSUForNode(callback) {
+    let mainDSU;
     const path = require("path");
     const crypto = require("opendsu").loadAPI("crypto");
     const uid = crypto.generateRandom(5).toString("hex");
     const BASE_DIR_PATH = path.join(require("os").tmpdir(), uid);
     const MAIN_DSU_PATH = path.join(BASE_DIR_PATH, "wallet");
-    const DOMAIN = "vault";
+    const DOMAIN = process.env.VAULT_DOMAIN || "vault";
     const fs = require("fs");
     const resolver = require("opendsu").loadAPI("resolver");
 
@@ -59,8 +60,8 @@ function getMainDSUForNode(callback) {
                 setMainDSU(seedDSU);
 
                 seedDSU.writeFile("/environment.json", JSON.stringify({
-                    vaultDomain: "vault",
-                    didDomain: "vault"
+                    vaultDomain: DOMAIN,
+                    didDomain: DOMAIN
                 }), (err) => {
                     if (err) {
                         return callback(err);
@@ -127,9 +128,6 @@ function SecurityContext() {
     const ObservableMixin = require("../utils/ObservableMixin");
     ObservableMixin(this);
     const openDSU = require("opendsu");
-    const crypto = openDSU.loadAPI("crypto");
-    const keySSISpace = openDSU.loadAPI("keyssi")
-    const resolver = openDSU.loadAPI("resolver")
     const config = openDSU.loadAPI("config");
     const enclaveAPI = openDSU.loadAPI("enclave");
     let enclave;
@@ -184,7 +182,7 @@ function SecurityContext() {
 
         enclave = enclaveAPI.createEnclave(enclaveType);
         await initSharedEnclave();
-        enclave.on("initialised", async () => {
+        const __saveEnclaveDIDAndFinishInit =async ()=>{
             if (typeof enclaveDID === "undefined") {
                 enclaveDID = await $$.promisify(enclave.getDID)();
                 try {
@@ -204,7 +202,15 @@ function SecurityContext() {
             } else {
                 finishInit();
             }
-        });
+        }
+
+        if(enclave.isInitialised()){
+            __saveEnclaveDIDAndFinishInit()
+        }else{
+            enclave.on("initialised", async () => {
+                __saveEnclaveDIDAndFinishInit();
+            });
+        }
     }
 
     const finishInit = () => {

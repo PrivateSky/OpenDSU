@@ -36,5 +36,5 @@ assert.callback('key DID SSI test', (testFinished) => {
 
         testFinished();
     });
-}, 5000);
+}, 50000);
 

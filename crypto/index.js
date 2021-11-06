@@ -5,6 +5,8 @@ const keySSIFactory = keySSIResolver.KeySSIFactory;
 const SSITypes = keySSIResolver.SSITypes;
 const CryptoFunctionTypes = keySSIResolver.CryptoFunctionTypes;
 const jwtUtils = require("./jwt");
+const constants = require("../moduleConstants");
+const config = require("./index");
 
 const templateSeedSSI = keySSIFactory.createType(SSITypes.SEED_SSI);
 templateSeedSSI.load(SSITypes.SEED_SSI, "default");
@@ -54,10 +56,6 @@ const deriveEncryptionKey = (password) => {
 
 const convertDerSignatureToASN1 = (derSignature) => {
     return require('pskcrypto').decodeDerToASN1ETH(derSignature);
-};
-
-const convertASN1SignatureToDer = (ans1Signature) => {
-
 };
 
 const sign = (keySSI, data, callback) => {
@@ -276,6 +274,17 @@ function createBloomFilter(options) {
     return new BloomFilter(options);
 }
 
+const sha256JOSE = (data) => {
+    const pskCrypto = require("pskcrypto");
+    return pskCrypto.hash("sha256", data);
+}
+
+const base64UrlEncodeJOSE = (data) => {
+    if (typeof data === "string") {
+        data = $$.Buffer.from(data);
+    }
+    return data.toString("base64").replaceAll('+', '-').replaceAll('/', '_').replaceAll('=', '');
+}
 
 module.exports = {
     getCryptoFunctionForKeySSI,
@@ -312,5 +321,8 @@ module.exports = {
     verifyDID_JWT,
     verifyDIDAuthToken,
     createAuthTokenForDID,
-    createCredentialForDID
+    createCredentialForDID,
+    base64UrlEncodeJOSE,
+    sha256JOSE,
+    joseAPI: require("pskcrypto").joseAPI
 };

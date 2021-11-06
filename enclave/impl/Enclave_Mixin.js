@@ -102,12 +102,16 @@ function Enclave_Mixin(target, did) {
         target.storageDB.cancelBatch(callback);
     }
 
-    target.readKey = (forDID, key, callback)=>{
+    target.readKey = (forDID, key, callback) => {
         target.storageDB.readKey(key, callback);
     }
 
-    target.writeKey = (forDID, key, value, callback)=>{
+    target.writeKey = (forDID, key, value, callback) => {
         target.storageDB.writeKey(key, value, callback);
+    }
+
+    target.getAllRecords = (forDID, tableName, callback) => {
+        target.storageDB.getAllRecords(tableName, callback);
     }
 
     target.storeSeedSSI = (forDID, seedSSI, alias, callback) => {

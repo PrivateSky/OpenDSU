@@ -46,6 +46,7 @@ if(!PREVENT_DOUBLE_LOADING_OF_OPENDSU.INITIALISED){
             case "keyssi":return require("./keyssi"); break;
             case "mq":return require("./mq"); break;
             case "notifications":return require("./notifications"); break;
+            case "oauth":return require("./oauth"); break;
             case "resolver":return require("./resolver"); break;
             case "sc":return require("./sc"); break;
             case "cache":return require("./cache"); break;
