@@ -102,24 +102,24 @@ function GroupDID_Method() {
     }
 }
 
-function SCKeyDID_Method() {
-    let SCKeyDIDDocument = require('./SCKeyDID_Document');
+function ContractDID_Method() {
+    let ContractDIDDocument = require('./ContractDID_Document');
 
-    this.create = (callback) => {
-        const scKeyDIDDocument = SCKeyDIDDocument.initiateDIDDocument();
+    this.create = (name, callback) => {
+        const contractDIDDocument = ContractDIDDocument.initiateDIDDocument(name);
         const securityContext = require("opendsu").loadAPI("sc").getSecurityContext();
-        securityContext.registerDID(scKeyDIDDocument, (err) => {
+        securityContext.registerDID(contractDIDDocument, (err) => {
             if (err) {
-                return callback(createOpenDSUErrorWrapper(`failed to register did ${scKeyDIDDocument.getIdentifier()} in security context`, err));
+                return callback(createOpenDSUErrorWrapper(`failed to register did ${contractDIDDocument.getIdentifier()} in security context`, err));
             }
 
-            callback(null, scKeyDIDDocument);
+            callback(null, contractDIDDocument);
         })
         
     }
     
     this.resolve = (tokens, callback) => {
-        callback(null, SCKeyDIDDocument.createDIDDocument(tokens))
+        callback(null, ContractDIDDocument.createDIDDocument(tokens))
     }
 }
 
@@ -139,8 +139,8 @@ function create_GroupDID_Method() {
     return new GroupDID_Method();
 }
 
-function create_SCKeyDID_Method() {
-    return new SCKeyDID_Method();
+function create_ContractDID_Method() {
+    return new ContractDID_Method();
 }
 
 
@@ -149,5 +149,5 @@ module.exports = {
     create_SReadDID_Method,
     create_NameDID_Method,
     create_GroupDID_Method,
-    create_SCKeyDID_Method
+    create_ContractDID_Method
 }
