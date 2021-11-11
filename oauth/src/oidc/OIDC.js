@@ -112,7 +112,7 @@ class OIDC {
 
 
     isCallbackPhaseActive() {
-        return !!location.toString().includes(this.client.redirectPath);
+        return !!location.toString().includes(this.client.redirectPath) || !!location.toString().includes("/#code=");
     }
 
 
