@@ -37,10 +37,6 @@ const createTemplateSeedSSI = (domain, specificString, control, vn, hint, callba
     return createTemplateKeySSI(SSITypes.SEED_SSI, domain, specificString, control, vn, hint, callback);
 };
 
-const we_createTemplateSeedSSI = (enclave, domain, specificString, control, vn, hint, callback) => {
-    return createTemplateKeySSI(SSITypes.SEED_SSI, domain, specificString, control, vn, hint, callback);
-};
-
 const createHashLinkSSI = (domain, hash, vn, hint) => {
     const hashLinkSSI = keySSIFactory.createType(SSITypes.HASH_LINK_SSI)
     hashLinkSSI.initialize(domain, hash, vn, hint);
@@ -48,11 +44,6 @@ const createHashLinkSSI = (domain, hash, vn, hint) => {
 };
 
 const createTemplateKeySSI = (ssiType, domain, specificString, control, vn, hint, callback) => {
-    //only ssiType and domain are mandatory arguments
-    return we_createTemplateKeySSI(dbAPI.getMainEnclave(), ssiType, domain, specificString, control, vn, hint, callback);
-};
-
-const we_createTemplateKeySSI = (enclave, ssiType, domain, specificString, control, vn, hint, callback) => {
     //only ssiType and domain are mandatory arguments
     if (typeof specificString === "function") {
         callback = specificString;
@@ -73,11 +64,7 @@ const we_createTemplateKeySSI = (enclave, ssiType, domain, specificString, contr
     const keySSI = keySSIFactory.createType(ssiType);
     keySSI.load(ssiType, domain, specificString, control, vn, hint);
     if (typeof callback === "function") {
-        if (enclave) {
-            enclave.storeKeySSI(keySSI, (err) => callback(err, keySSI));
-        } else {
-            callback(undefined, keySSI);
-        }
+        callback(undefined, keySSI);
     }
     return keySSI;
 };
