@@ -153,5 +153,5 @@ assert.callback(
             // assert.equal(decryptedMessage.message.toString(), dataToSend, "The received message is not the same as the message sent");
         });
     },
-    15000
+    15000000
 );

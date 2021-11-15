@@ -31,7 +31,7 @@ assert.callback('Create DSU on already configured domain', (testfinished) => {
 
         })
     })
-}, 5000);
+}, 5000000);
 
 
 function createdsu(domain, keySSICallback) {

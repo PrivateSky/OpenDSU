@@ -182,7 +182,7 @@ function SecurityContext() {
 
         enclave = enclaveAPI.createEnclave(enclaveType);
         await initSharedEnclave();
-        const __saveEnclaveDIDAndFinishInit =async ()=>{
+        const __saveEnclaveDIDAndFinishInit = async () => {
             if (typeof enclaveDID === "undefined") {
                 enclaveDID = await $$.promisify(enclave.getDID)();
                 try {
@@ -204,9 +204,9 @@ function SecurityContext() {
             }
         }
 
-        if(enclave.isInitialised()){
+        if (enclave.isInitialised()) {
             __saveEnclaveDIDAndFinishInit()
-        }else{
+        } else {
             enclave.on("initialised", async () => {
                 __saveEnclaveDIDAndFinishInit();
             });
@@ -290,47 +290,59 @@ function SecurityContext() {
         callback(undefined, storageDSU);
     }
 
-    const wrapEnclave = (enclave) => {
-        const enclaveDB = {};
+    const wrapEnclave = (asDID, enclave) => {
+        const wrappedEnclave = {};
         let asyncDBMethods = ["insertRecord", "updateRecord", "getRecord", "deleteRecord", "filter", "commitBatch", "cancelBatch", "getKeySSI", "readKey", "writeKey", "getAllRecords"];
-        let syncDBMethods = ["beginBatch"]
         for (let i = 0; i < asyncDBMethods.length; i++) {
-            enclaveDB[asyncDBMethods[i]] = function (...args) {
-                enclave[asyncDBMethods[i]](mainDID, ...args);
+            wrappedEnclave[asyncDBMethods[i]] = (...args) => {
+                enclave[asyncDBMethods[i]](asDID, ...args);
             }
 
-            enclaveDB[`${asyncDBMethods[i]}Async`] = $$.promisify(enclaveDB[asyncDBMethods[i]]);
+            wrappedEnclave[`${asyncDBMethods[i]}Async`] = $$.promisify(wrappedEnclave[asyncDBMethods[i]]);
         }
 
-
-        for (let i = 0; i < syncDBMethods.length; i++) {
-            enclaveDB[syncDBMethods[i]] = function (...args) {
-                enclave[syncDBMethods[i]](mainDID, ...args);
+        Object.keys(enclave).forEach(methodName => {
+            if (typeof wrappedEnclave[methodName] === "undefined") {
+                wrappedEnclave[methodName] = (...args) => {
+                    enclave[methodName](asDID, ...args);
+                }
             }
-        }
-
-        return enclaveDB;
+        })
+        return wrappedEnclave;
     }
-    this.getMainEnclaveDB = (callback) => {
+    this.getMainEnclaveDB = (asDID, callback) => {
+        if (typeof asDID === "function") {
+            callback = asDID;
+            asDID = mainDID;
+        }
+
         let mainEnclaveDB;
         if (this.isInitialised()) {
-            mainEnclaveDB = wrapEnclave(enclave);
-            callback(undefined, mainEnclaveDB);
+            mainEnclaveDB = wrapEnclave(asDID, enclave);
+            if (typeof callback === "function") {
+                callback(undefined, mainEnclaveDB);
+            }
+            return mainEnclaveDB;
         } else {
             enclave.on("initialised", () => {
-                mainEnclaveDB = wrapEnclave(enclave);
+                mainEnclaveDB = wrapEnclave(asDID, enclave);
                 callback(undefined, mainEnclaveDB);
             })
         }
     }
 
-    this.getSharedEnclaveDB = (callback) => {
+    this.getSharedEnclaveDB = (asDID, callback) => {
+        if (typeof asDID === "function") {
+            callback = asDID;
+            asDID = mainDID;
+        }
+
         let sharedEnclaveDB;
         const __getWrappedEnclave = () => {
             if (!sharedEnclave) {
                 return callback(Error(`No shared db found`))
             }
-            sharedEnclaveDB = wrapEnclave(sharedEnclave);
+            sharedEnclaveDB = wrapEnclave(asDID, sharedEnclave);
             callback(undefined, sharedEnclaveDB);
         }
         if (this.isInitialised()) {

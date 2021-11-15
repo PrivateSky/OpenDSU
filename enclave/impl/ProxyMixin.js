@@ -1,14 +1,9 @@
 const {createOpenDSUErrorWrapper} = require("../../error");
-const commandNames = require("./lib/commandsNames");
 
 function ProxyMixin(target) {
     const commandNames = require("./lib/commandsNames");
-    const openDSU = require("opendsu");
-    const keySSISpace = openDSU.loadAPI("keyssi")
-    const w3cDID = openDSU.loadAPI("w3cdid")
-    const CryptoSkills = w3cDID.CryptographicSkills;
-    const ObservableMixin = require("../../utils/ObservableMixin");
-    ObservableMixin(target);
+    const EnclaveMixin = require("./Enclave_Mixin");
+    EnclaveMixin(target);
     target.insertRecord = (forDID, table, pk, plainRecord, encryptedRecord, callback) => {
         target.__putCommandObject(commandNames.INSERT_RECORD, forDID, table, pk, plainRecord, callback);
     };

@@ -2,7 +2,7 @@ const keySSIResolver = require("key-ssi-resolver");
 const crypto = require("../crypto");
 const keySSIFactory = keySSIResolver.KeySSIFactory;
 const SSITypes = keySSIResolver.SSITypes;
-
+const dbAPI = require("opendsu").loadAPI("db");
 const parse = (ssiString, options) => {
     return keySSIFactory.create(ssiString, options);
 };
@@ -37,6 +37,10 @@ const createTemplateSeedSSI = (domain, specificString, control, vn, hint, callba
     return createTemplateKeySSI(SSITypes.SEED_SSI, domain, specificString, control, vn, hint, callback);
 };
 
+const we_createTemplateSeedSSI = (enclave, domain, specificString, control, vn, hint, callback) => {
+    return createTemplateKeySSI(SSITypes.SEED_SSI, domain, specificString, control, vn, hint, callback);
+};
+
 const createHashLinkSSI = (domain, hash, vn, hint) => {
     const hashLinkSSI = keySSIFactory.createType(SSITypes.HASH_LINK_SSI)
     hashLinkSSI.initialize(domain, hash, vn, hint);
@@ -44,6 +48,11 @@ const createHashLinkSSI = (domain, hash, vn, hint) => {
 };
 
 const createTemplateKeySSI = (ssiType, domain, specificString, control, vn, hint, callback) => {
+    //only ssiType and domain are mandatory arguments
+    return we_createTemplateKeySSI(dbAPI.getMainEnclave(), ssiType, domain, specificString, control, vn, hint, callback);
+};
+
+const we_createTemplateKeySSI = (enclave, ssiType, domain, specificString, control, vn, hint, callback) => {
     //only ssiType and domain are mandatory arguments
     if (typeof specificString === "function") {
         callback = specificString;
@@ -64,11 +73,14 @@ const createTemplateKeySSI = (ssiType, domain, specificString, control, vn, hint
     const keySSI = keySSIFactory.createType(ssiType);
     keySSI.load(ssiType, domain, specificString, control, vn, hint);
     if (typeof callback === "function") {
-        callback(undefined, keySSI);
+        if (enclave) {
+            enclave.storeKeySSI(keySSI, (err) => callback(err, keySSI));
+        } else {
+            callback(undefined, keySSI);
+        }
     }
     return keySSI;
 };
-
 
 const buildTemplateWalletSSI = (domain, arrayWIthCredentials, hint) => {
     console.log("This function is obsolete. Use createTemplateWalletSSI instead.");
@@ -91,15 +103,37 @@ const createTemplateWalletSSI = (domain, arrayWIthCredentials, hint) => {
     }
 };
 
-const createConstSSI = (domain, constString, vn, hint, callback) => {
+const createConstSSI = (domain, constString, vn, hint) => {
+    return we_createConstSSI(dbAPI.getMainEnclave(), domain, constString, vn, hint)
+};
+
+const we_createConstSSI = (enclave, domain, constString, vn, hint, callback) => {
     const constSSI = keySSIFactory.createType(SSITypes.CONST_SSI);
     constSSI.initialize(domain, constString, vn, hint);
+    if (typeof callback === "function") {
+        if (enclave) {
+            enclave.storeKeySSI(undefined, constSSI, callback);
+        } else {
+            callback(undefined, constSSI);
+        }
+    }
     return constSSI;
 };
 
 const createArraySSI = (domain, arr, vn, hint, callback) => {
+    return we_createArraySSI(dbAPI.getMainEnclave(), domain, arr, vn, hint);
+}
+
+const we_createArraySSI = (enclave, domain, arr, vn, hint, callback) => {
     const arraySSI = keySSIFactory.createType(SSITypes.ARRAY_SSI);
     arraySSI.initialize(domain, arr, vn, hint);
+    if (typeof callback === "function") {
+        if (enclave) {
+            enclave.storeKeySSI(undefined, arraySSI, callback);
+        } else {
+            callback(undefined, arraySSI);
+        }
+    }
     return arraySSI;
 };
 
@@ -203,6 +237,7 @@ const createPublicKeySSI = (compatibleFamilyName, publicKey, vn) => {
     publicKeySSI.initialize(compatibleFamilyName, publicKey, vn);
     return publicKeySSI;
 };
+
 
 module.exports = {
     parse,

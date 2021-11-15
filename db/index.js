@@ -69,8 +69,8 @@ const getEnclaveDB = () => {
 const getMainEnclaveDB = (callback) => {
     const sc = require("opendsu").loadAPI("sc").getSecurityContext();
     if (sc.isInitialised()) {
-        sc.getMainEnclaveDB(callback);
-    }else {
+        return sc.getMainEnclaveDB(callback);
+    } else {
         sc.on("initialised", () => {
             sc.getMainEnclaveDB(callback);
         });
@@ -81,7 +81,7 @@ const getSharedEnclaveDB = (callback) => {
     const sc = require("opendsu").loadAPI("sc").getSecurityContext();
     if (sc.isInitialised()) {
         sc.getSharedEnclaveDB(callback);
-    }else {
+    } else {
         sc.on("initialised", () => {
             sc.getSharedEnclaveDB(callback);
         });
@@ -99,5 +99,7 @@ module.exports = {
     getInMemoryDB,
     getEnclaveDB,
     getMainEnclaveDB,
+    getMainEnclave: getMainEnclaveDB,
+    getSharedEnclave: getSharedEnclaveDB,
     getSharedEnclaveDB
 }

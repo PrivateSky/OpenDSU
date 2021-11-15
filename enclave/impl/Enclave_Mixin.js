@@ -150,6 +150,20 @@ function Enclave_Mixin(target, did) {
         })
     }
 
+    target.storeKeySSI = (forDID, keySSI, callback) => {
+        if (typeof keySSI === "string") {
+            try {
+                keySSI = keySSISpace.parse(keySSI);
+            } catch (e) {
+                return callback(createOpenDSUErrorWrapper(`Failed to parse keySSI ${keySSI}`, e))
+            }
+        }
+
+        const keySSIIdentifier = keySSI.getIdentifier();
+
+        target.storageDB.insertRecord(KEY_SSIS_TABLE, keySSIIdentifier, {keySSI: keySSIIdentifier}, callback)
+    }
+
     target.storeDID = (forDID, storedDID, privateKeys, callback) => {
         target.storageDB.getRecord(DIDS_PRIVATE_KEYS, storedDID.getIdentifier(), (err, res) => {
             if (err || !res) {
@@ -249,6 +263,11 @@ function Enclave_Mixin(target, did) {
             CryptoSkills.applySkill(didTo.getMethodName(), CryptoSkills.NAMES.DECRYPT_MESSAGE, privateKeys, didTo, encryptedMessage, callback);
         });
     };
+
+    const resolverAPI = openDSU.loadAPI("resolver");
+    Object.keys(resolverAPI).forEach(fnName => {
+
+    })
 }
 
 module.exports = Enclave_Mixin;
