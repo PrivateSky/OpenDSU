@@ -9,19 +9,35 @@
 
  */
 
-function W3CDID_Mixin(target) {
-    const securityContext = require("opendsu").loadAPI("sc").getSecurityContext();
-    const keySSISpace = require("opendsu").loadAPI("keyssi");
-    const crypto = require("opendsu").loadAPI("crypto");
+function W3CDID_Mixin(target, enclave) {
+    const openDSU = require("opendsu");
+    const dbAPI = openDSU.loadAPI("db");
+    const crypto = openDSU.loadAPI("crypto");
     target.findPrivateKeysInSecurityContext = function (callback) {
     };
 
+    const __ensureEnclaveExistsThenExecute = (fnName, ...args) => {
+        const callback = args[args.length - 1];
+        if (typeof enclave === "undefined") {
+            dbAPI.getMainEnclave((err, mainEnclave) => {
+                if (err) {
+                    return callback(err);
+                }
+
+                enclave = mainEnclave;
+                enclave[fnName](...args);
+            })
+        } else {
+            enclave[fnName](...args);
+        }
+    }
+
     target.sign = function (hash, callback) {
-        securityContext.signAsDID(target, hash, callback);
+        __ensureEnclaveExistsThenExecute("signForDID", target, hash, callback);
     };
 
     target.verify = function (hash, signature, callback) {
-        securityContext.verifyForDID(target, hash, signature, callback);
+        __ensureEnclaveExistsThenExecute("verifyForDID", target, hash, signature, callback);
     };
 
     /*Elliptic Curve Integrated Encryption Scheme
@@ -39,11 +55,11 @@ function W3CDID_Mixin(target) {
      * */
 
     target.encryptMessage = function (receiverDID, message, callback) {
-        securityContext.encryptForDID(target, receiverDID, message, callback);
+        __ensureEnclaveExistsThenExecute("encryptMessage", target, receiverDID, message, callback);
     };
 
     target.decryptMessage = function (encryptedMessage, callback) {
-        securityContext.decryptAsDID(target, encryptedMessage, callback);
+        __ensureEnclaveExistsThenExecute("decryptMessage", target, encryptedMessage, callback);
     };
 
     /* messages to the APiHUb MQ compatible APIs
@@ -100,6 +116,10 @@ function W3CDID_Mixin(target) {
             })
         });
     };
+
+    target.getEnclave = () => {
+        return enclave;
+    }
 
     target.on = function (callback) {
     };

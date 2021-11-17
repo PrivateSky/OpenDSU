@@ -35,5 +35,5 @@ assert.callback('Writing DSU with SReadSSI via SC', (testFinished) => {
             }, 2000);
         });
     });
-}, 10000);
+}, 100000);
 

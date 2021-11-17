@@ -1,12 +1,12 @@
 const methodsNames = require("../didMethodsNames");
 
-function SReadDID_Document(isInitialisation, seedSSI) {
+function SReadDID_Document(enclave, isInitialisation, seedSSI) {
     let DID_mixin = require("./ConstDID_Document_Mixin");
     let tokens;
     let sReadSSI;
 
     const PUB_KEYS_PATH = "publicKeys";
-    DID_mixin(this);
+    DID_mixin(this, enclave);
 
     const openDSU = require("opendsu");
     const keySSISpace = openDSU.loadAPI("keyssi");
@@ -93,10 +93,10 @@ function SReadDID_Document(isInitialisation, seedSSI) {
 }
 
 module.exports = {
-    initiateDIDDocument: function (seedSSI) {
-        return new SReadDID_Document(true, seedSSI)
+    initiateDIDDocument: function (enclave, seedSSI) {
+        return new SReadDID_Document(enclave, true, seedSSI)
     },
     createDIDDocument: function (tokens) {
-        return new SReadDID_Document(false, tokens.slice(1));
+        return new SReadDID_Document(undefined, false, tokens.slice(1));
     }
 };

@@ -8,6 +8,10 @@ const parse = (ssiString, options) => {
 };
 
 const createSeedSSI = (domain, vn, hint, callback) => {
+    return we_createSeedSSI(dbAPI.getMainEnclave(), domain, vn, hint, callback);
+};
+
+const we_createSeedSSI = (enclave, domain, vn, hint, callback) => {
     if (typeof vn == "function") {
         callback = vn;
         vn = undefined;
@@ -20,7 +24,21 @@ const createSeedSSI = (domain, vn, hint, callback) => {
 
     let seedSSI = keySSIFactory.createType(SSITypes.SEED_SSI);
 
-    seedSSI.initialize(domain, undefined, undefined, vn, hint, callback);
+    if (typeof callback === "function") {
+        seedSSI.initialize(domain, undefined, undefined, vn, hint, (err => {
+            if (err) {
+                return callback(err);
+            }
+
+            if (enclave) {
+                enclave.storeKeySSI(seedSSI, (err) => callback(err, seedSSI));
+            } else {
+                callback(undefined, seedSSI);
+            }
+        }));
+    } else {
+        seedSSI.initialize(domain, undefined, undefined, vn, hint);
+    }
     return seedSSI;
 };
 
@@ -245,5 +263,8 @@ module.exports = {
     createTransferSSI,
     createTemplateTransferSSI,
     createSignedHashLinkSSI,
-    createPublicKeySSI
+    createPublicKeySSI,
+    we_createSeedSSI,
+    we_createConstSSI,
+    we_createArraySSI
 };

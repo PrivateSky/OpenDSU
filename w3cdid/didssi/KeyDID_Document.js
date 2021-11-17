@@ -1,22 +1,49 @@
 const methodsNames = require("../didMethodsNames");
+const {bindAutoPendingFunctions} = require("../../utils/BindAutoPendingFunctions");
 
-function KeyDID_Document(isInitialisation, seedSSI) {
-    let mixin = require("../W3CDID_Mixin");
-    mixin(this);
-    let tokens;
-    if (!isInitialisation) {
-        tokens = seedSSI;
-        seedSSI = undefined;
-    }
+function KeyDID_Document(enclave, isInitialisation, seedSSI) {
+    let DID_mixin = require("../W3CDID_Mixin");
+    const ObservableMixin = require("../../utils/ObservableMixin");
+    DID_mixin(this, enclave);
+    ObservableMixin(this);
+
     const openDSU = require("opendsu");
+    const dbAPI = openDSU.loadAPI("db");
     const keySSISpace = openDSU.loadAPI("keyssi");
     const crypto = openDSU.loadAPI("crypto");
-    const sc = openDSU.loadAPI("sc").getSecurityContext();
-    if (typeof seedSSI === "string") {
-        try {
-            seedSSI = keySSISpace.parse(seedSSI);
-        } catch (e) {
-            throw createOpenDSUErrorWrapper(`Failed to parse ssi ${seedSSI}`);
+
+    let tokens;
+    const __init = async () => {
+        if (!isInitialisation) {
+            tokens = seedSSI;
+            seedSSI = undefined;
+        }
+
+        if (typeof seedSSI === "string") {
+            try {
+                seedSSI = keySSISpace.parse(seedSSI);
+            } catch (e) {
+                throw createOpenDSUErrorWrapper(`Failed to parse ssi ${seedSSI}`);
+            }
+        }
+
+        if (typeof enclave === "undefined") {
+            enclave = await $$.promisify(dbAPI.getMainEnclave)();
+        }
+
+        if (isInitialisation) {
+            try {
+                await $$.promisify(enclave.storeDID)(this, seedSSI.getPrivateKey());
+            } catch (e) {
+                throw createOpenDSUErrorWrapper(`Failed to store private key in enclave`, e);
+            }
+
+            this.finishInitialisation();
+            this.dispatchEvent("initialised");
+
+        } else {
+            this.finishInitialisation();
+            this.dispatchEvent("initialised");
         }
     }
 
@@ -68,14 +95,16 @@ function KeyDID_Document(isInitialisation, seedSSI) {
         return [seedSSI.getPrivateKey()];
     };
 
+    bindAutoPendingFunctions(this, ["getIdentifier", "getDomain", "addPublicKey", "on", "off", "dispatchEvent", "removeAllObservers"]);
+    __init();
     return this;
 }
 
 module.exports = {
-    initiateDIDDocument: function (seedSSI) {
-        return new KeyDID_Document(true, seedSSI)
+    initiateDIDDocument: function (enclave, seedSSI) {
+        return new KeyDID_Document(enclave, true, seedSSI);
     },
     createDIDDocument: function (tokens) {
-        return new KeyDID_Document(false, [tokens[3], tokens[4]]);
+        return new KeyDID_Document(undefined, false,  [tokens[3], tokens[4]]);
     }
 };

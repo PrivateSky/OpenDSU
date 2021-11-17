@@ -89,6 +89,11 @@ function MemoryStorageStrategy() {
         query.sortValues(filteredRecords, sort);
         callback(undefined, filteredRecords);
     }
+
+    this.getAllRecords = (tableName, callback) => {
+        const table = getTable(tableName);
+        callback(undefined, Object.values(table));
+    }
     /*
       Insert a record, return error if already exists
     */

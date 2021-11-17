@@ -13,7 +13,12 @@ function Enclave_Mixin(target, did) {
         did = CryptoSkills.applySkill("key", CryptoSkills.NAMES.CREATE_DID_DOCUMENT).getIdentifier();
     }
     const getPrivateInfoForDID = (did, callback) => {
-        target.storageDB.getRecord(DIDS_PRIVATE_KEYS, did, (err, record) => {
+        target.storageDB.getAllRecords( DIDS_PRIVATE_KEYS,(err, records)=>{
+            if (err) {
+                return callback(err);
+            }
+            console.log(records);
+            target.storageDB.getRecord(DIDS_PRIVATE_KEYS, did, (err, record) => {
             if (err) {
                 return callback(err);
             }
@@ -26,6 +31,7 @@ function Enclave_Mixin(target, did) {
                 return privateKey;
             });
             callback(undefined, privateKeysAsBuff);
+        });
         });
     };
 
@@ -123,6 +129,16 @@ function Enclave_Mixin(target, did) {
             }
         }
 
+        if (typeof alias === "function") {
+            callback = alias;
+            alias = undefined;
+        }
+
+        if (typeof alias === "undefined") {
+            const generateUid = require("swarmutils").generateUid;
+            alias = generateUid(10).toString("hex");
+        }
+
         const keySSIIdentifier = seedSSI.getIdentifier();
 
         function registerDerivedKeySSIs(derivedKeySSI) {
@@ -158,13 +174,19 @@ function Enclave_Mixin(target, did) {
                 return callback(createOpenDSUErrorWrapper(`Failed to parse keySSI ${keySSI}`, e))
             }
         }
-
+        if (keySSI.getTypeName() === openDSU.constants.KEY_SSIS.SEED_SSI) {
+            return target.storeSeedSSI(forDID, keySSI, undefined, callback);
+        }
         const keySSIIdentifier = keySSI.getIdentifier();
 
         target.storageDB.insertRecord(KEY_SSIS_TABLE, keySSIIdentifier, {keySSI: keySSIIdentifier}, callback)
     }
 
     target.storeDID = (forDID, storedDID, privateKeys, callback) => {
+        if (!Array.isArray(privateKeys)) {
+            privateKeys = [privateKeys];
+        }
+
         target.storageDB.getRecord(DIDS_PRIVATE_KEYS, storedDID.getIdentifier(), (err, res) => {
             if (err || !res) {
                 return target.storageDB.insertRecord(DIDS_PRIVATE_KEYS, storedDID.getIdentifier(), {privateKeys: privateKeys}, callback);
@@ -264,9 +286,24 @@ function Enclave_Mixin(target, did) {
         });
     };
 
+    // expose resolver APIs
     const resolverAPI = openDSU.loadAPI("resolver");
     Object.keys(resolverAPI).forEach(fnName => {
+        target[fnName] = resolverAPI[fnName];
+    })
 
+    // expose keyssi APIs
+    Object.keys(keySSISpace).forEach(fnName => {
+        if (fnName.startsWith("we_")) {
+            const trimmedFnName = fnName.slice(3);
+            target[trimmedFnName] = (...args) => {
+                args.shift();
+                args.unshift(target);
+                keySSISpace[fnName](...args);
+            }
+        } else if (fnName.startsWith("createTemplate")) {
+            target[fnName] = keySSISpace[fnName];
+        }
     })
 }
 

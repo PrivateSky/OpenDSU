@@ -1,45 +1,50 @@
-const GroupDIDDocument = require("./GroupDID_Document");
-
 function storeDIDInSC(didDocument, callback) {
     const securityContext = require("opendsu").loadAPI("sc").getSecurityContext();
-        const __registerDID = ()=>{
-            securityContext.registerDID(didDocument, (err) => {
-                if (err) {
-                    return callback(createOpenDSUErrorWrapper(`failed to register did ${didDocument.getIdentifier()} in security context`, err));
-                }
+    const __registerDID = () => {
+        securityContext.registerDID(didDocument, (err) => {
+            if (err) {
+                return callback(createOpenDSUErrorWrapper(`failed to register did ${didDocument.getIdentifier()} in security context`, err));
+            }
 
-                callback(null, didDocument);
-            })
-        }
-        if(securityContext.isInitialised()){
-            __registerDID();
-        }else {
-            securityContext.on("initialised", ()=>{
-                __registerDID()
-            })
-        }
+            callback(null, didDocument);
+        })
+    }
+    if (securityContext.isInitialised()) {
+        __registerDID();
+    } else {
+        securityContext.on("initialised", () => {
+            __registerDID()
+        })
+    }
 }
+
 function SReadDID_Method() {
     let SReadDID_Document = require("./SReadDID_Document");
     this.create = (seedSSI, callback) => {
         const sReadDIDDocument = SReadDID_Document.initiateDIDDocument(seedSSI);
+        sReadDIDDocument.on("error", (err) => {
+            callback(err);
+        });
+
         sReadDIDDocument.on("initialised", () => {
-            storeDIDInSC(sReadDIDDocument, callback);
+            callback(undefined, sReadDIDDocument);
         });
     }
     this.resolve = function (tokens, callback) {
         const sReadDIDDocument = SReadDID_Document.createDIDDocument(tokens);
         sReadDIDDocument.on("initialised", () => {
-            callback(null, sReadDIDDocument);
+            callback(undefined, sReadDIDDocument);
         });
     }
 }
 
 function KeyDID_Method() {
     let KeyDIDDocument = require("./KeyDID_Document");
-    this.create = function (seedSSI, callback) {
-        const keyDIDDocument = KeyDIDDocument.initiateDIDDocument(seedSSI);
-        storeDIDInSC(keyDIDDocument, callback);
+    this.create = function (enclave, seedSSI, callback) {
+        const keyDIDDocument = KeyDIDDocument.initiateDIDDocument(enclave, seedSSI);
+        keyDIDDocument.on("initialised", () => {
+            callback(undefined, keyDIDDocument);
+        })
     }
 
     this.resolve = function (tokens, callback) {
@@ -50,15 +55,15 @@ function KeyDID_Method() {
 function NameDID_Method() {
     const NameDIDDocument = require("./NameDID_Document");
 
-    this.create = (domain, publicName, callback) => {
-        const nameDIDDocument = NameDIDDocument.initiateDIDDocument(domain, publicName);
+    this.create = (enclave, domain, publicName, callback) => {
+        const nameDIDDocument = NameDIDDocument.initiateDIDDocument(enclave, domain, publicName);
 
         nameDIDDocument.on("error", (err) => {
             return callback(err);
         })
 
         nameDIDDocument.on("initialised", () => {
-            storeDIDInSC(nameDIDDocument, callback);
+            callback(undefined, nameDIDDocument);
         });
     }
 
@@ -77,7 +82,7 @@ function NameDID_Method() {
 function GroupDID_Method() {
     const GroupDIDDocument = require("./GroupDID_Document");
 
-    this.create = (domain, groupName, callback) => {
+    this.create = (enclave, domain, groupName, callback) => {
         const groupDIDDocument = GroupDIDDocument.initiateDIDDocument(domain, groupName);
 
         groupDIDDocument.on("error", (err) => {
@@ -85,7 +90,7 @@ function GroupDID_Method() {
         })
 
         groupDIDDocument.on("initialised", () => {
-            storeDIDInSC(groupDIDDocument, callback);
+            callback(undefined, groupDIDDocument);
         })
     }
 

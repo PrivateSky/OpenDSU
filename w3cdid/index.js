@@ -32,10 +32,13 @@ let methodRegistry = {};
     Create a new W3CDID based on SeedSSI
  */
 function createIdentity(didMethod, ...args) {
-    let callback = args.pop();
-    methodRegistry[didMethod].create(...args, callback);
+    we_createIdentity(undefined, didMethod, ...args);
 }
 
+function we_createIdentity(enclave, didMethod, ...args) {
+    let callback = args.pop();
+    methodRegistry[didMethod].create(enclave, ...args, callback);
+}
 
 /*
     Returns an error or an instance of W3CDID

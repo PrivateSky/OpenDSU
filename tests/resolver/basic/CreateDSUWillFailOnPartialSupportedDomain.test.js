@@ -35,8 +35,16 @@ function createDSU(domain, callback) {
 
 
 function prepareBDNSContext(folder) {
-
     let bdns = {
+        'vault': {
+            "replicas": [],
+            "brickStorages": [
+                "$ORIGIN"
+            ],
+            "anchoringServices": [
+                "$ORIGIN"
+            ]
+        },
         'testdomain': {
             "replicas": [],
             "brickStorages": [
