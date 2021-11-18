@@ -1,16 +1,18 @@
 const methodsNames = require("../didMethodsNames");
 
 function SReadDID_Document(enclave, isInitialisation, seedSSI) {
-    let DID_mixin = require("./ConstDID_Document_Mixin");
+    const DID_mixin = require("./ConstDID_Document_Mixin");
+    const ObservableMixin = require("../../utils/ObservableMixin");
     let tokens;
     let sReadSSI;
 
     const PUB_KEYS_PATH = "publicKeys";
     DID_mixin(this, enclave);
-
+    ObservableMixin(this);
     const openDSU = require("opendsu");
     const keySSISpace = openDSU.loadAPI("keyssi");
     const resolver = openDSU.loadAPI("resolver");
+    const dbAPI = openDSU.loadAPI("db");
 
     const createSeedDSU = async () => {
         try {
@@ -47,6 +49,15 @@ function SReadDID_Document(enclave, isInitialisation, seedSSI) {
         if (isInitialisation) {
             sReadSSI = seedSSI.derive();
             await createSeedDSU();
+            if (typeof enclave === "undefined") {
+                enclave = await $$.promisify(dbAPI.getMainEnclave)();
+            }
+
+            try {
+                await $$.promisify(enclave.storeDID)(this, seedSSI.getPrivateKey());
+            } catch (e) {
+                throw createOpenDSUErrorWrapper(`Failed to store private key in enclave`, e);
+            }
             this.finishInitialisation();
             this.dispatchEvent("initialised");
         } else {

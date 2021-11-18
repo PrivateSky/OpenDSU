@@ -20,8 +20,8 @@ function storeDIDInSC(didDocument, callback) {
 
 function SReadDID_Method() {
     let SReadDID_Document = require("./SReadDID_Document");
-    this.create = (seedSSI, callback) => {
-        const sReadDIDDocument = SReadDID_Document.initiateDIDDocument(seedSSI);
+    this.create = (enclave, seedSSI, callback) => {
+        const sReadDIDDocument = SReadDID_Document.initiateDIDDocument(enclave, seedSSI);
         sReadDIDDocument.on("error", (err) => {
             callback(err);
         });
