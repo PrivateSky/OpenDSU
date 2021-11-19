@@ -18,6 +18,23 @@ function storeDIDInSC(didDocument, callback) {
     }
 }
 
+const openDSU = require("opendsu");
+const dbAPI = openDSU.loadAPI("db")
+const __ensureEnclaveExistsThenExecute = (fn, enclave, ...args) => {
+    if (typeof enclave === "undefined") {
+        dbAPI.getMainEnclave((err, mainEnclave) => {
+            if (err) {
+                return callback(err);
+            }
+
+            enclave = mainEnclave;
+            fn(mainEnclave, ...args);
+        })
+    } else {
+        fn(enclave, ...args);
+    }
+}
+
 function SReadDID_Method() {
     let SReadDID_Document = require("./SReadDID_Document");
     this.create = (enclave, seedSSI, callback) => {
@@ -42,9 +59,7 @@ function KeyDID_Method() {
     let KeyDIDDocument = require("./KeyDID_Document");
     this.create = function (enclave, seedSSI, callback) {
         const keyDIDDocument = KeyDIDDocument.initiateDIDDocument(enclave, seedSSI);
-        keyDIDDocument.on("initialised", () => {
-            callback(undefined, keyDIDDocument);
-        })
+        callback(undefined, keyDIDDocument);
     }
 
     this.resolve = function (enclave, tokens, callback) {
@@ -56,6 +71,11 @@ function NameDID_Method() {
     const NameDIDDocument = require("./NameDID_Document");
 
     this.create = (enclave, domain, publicName, callback) => {
+        if (typeof publicName === "function") {
+            callback = publicName;
+            publicName = domain;
+            domain = undefined;
+        }
         const nameDIDDocument = NameDIDDocument.initiateDIDDocument(enclave, domain, publicName);
 
         nameDIDDocument.on("error", (err) => {

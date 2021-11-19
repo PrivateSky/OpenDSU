@@ -9,6 +9,10 @@ function Enclave_Mixin(target, did) {
     ObservableMixin(target);
     const CryptoSkills = w3cDID.CryptographicSkills;
 
+    if (!did) {
+        did = CryptoSkills.applySkill("key", CryptoSkills.NAMES.CREATE_DID_DOCUMENT).getIdentifier();
+    }
+
     const getPrivateInfoForDID = (did, callback) => {
         target.storageDB.getAllRecords(DIDS_PRIVATE_KEYS, (err, records) => {
             if (err) {
@@ -62,9 +66,6 @@ function Enclave_Mixin(target, did) {
     };
 
     target.getDID = (callback) => {
-        if (!did) {
-            did = CryptoSkills.applySkill("key", CryptoSkills.NAMES.CREATE_DID_DOCUMENT).getIdentifier();
-        }
         callback(undefined, did);
     }
 

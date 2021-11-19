@@ -28,6 +28,9 @@
 const methodsNames = require("./didMethodsNames");
 let methodRegistry = {};
 
+const openDSU = require("opendsu");
+const dbAPI = openDSU.loadAPI("db");
+
 /*
     Create a new W3CDID based on SeedSSI
  */
@@ -37,7 +40,26 @@ function createIdentity(didMethod, ...args) {
 
 function we_createIdentity(enclave, didMethod, ...args) {
     let callback = args.pop();
-    methodRegistry[didMethod].create(enclave, ...args, callback);
+    const __createAndStoreDID = (enclave) => {
+        methodRegistry[didMethod].create(enclave, ...args, (err, didDocument) => {
+            if (err) {
+                return callback(err);
+            }
+
+            enclave.storeDID(didDocument, didDocument.getPrivateKeys(), err => callback(err, didDocument));
+        });
+    }
+    if (typeof enclave === "undefined") {
+        dbAPI.getMainEnclave((err, mainEnclave) => {
+            if (err) {
+                return callback(err);
+            }
+
+            __createAndStoreDID(mainEnclave);
+        })
+    } else {
+        __createAndStoreDID(enclave);
+    }
 }
 
 /*
@@ -56,7 +78,18 @@ function we_resolveDID(enclave, identifier, callback) {
     if (tokens[1] === methodsNames.OPENDSU_METHOD_NAME) {
         method = `${tokens[1]}:${tokens[2]}`;
     }
-    methodRegistry[method].resolve(enclave, tokens, callback);
+
+    if (typeof enclave === "undefined") {
+        dbAPI.getMainEnclave((err, mainEnclave) => {
+            if (err) {
+                return callback(err);
+            }
+
+            methodRegistry[method].resolve(mainEnclave, tokens, callback);
+        })
+    } else {
+        methodRegistry[method].resolve(enclave, tokens, callback);
+    }
 }
 
 
@@ -69,10 +102,10 @@ registerDIDMethod(methodsNames.S_READ_SUBTYPE, require("./didssi/ssiMethods").cr
 registerDIDMethod(methodsNames.SSI_KEY_SUBTYPE, require("./didssi/ssiMethods").create_KeyDID_Method());
 registerDIDMethod(methodsNames.NAME_SUBTYPE, require("./didssi/ssiMethods").create_NameDID_Method());
 
-registerDIDMethod(methodsNames.DEMO_METHOD_NAME, require("./demo/diddemo").create_demo_DIDMethod());
 registerDIDMethod(methodsNames.GROUP_METHOD_NAME, require("./didssi/ssiMethods").create_GroupDID_Method());
 registerDIDMethod(methodsNames.KEY_SUBTYPE, require("./w3cdids/didMethods").create_KeyDID_Method());
 
+registerDIDMethod(methodsNames.DEMO_METHOD_NAME, require("./didssi/ssiMethods").create_NameDID_Method());
 
 module.exports = {
     createIdentity,

@@ -1,4 +1,11 @@
+const {createOpenDSUErrorWrapper} = require("../../error");
+
 function ConstDID_Document_Mixin(target, enclave, domain, name, isInitialisation) {
+    if (arguments.length === 4) {
+        isInitialisation = name;
+        name = domain;
+        domain = undefined;
+    }
     let mixin = require("../W3CDID_Mixin");
     const observableMixin = require("../../utils/ObservableMixin")
     mixin(target, enclave);
@@ -6,6 +13,7 @@ function ConstDID_Document_Mixin(target, enclave, domain, name, isInitialisation
 
     const openDSU = require("opendsu");
     const dbAPI = openDSU.loadAPI("db");
+    const scAPI = openDSU.loadAPI("sc");
     const crypto = openDSU.loadAPI("crypto");
     const keySSISpace = openDSU.loadAPI("keyssi");
     const resolver = openDSU.loadAPI("resolver");
@@ -65,21 +73,18 @@ function ConstDID_Document_Mixin(target, enclave, domain, name, isInitialisation
             throw createOpenDSUErrorWrapper(`Failed to commit batch in Const DSU`, e);
         }
 
-        if (typeof enclave === "undefined") {
-            enclave = await $$.promisify(dbAPI.getMainEnclave)();
-        }
-
-        try {
-            await $$.promisify(enclave.storeDID)(target, target.privateKey);
-        } catch (e) {
-            throw createOpenDSUErrorWrapper(`Failed to store private key in enclave`, e);
-        }
-
         target.finishInitialisation();
         target.dispatchEvent("initialised");
     };
 
-    target.init = () => {
+    target.init = async () => {
+        if (!domain) {
+            try {
+                domain = await $$.promisify(scAPI.getDIDDomain)();
+            } catch (e) {
+                throw createOpenDSUErrorWrapper(`Failed to get did domain`, e);
+            }
+        }
         resolver.loadDSU(keySSISpace.createConstSSI(domain, name), async (err, constDSUInstance) => {
             if (err) {
                 if (isInitialisation === false) {
@@ -100,16 +105,6 @@ function ConstDID_Document_Mixin(target, enclave, domain, name, isInitialisation
                 throw createOpenDSUErrorWrapper(`Failed to load writableDSU`, e);
             }
 
-            // if (typeof enclave === "undefined") {
-            //     enclave = await $$.promisify(dbAPI.getMainEnclave)();
-            // }
-            //
-            // try {
-            //     await $$.promisify(enclave.storeDID)(target, target.privateKey);
-            // } catch (e) {
-            //     throw createOpenDSUErrorWrapper(`Failed to store private key in enclave`, e);
-            // }
-            //
             target.finishInitialisation();
             target.dispatchEvent("initialised");
         });

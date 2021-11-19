@@ -1,8 +1,13 @@
 const methodsNames = require("../didMethodsNames");
 
 function NameDID_Document(enclave, domain, name, isInitialisation) {
-    if (typeof domain === "undefined" || typeof name === "undefined") {
-        throw Error(`Invalid number of arguments. Expected blockchain domain and group name.`);
+    if (arguments.length === 3) {
+        isInitialisation = name;
+        name = domain;
+        domain = undefined;
+    }
+    if (typeof name === "undefined") {
+        throw Error(`Argument name is missing`);
     }
 
     let mixin = require("./ConstDID_Document_Mixin");
@@ -14,7 +19,7 @@ function NameDID_Document(enclave, domain, name, isInitialisation) {
     }
 
     this.getIdentifier = () => {
-        return `did:ssi:name:${domain}:${name}`;
+        return `did:ssi:name:${this.getDomain()}:${name}`;
     };
 
     this.getName = () => {
@@ -29,7 +34,7 @@ function NameDID_Document(enclave, domain, name, isInitialisation) {
 
 module.exports = {
     initiateDIDDocument: function (enclave, domain, name) {
-        return new NameDID_Document(enclave, domain, name)
+        return new NameDID_Document(enclave, domain, name, true);
     },
     createDIDDocument: function (enclave, tokens) {
         return new NameDID_Document(enclave, tokens[3], tokens[4], false);

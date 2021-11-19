@@ -11,8 +11,8 @@ function KeyDID_Method() {
         });
     }
 
-    this.resolve = function (tokens, callback) {
-        callback(null, KeyDIDDocument.createDIDDocument(tokens))
+    this.resolve = function (enclave, tokens, callback) {
+        callback(null, KeyDIDDocument.createDIDDocument(enclave, tokens));
     }
 }
 

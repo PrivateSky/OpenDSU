@@ -41,7 +41,7 @@ assert.callback('w3cDID MQ test', (testFinished) => {
 
                 const senderIdentity = firstDIDDocument.getIdentifier();
                 setTimeout(()=>{
-                    secondDIDDocument.sendMessage(message, recipientIdentity, (err) => {
+                    secondDIDDocument.sendMessage(message, firstDIDDocument, (err) => {
                         if(err){
                             throw err;
                         }
@@ -53,5 +53,5 @@ assert.callback('w3cDID MQ test', (testFinished) => {
         });
     });
 
-}, 15000);
+}, 15000000);
 

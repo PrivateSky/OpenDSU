@@ -1,6 +1,6 @@
 
 
-function DemoPKDocument(identifier){
+function DemoPKDocument(enclave, identifier){
     this.sign = function(hash, callback){
         // Convert the hash to a Buffer instance in order to
         // remain compatible with the other DID document types
@@ -105,12 +105,12 @@ function DemoPKDocument(identifier){
 
 function DEMO_DIDMethod(){
     let aliasDocument = require("../proposals/aliasDocument");
-    this.create = function(identifier, callback){
-        callback(null, new DemoPKDocument(identifier));
+    this.create = function(enclave, identifier, callback){
+        callback(null, new DemoPKDocument(enclave, identifier));
     }
 
-    this.resolve = function(tokens, callback){
-        callback(null, new DemoPKDocument(tokens[2]));
+    this.resolve = function(enclave, tokens, callback){
+        callback(null, new DemoPKDocument(enclave, tokens[2]));
     }
 }
 

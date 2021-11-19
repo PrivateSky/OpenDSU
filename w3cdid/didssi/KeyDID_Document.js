@@ -3,9 +3,7 @@ const {bindAutoPendingFunctions} = require("../../utils/BindAutoPendingFunctions
 
 function KeyDID_Document(enclave, isInitialisation, seedSSI) {
     let DID_mixin = require("../W3CDID_Mixin");
-    const ObservableMixin = require("../../utils/ObservableMixin");
     DID_mixin(this, enclave);
-    ObservableMixin(this);
 
     const openDSU = require("opendsu");
     const dbAPI = openDSU.loadAPI("db");
@@ -25,25 +23,6 @@ function KeyDID_Document(enclave, isInitialisation, seedSSI) {
             } catch (e) {
                 throw createOpenDSUErrorWrapper(`Failed to parse ssi ${seedSSI}`);
             }
-        }
-
-        if (typeof enclave === "undefined") {
-            enclave = await $$.promisify(dbAPI.getMainEnclave)();
-        }
-
-        if (isInitialisation) {
-            try {
-                await $$.promisify(enclave.storeDID)(this, seedSSI.getPrivateKey());
-            } catch (e) {
-                throw createOpenDSUErrorWrapper(`Failed to store private key in enclave`, e);
-            }
-
-            this.finishInitialisation();
-            this.dispatchEvent("initialised");
-
-        } else {
-            this.finishInitialisation();
-            this.dispatchEvent("initialised");
         }
     }
 
@@ -95,7 +74,6 @@ function KeyDID_Document(enclave, isInitialisation, seedSSI) {
         return [seedSSI.getPrivateKey()];
     };
 
-    bindAutoPendingFunctions(this, ["getIdentifier", "getDomain", "addPublicKey", "on", "off", "dispatchEvent", "removeAllObservers"]);
     __init();
     return this;
 }

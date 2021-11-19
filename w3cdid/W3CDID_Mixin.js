@@ -14,6 +14,7 @@ function W3CDID_Mixin(target, enclave) {
     const dbAPI = openDSU.loadAPI("db");
     const crypto = openDSU.loadAPI("crypto");
     target.findPrivateKeysInSecurityContext = function (callback) {
+
     };
 
     const __ensureEnclaveExistsThenExecute = (fnName, ...args) => {

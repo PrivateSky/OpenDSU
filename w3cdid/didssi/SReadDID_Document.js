@@ -30,15 +30,6 @@ function SReadDID_Document(enclave, isInitialisation, seedSSI) {
 
         this.privateKey = ssi.getPrivateKey();
         const publicKey = ssi.getPublicKey("raw");
-        if (typeof enclave === "undefined") {
-            enclave = await $$.promisify(dbAPI.getMainEnclave)();
-        }
-
-        try {
-            await $$.promisify(enclave.storeDID)(this, this.privateKey);
-        } catch (e) {
-            throw createOpenDSUErrorWrapper(`Failed to store private key in enclave`, e);
-        }
 
         try {
             await $$.promisify(this.dsu.writeFile)(`${PUB_KEYS_PATH}/${publicKey.toString("hex")}`);

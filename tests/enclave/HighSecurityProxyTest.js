@@ -39,5 +39,5 @@ assert.callback('HighSecurityProxy test', (testFinished) => {
             testFinished();
         }, 1000)
     });
-}, 20000);
+}, 2000000);
 
