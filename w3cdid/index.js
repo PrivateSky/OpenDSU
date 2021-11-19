@@ -44,19 +44,21 @@ function we_createIdentity(enclave, didMethod, ...args) {
     Returns an error or an instance of W3CDID
  */
 function resolveDID(identifier, callback) {
+    we_resolveDID(undefined, identifier, callback);
+}
+
+function we_resolveDID(enclave, identifier, callback) {
     let tokens = identifier.split(":");
     if (tokens[0] !== "did") {
         return callback(Error("Wrong identifier format. Missing did keyword."));
     }
     let method = tokens[1];
     if (tokens[1] === methodsNames.OPENDSU_METHOD_NAME) {
-        method = tokens[2];
-        if (method === methodsNames.KEY_SUBTYPE) {
-            method = methodsNames.SSI_KEY_SUBTYPE;
-        }
+        method = `${tokens[1]}:${tokens[2]}`;
     }
-    methodRegistry[method].resolve(tokens, callback);
+    methodRegistry[method].resolve(enclave, tokens, callback);
 }
+
 
 function registerDIDMethod(method, implementation) {
     methodRegistry[method] = implementation;

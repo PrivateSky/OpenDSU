@@ -37,5 +37,5 @@ assert.callback('W3C Key DID test', (testFinished) => {
             throw e;
         }
     });
-}, 20000);
+}, 2000000);
 

@@ -30,8 +30,8 @@ function SReadDID_Method() {
             callback(undefined, sReadDIDDocument);
         });
     }
-    this.resolve = function (tokens, callback) {
-        const sReadDIDDocument = SReadDID_Document.createDIDDocument(tokens);
+    this.resolve = function (enclave, tokens, callback) {
+        const sReadDIDDocument = SReadDID_Document.createDIDDocument(enclave, tokens);
         sReadDIDDocument.on("initialised", () => {
             callback(undefined, sReadDIDDocument);
         });
@@ -47,8 +47,8 @@ function KeyDID_Method() {
         })
     }
 
-    this.resolve = function (tokens, callback) {
-        callback(null, KeyDIDDocument.createDIDDocument(tokens))
+    this.resolve = function (enclave, tokens, callback) {
+        callback(null, KeyDIDDocument.createDIDDocument(enclave, tokens))
     }
 }
 
@@ -67,8 +67,8 @@ function NameDID_Method() {
         });
     }
 
-    this.resolve = (tokens, callback) => {
-        const nameDIDDocument = NameDIDDocument.createDIDDocument(tokens);
+    this.resolve = (enclave, tokens, callback) => {
+        const nameDIDDocument = NameDIDDocument.createDIDDocument(enclave, tokens);
         nameDIDDocument.on("error", (err) => {
             return callback(err);
         })
@@ -83,7 +83,7 @@ function GroupDID_Method() {
     const GroupDIDDocument = require("./GroupDID_Document");
 
     this.create = (enclave, domain, groupName, callback) => {
-        const groupDIDDocument = GroupDIDDocument.initiateDIDDocument(domain, groupName);
+        const groupDIDDocument = GroupDIDDocument.initiateDIDDocument(enclave, domain, groupName);
 
         groupDIDDocument.on("error", (err) => {
             return callback(err);
@@ -94,8 +94,8 @@ function GroupDID_Method() {
         })
     }
 
-    this.resolve = (tokens, callback) => {
-        const groupDIDDocument = GroupDIDDocument.createDIDDocument(tokens);
+    this.resolve = (enclave, tokens, callback) => {
+        const groupDIDDocument = GroupDIDDocument.createDIDDocument(enclave, tokens);
 
         groupDIDDocument.on("error", (err) => {
             return callback(err);

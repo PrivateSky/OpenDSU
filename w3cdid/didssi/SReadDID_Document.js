@@ -30,6 +30,16 @@ function SReadDID_Document(enclave, isInitialisation, seedSSI) {
 
         this.privateKey = ssi.getPrivateKey();
         const publicKey = ssi.getPublicKey("raw");
+        if (typeof enclave === "undefined") {
+            enclave = await $$.promisify(dbAPI.getMainEnclave)();
+        }
+
+        try {
+            await $$.promisify(enclave.storeDID)(this, this.privateKey);
+        } catch (e) {
+            throw createOpenDSUErrorWrapper(`Failed to store private key in enclave`, e);
+        }
+
         try {
             await $$.promisify(this.dsu.writeFile)(`${PUB_KEYS_PATH}/${publicKey.toString("hex")}`);
         } catch (e) {
@@ -49,15 +59,6 @@ function SReadDID_Document(enclave, isInitialisation, seedSSI) {
         if (isInitialisation) {
             sReadSSI = seedSSI.derive();
             await createSeedDSU();
-            if (typeof enclave === "undefined") {
-                enclave = await $$.promisify(dbAPI.getMainEnclave)();
-            }
-
-            try {
-                await $$.promisify(enclave.storeDID)(this, seedSSI.getPrivateKey());
-            } catch (e) {
-                throw createOpenDSUErrorWrapper(`Failed to store private key in enclave`, e);
-            }
             this.finishInitialisation();
             this.dispatchEvent("initialised");
         } else {
@@ -107,7 +108,7 @@ module.exports = {
     initiateDIDDocument: function (enclave, seedSSI) {
         return new SReadDID_Document(enclave, true, seedSSI)
     },
-    createDIDDocument: function (tokens) {
-        return new SReadDID_Document(undefined, false, tokens.slice(1));
+    createDIDDocument: function (enclave, tokens) {
+        return new SReadDID_Document(enclave, false, tokens.slice(1));
     }
 };

@@ -34,7 +34,7 @@ async function createIdentities() {
     for (let i = 0; i < ids.length; i++) {
         let didDocument;
         try {
-            didDocument = await $$.promisify(w3cDID.createIdentity)("name", DOMAIN, ids[i]);
+            didDocument = await $$.promisify(w3cDID.createIdentity)("ssi:name", DOMAIN, ids[i]);
             identities.push(didDocument.getIdentifier());
         } catch (e) {
             throw e;
@@ -105,7 +105,7 @@ assert.callback(
             try {
                 sc.getSecurityContext();
                 const didDocuments = await createIdentities();
-                const groupDIDDocument = await $$.promisify(w3cDID.createIdentity)("group", DOMAIN, "myTeam");
+                const groupDIDDocument = await $$.promisify(w3cDID.createIdentity)("ssi:group", DOMAIN, "myTeam");
                 let counter = 0;
 
                 function callReadMessage(didDocument) {

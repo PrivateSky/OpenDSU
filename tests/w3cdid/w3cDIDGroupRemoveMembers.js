@@ -113,9 +113,9 @@ assert.callback('key DID SSI test', (testFinished) => {
             sc = scAPI.getSecurityContext();
             const ids = ["first", "second", "third"];
             const didDocuments = [];
-            const groupDIDDocument = await $$.promisify(w3cDID.createIdentity)("group",domain, "group_name")
+            const groupDIDDocument = await $$.promisify(w3cDID.createIdentity)("ssi:group",domain, "group_name")
             for (let i = 0; i < ids.length; i++) {
-                const didDocument = await $$.promisify(w3cDID.createIdentity)("name",domain, ids[i])
+                const didDocument = await $$.promisify(w3cDID.createIdentity)("ssi:name",domain, ids[i])
                 didDocuments.push(didDocument);
                 await $$.promisify(groupDIDDocument.addMember)(didDocument.getIdentifier());
             }

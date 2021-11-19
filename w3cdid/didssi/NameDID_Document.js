@@ -31,7 +31,7 @@ module.exports = {
     initiateDIDDocument: function (enclave, domain, name) {
         return new NameDID_Document(enclave, domain, name)
     },
-    createDIDDocument: function (tokens) {
-        return new NameDID_Document(undefined, tokens[3], tokens[4], false);
+    createDIDDocument: function (enclave, tokens) {
+        return new NameDID_Document(enclave, tokens[3], tokens[4], false);
     }
 };

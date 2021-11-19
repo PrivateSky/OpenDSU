@@ -9,29 +9,26 @@ function Enclave_Mixin(target, did) {
     ObservableMixin(target);
     const CryptoSkills = w3cDID.CryptographicSkills;
 
-    if (!did) {
-        did = CryptoSkills.applySkill("key", CryptoSkills.NAMES.CREATE_DID_DOCUMENT).getIdentifier();
-    }
     const getPrivateInfoForDID = (did, callback) => {
-        target.storageDB.getAllRecords( DIDS_PRIVATE_KEYS,(err, records)=>{
+        target.storageDB.getAllRecords(DIDS_PRIVATE_KEYS, (err, records) => {
             if (err) {
                 return callback(err);
             }
             console.log(records);
             target.storageDB.getRecord(DIDS_PRIVATE_KEYS, did, (err, record) => {
-            if (err) {
-                return callback(err);
-            }
-
-            const privateKeysAsBuff = record.privateKeys.map(privateKey => {
-                if (privateKey) {
-                    return $$.Buffer.from(privateKey)
+                if (err) {
+                    return callback(err);
                 }
 
-                return privateKey;
+                const privateKeysAsBuff = record.privateKeys.map(privateKey => {
+                    if (privateKey) {
+                        return $$.Buffer.from(privateKey)
+                    }
+
+                    return privateKey;
+                });
+                callback(undefined, privateKeysAsBuff);
             });
-            callback(undefined, privateKeysAsBuff);
-        });
         });
     };
 
@@ -65,6 +62,9 @@ function Enclave_Mixin(target, did) {
     };
 
     target.getDID = (callback) => {
+        if (!did) {
+            did = CryptoSkills.applySkill("key", CryptoSkills.NAMES.CREATE_DID_DOCUMENT).getIdentifier();
+        }
         callback(undefined, did);
     }
 

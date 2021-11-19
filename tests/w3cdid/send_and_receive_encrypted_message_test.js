@@ -44,8 +44,8 @@ assert.callback(
             let senderDIDDocument;
             try {
                 const sc = scAPI.getSecurityContext();
-                senderDIDDocument = await $$.promisify(w3cDID.createIdentity)("name", domain, "sender");
-                receiverDIDDocument = await $$.promisify(w3cDID.createIdentity)("name", domain, "receiver");
+                senderDIDDocument = await $$.promisify(w3cDID.createIdentity)("ssi:name", domain, "sender");
+                receiverDIDDocument = await $$.promisify(w3cDID.createIdentity)("ssi:name", domain, "receiver");
             } catch (e) {
                 return console.log(e);
             }

@@ -1,18 +1,46 @@
 const methodsNames = require("../didMethodsNames");
 
-function KeyDID_Document(isInitialisation, publicKey) {
-    let mixin = require("../W3CDID_Mixin");
-    mixin(this);
+function KeyDID_Document(enclave, isInitialisation, publicKey) {
+    const DID_mixin = require("../W3CDID_Mixin");
+    const ObservableMixin = require("../../utils/ObservableMixin");
+    DID_mixin(this, enclave);
+    ObservableMixin(this);
     let privateKey;
     const openDSU = require("opendsu");
     const keySSISpace = openDSU.loadAPI("keyssi");
     const crypto = openDSU.loadAPI("crypto");
+    const dbAPI = openDSU.loadAPI("db");
+    const scAPI = openDSU.loadAPI("sc");
 
     const init = async () => {
         if (isInitialisation) {
-            let seedSSI = keySSISpace.createSeedSSI();
+            let didDomain;
+            try {
+                didDomain = await $$.promisify(scAPI.getDIDDomain)();
+            } catch (e) {
+                throw createOpenDSUErrorWrapper(`Failed to get did domain`, e);
+            }
+
+            let seedSSI;
+            try {
+                seedSSI = await $$.promisify(keySSISpace.createSeedSSI)(didDomain);
+            } catch (e) {
+                throw createOpenDSUErrorWrapper(`Failed to create Seed SSI`, e);
+            }
             privateKey = seedSSI.getPrivateKey();
+            if (typeof enclave === "undefined") {
+                enclave = await $$.promisify(dbAPI.getMainEnclave)();
+            }
+
+            try {
+                await $$.promisify(enclave.storeDID)(this, privateKey);
+            } catch (e) {
+                throw createOpenDSUErrorWrapper(`Failed to store private key in enclave`, e);
+            }
             publicKey = crypto.encodeBase58(seedSSI.getPublicKey("raw"));
+            this.dispatchEvent("initialised");
+        } else {
+            this.dispatchEvent("initialised");
         }
     };
 
@@ -50,10 +78,10 @@ function KeyDID_Document(isInitialisation, publicKey) {
 }
 
 module.exports = {
-    initiateDIDDocument: function (seedSSI) {
-        return new KeyDID_Document(true, seedSSI)
+    initiateDIDDocument: function (enclave, seedSSI) {
+        return new KeyDID_Document(enclave, true, seedSSI)
     },
     createDIDDocument: function (tokens) {
-        return new KeyDID_Document(false, tokens[2]);
+        return new KeyDID_Document(undefined, false, tokens[2]);
     }
 };

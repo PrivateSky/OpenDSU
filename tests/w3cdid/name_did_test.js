@@ -24,7 +24,7 @@ assert.callback('key DID SSI test', (testFinished) => {
         await tir.launchConfigurableApiHubTestNodeAsync({domains: [{name: "vault", config: vaultDomainConfig}]});
         try {
             sc = scAPI.getSecurityContext();
-            const didDocument = await $$.promisify(w3cDID.createIdentity)("name", domain, "publicName");
+            const didDocument = await $$.promisify(w3cDID.createIdentity)("ssi:name", domain, "publicName");
 
             const dataToSign = "someData";
             const signature = await $$.promisify(didDocument.sign)(dataToSign);

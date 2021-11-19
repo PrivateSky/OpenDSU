@@ -205,7 +205,7 @@ module.exports = {
     initiateDIDDocument: function (enclave, domain, groupName) {
         return new GroupDID_Document(enclave, domain, groupName)
     },
-    createDIDDocument: function (tokens) {
-        return new GroupDID_Document(undefined, tokens[3], tokens[4], false);
+    createDIDDocument: function (enclave, tokens) {
+        return new GroupDID_Document(enclave, tokens[3], tokens[4], false);
     }
 };

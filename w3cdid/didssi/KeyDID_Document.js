@@ -104,7 +104,7 @@ module.exports = {
     initiateDIDDocument: function (enclave, seedSSI) {
         return new KeyDID_Document(enclave, true, seedSSI);
     },
-    createDIDDocument: function (tokens) {
-        return new KeyDID_Document(undefined, false,  [tokens[3], tokens[4]]);
+    createDIDDocument: function (enclave, tokens) {
+        return new KeyDID_Document(enclave, false,  [tokens[3], tokens[4]]);
     }
 };

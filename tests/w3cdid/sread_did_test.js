@@ -25,7 +25,7 @@ assert.callback('key DID SSI test', (testFinished) => {
         try {
             sc = scAPI.getSecurityContext();
             const seedSSI = await $$.promisify(keySSI.createSeedSSI)(domain);
-            const didDocument = await $$.promisify(w3cDID.createIdentity)("sread", seedSSI);
+            const didDocument = await $$.promisify(w3cDID.createIdentity)("ssi:sread", seedSSI);
 
             const dataToSign = "someData";
             const signature = await $$.promisify(didDocument.sign)(dataToSign);
