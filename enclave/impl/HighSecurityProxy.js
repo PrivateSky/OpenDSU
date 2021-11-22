@@ -18,12 +18,16 @@ function HighSecurityProxy(domain, did) {
         }
         if (typeof did === "undefined") {
             didDocument = CryptoSkills.applySkill("key", CryptoSkills.NAMES.CREATE_DID_DOCUMENT);
-            did = didDocument.getIdentifier();
+            didDocument.on("initialised", () => {
+                did = didDocument.getIdentifier();
+                this.url = `${system.getBaseURL()}/runEnclaveEncryptedCommand/${domain}/${did}`;
+                this.finishInitialisation();
+            })
         } else {
             didDocument = await $$.promisify(w3cDID.resolveDID)(did);
+            this.url = `${system.getBaseURL()}/runEnclaveEncryptedCommand/${domain}/${did}`;
+            this.finishInitialisation();
         }
-        this.url = `${system.getBaseURL()}/runEnclaveEncryptedCommand/${domain}/${did}`;
-        this.finishInitialisation();
     }
 
     this.getDID = (callback) => {

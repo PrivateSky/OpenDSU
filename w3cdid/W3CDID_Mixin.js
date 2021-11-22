@@ -79,18 +79,34 @@ function W3CDID_Mixin(target, enclave) {
                 return callback(e);
             }
         }
-        const mqHandler = require("opendsu")
-            .loadAPI("mq")
-            .getMQHandlerForDID(toOtherDID);
-        target.encryptMessage(toOtherDID, message, (err, encryptedMessage) => {
-            if (err) {
-                return callback(
-                    createOpenDSUErrorWrapper(`Failed to encrypt message`, err)
-                );
-            }
 
-            mqHandler.writeMessage(JSON.stringify(encryptedMessage), callback);
-        });
+        const __sendMessage = () => {
+            const mqHandler = require("opendsu")
+                .loadAPI("mq")
+                .getMQHandlerForDID(toOtherDID);
+            target.encryptMessage(toOtherDID, message, (err, encryptedMessage) => {
+                if (err) {
+                    return callback(
+                        createOpenDSUErrorWrapper(`Failed to encrypt message`, err)
+                    );
+                }
+
+                mqHandler.writeMessage(JSON.stringify(encryptedMessage), callback);
+            });
+        }
+
+        if (typeof toOtherDID === "string") {
+            enclave.resolveDID(toOtherDID, (err, didDocument) => {
+                if (err) {
+                    return callback(err);
+                }
+
+                toOtherDID = didDocument;
+                __sendMessage();
+            })
+        } else {
+            __sendMessage();
+        }
     };
 
     target.readMessage = function (callback) {

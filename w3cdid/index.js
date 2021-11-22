@@ -109,7 +109,9 @@ registerDIDMethod(methodsNames.DEMO_METHOD_NAME, require("./didssi/ssiMethods").
 
 module.exports = {
     createIdentity,
+    we_createIdentity,
     resolveDID,
+    we_resolveDID,
     registerDIDMethod,
     CryptographicSkills: require("./CryptographicSkills/CryptographicSkills")
 }

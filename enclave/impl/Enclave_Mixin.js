@@ -306,6 +306,18 @@ function Enclave_Mixin(target, did) {
             target[fnName] = keySSISpace[fnName];
         }
     })
+
+    // expose w3cdid APIs
+    Object.keys(w3cDID).forEach(fnName => {
+        if (fnName.startsWith("we_")) {
+            const trimmedFnName = fnName.slice(3);
+            target[trimmedFnName] = (...args) => {
+                args.shift();
+                args.unshift(target);
+                w3cDID[fnName](...args);
+            }
+        }
+    })
 }
 
 module.exports = Enclave_Mixin;

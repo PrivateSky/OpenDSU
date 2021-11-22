@@ -15,7 +15,8 @@ assert.callback('w3cDID MQ test', (testFinished) => {
             "anchoring": {
                 "type": "FS",
                 "option": {}
-            }
+            },
+            "enable": ["mq"]
         }
         await tir.launchConfigurableApiHubTestNodeAsync({domains: [{name: "vault", config: vaultDomainConfig}]});
         w3cDID.createIdentity("demo", "myfirstDemoIdentity", (err, firstDIDDocument) => {
