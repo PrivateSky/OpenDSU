@@ -7,6 +7,8 @@ const assert = dc.assert;
 const openDSU = require("../../index");
 $$.__registerModule("opendsu", openDSU);
 const w3cDID = openDSU.loadAPI("w3cdid");
+const scAPI = openDSU.loadAPI("sc");
+
 const DOMAIN = "default";
 const DOMAIN_CONFIG = {
     anchoring: {
@@ -97,60 +99,67 @@ assert.callback(
                     "option": {}
                 }
             }
-            await tir.launchConfigurableApiHubTestNodeAsync({domains: [{name: "vault", config: vaultDomainConfig}, {name:DOMAIN, config: DOMAIN_CONFIG}]});
+            await tir.launchConfigurableApiHubTestNodeAsync({
+                domains: [{
+                    name: "vault",
+                    config: vaultDomainConfig
+                }, {name: DOMAIN, config: DOMAIN_CONFIG}]
+            });
 
             const resolver = openDSU.loadAPI("resolver");
-            const sc = openDSU.loadAPI("sc");
+            const scAPI = openDSU.loadAPI("sc");
 
-            try {
-                sc.getSecurityContext();
-                const didDocuments = await createIdentities();
-                const groupDIDDocument = await $$.promisify(w3cDID.createIdentity)("ssi:group", DOMAIN, "myTeam");
-                let counter = 0;
-
-                function callReadMessage(didDocument) {
-                    didDocument.readMessage((err, msg) => {
-                        if (err) {
-                            throw err;
-                        }
-
-                        assert.equal(new Message(msg).getContent(), messageContent);
-                        counter++;
-                        if (counter === didDocuments.length - 1) {
-                            testFinished();
-                        }
-                    });
-                }
-
-                for (let i = 0; i < didDocuments.length; i++) {
-                    await $$.promisify(groupDIDDocument.addMember)(
-                        didDocuments[i].getIdentifier(),
-                        info[i]
-                    );
-                }
-
-                const sender = didDocuments[0].getIdentifier();
-                const message = new Message();
-                message.setContent(messageContent);
-                message.setSender(sender);
-                await $$.promisify(groupDIDDocument.sendMessage)(message);
-                console.log(sender, "sent message", message.getSerialisation());
+            let sc = scAPI.getSecurityContext();
+            sc.on("initialised", async () => {
                 try {
-                    const membersIDs = await $$.promisify(groupDIDDocument.listMembersByIdentity)();
-                    assert.arraysMatch(membersIDs, identities, "The retrieved info is not the same as the ids added");
-                    const membersInfo = await $$.promisify(groupDIDDocument.listMembersInfo)();
-                    assert.objectsAreEqual(membersInfo, info, "The retrieved info is not the same as the info added");
-                } catch (e) {
-                    throw e;
-                }
-                for (let i = 0; i < didDocuments.length; i++) {
-                    await callReadMessage(didDocuments[i]);
-                }
-            } catch (e) {
-                return console.log(e);
-            }
+                    const didDocuments = await createIdentities();
+                    const groupDIDDocument = await $$.promisify(w3cDID.createIdentity)("ssi:group", DOMAIN, "myTeam");
+                    let counter = 0;
 
-            // assert.equal(decryptedMessage.message.toString(), dataToSend, "The received message is not the same as the message sent");
+                    function callReadMessage(didDocument) {
+                        didDocument.readMessage((err, msg) => {
+                            if (err) {
+                                throw err;
+                            }
+
+                            assert.equal(new Message(msg).getContent(), messageContent);
+                            counter++;
+                            if (counter === didDocuments.length - 1) {
+                                testFinished();
+                            }
+                        });
+                    }
+
+                    for (let i = 0; i < didDocuments.length; i++) {
+                        await $$.promisify(groupDIDDocument.addMember)(
+                            didDocuments[i].getIdentifier(),
+                            info[i]
+                        );
+                    }
+
+                    const sender = didDocuments[0].getIdentifier();
+                    const message = new Message();
+                    message.setContent(messageContent);
+                    message.setSender(sender);
+                    await $$.promisify(groupDIDDocument.sendMessage)(message);
+                    console.log(sender, "sent message", message.getSerialisation());
+                    try {
+                        const membersIDs = await $$.promisify(groupDIDDocument.listMembersByIdentity)();
+                        assert.arraysMatch(membersIDs, identities, "The retrieved info is not the same as the ids added");
+                        const membersInfo = await $$.promisify(groupDIDDocument.listMembersInfo)();
+                        assert.objectsAreEqual(membersInfo, info, "The retrieved info is not the same as the info added");
+                    } catch (e) {
+                        throw e;
+                    }
+                    for (let i = 0; i < didDocuments.length; i++) {
+                        await callReadMessage(didDocuments[i]);
+                    }
+                } catch (e) {
+                    return console.log(e);
+                }
+
+                // assert.equal(decryptedMessage.message.toString(), dataToSend, "The received message is not the same as the message sent");
+            });
         });
     },
     15000000

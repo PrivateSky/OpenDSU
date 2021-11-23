@@ -22,19 +22,21 @@ assert.callback('key DID SSI test', (testFinished) => {
             }
         }
         await tir.launchConfigurableApiHubTestNodeAsync({domains: [{name: "vault", config: vaultDomainConfig}]});
-        try {
-            sc = scAPI.getSecurityContext();
-            const senderDIDDocument = await $$.promisify(w3cDID.createIdentity)("ssi:name", domain, "sender");
-            const receiverDIDDocument = await $$.promisify(w3cDID.createIdentity)("ssi:name", domain, "receiver");
-            const message = "someData";
-            const encryptedMessage = await $$.promisify(senderDIDDocument.encryptMessage)(receiverDIDDocument, message);
-            const decryptedMessage = await $$.promisify(receiverDIDDocument.decryptMessage)(encryptedMessage);
-            assert.equal(message, decryptedMessage, `Decrypted message is not the same as the original message`);
-        } catch (e) {
-            return console.log(e);
-        }
+        sc = scAPI.getSecurityContext();
+        sc.on("initialised", async () => {
+            try {
+                const senderDIDDocument = await $$.promisify(w3cDID.createIdentity)("ssi:name", domain, "sender");
+                const receiverDIDDocument = await $$.promisify(w3cDID.createIdentity)("ssi:name", domain, "receiver");
+                const message = "someData";
+                const encryptedMessage = await $$.promisify(senderDIDDocument.encryptMessage)(receiverDIDDocument, message);
+                const decryptedMessage = await $$.promisify(receiverDIDDocument.decryptMessage)(encryptedMessage);
+                assert.equal(message, decryptedMessage, `Decrypted message is not the same as the original message`);
+            } catch (e) {
+                return console.log(e);
+            }
 
-        testFinished();
+            testFinished();
+        });
     });
 }, 50000);
 

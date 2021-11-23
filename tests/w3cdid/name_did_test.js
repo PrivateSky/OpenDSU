@@ -22,19 +22,21 @@ assert.callback('key DID SSI test', (testFinished) => {
             }
         }
         await tir.launchConfigurableApiHubTestNodeAsync({domains: [{name: "vault", config: vaultDomainConfig}]});
-        try {
-            sc = scAPI.getSecurityContext();
-            const didDocument = await $$.promisify(w3cDID.createIdentity)("ssi:name", domain, "publicName");
+        sc = scAPI.getSecurityContext();
+        sc.on("initialised", async () => {
+            try {
+                const didDocument = await $$.promisify(w3cDID.createIdentity)("ssi:name", domain, "publicName");
 
-            const dataToSign = "someData";
-            const signature = await $$.promisify(didDocument.sign)(dataToSign);
-            const resolvedDIDDocument = await $$.promisify(w3cDID.resolveDID)(didDocument.getIdentifier());
-            const verificationResult = await $$.promisify(resolvedDIDDocument.verify)(dataToSign, signature);
-            assert.true(verificationResult, "Failed to verify signature");
-            testFinished();
-        } catch (e) {
-            throw e;
-        }
+                const dataToSign = "someData";
+                const signature = await $$.promisify(didDocument.sign)(dataToSign);
+                const resolvedDIDDocument = await $$.promisify(w3cDID.resolveDID)(didDocument.getIdentifier());
+                const verificationResult = await $$.promisify(resolvedDIDDocument.verify)(dataToSign, signature);
+                assert.true(verificationResult, "Failed to verify signature");
+                testFinished();
+            } catch (e) {
+                throw e;
+            }
+        })
     });
 }, 5000000);
 

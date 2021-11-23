@@ -36,29 +36,36 @@ assert.callback(
                     "option": {}
                 }
             }
-            await tir.launchConfigurableApiHubTestNodeAsync({domains: [{name: "vault", config: vaultDomainConfig}, {name:domain, config: DOMAIN_CONFIG}]});
+            await tir.launchConfigurableApiHubTestNodeAsync({
+                domains: [{
+                    name: "vault",
+                    config: vaultDomainConfig
+                }, {name: domain, config: DOMAIN_CONFIG}]
+            });
 
             const dataToSend = "someData";
 
             let receiverDIDDocument;
             let senderDIDDocument;
-            try {
-                const sc = scAPI.getSecurityContext();
-                senderDIDDocument = await $$.promisify(w3cDID.createIdentity)("ssi:name", domain, "sender");
-                receiverDIDDocument = await $$.promisify(w3cDID.createIdentity)("ssi:name", domain, "receiver");
-            } catch (e) {
-                return console.log(e);
-            }
+            sc = scAPI.getSecurityContext();
+            sc.on("initialised", async () => {
+                try {
+                    senderDIDDocument = await $$.promisify(w3cDID.createIdentity)("ssi:name", domain, "sender");
+                    receiverDIDDocument = await $$.promisify(w3cDID.createIdentity)("ssi:name", domain, "receiver");
+                } catch (e) {
+                    return console.log(e);
+                }
 
-            senderDIDDocument.sendMessage(dataToSend, receiverDIDDocument, (err) => {
-                console.log("Sent message", dataToSend);
-                receiverDIDDocument.readMessage((err, decryptedMessage) => {
-                    if (err) {
-                        return console.log(err);
-                    }
+                senderDIDDocument.sendMessage(dataToSend, receiverDIDDocument, (err) => {
+                    console.log("Sent message", dataToSend);
+                    receiverDIDDocument.readMessage((err, decryptedMessage) => {
+                        if (err) {
+                            return console.log(err);
+                        }
 
-                    assert.equal(decryptedMessage, dataToSend, "The received message is not the same as the message sent");
-                    testFinished();
+                        assert.equal(decryptedMessage, dataToSend, "The received message is not the same as the message sent");
+                        testFinished();
+                    });
                 });
             });
         });
