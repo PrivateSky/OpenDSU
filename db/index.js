@@ -66,6 +66,11 @@ const getEnclaveDB = () => {
     throw Error("Not implemented");
 };
 
+const mainEnclaveIsInitialised = ()=>{
+    const sc = require("opendsu").loadAPI("sc");
+    return sc.securityContextIsInitialised();
+}
+
 const getMainEnclaveDB = (callback) => {
     const sc = require("opendsu").loadAPI("sc").getSecurityContext();
     if (sc.isInitialised()) {
@@ -100,6 +105,7 @@ module.exports = {
     getEnclaveDB,
     getMainEnclaveDB,
     getMainEnclave: getMainEnclaveDB,
+    mainEnclaveIsInitialised,
     getSharedEnclave: getSharedEnclaveDB,
     getSharedEnclaveDB
 }
