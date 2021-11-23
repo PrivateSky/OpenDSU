@@ -28,15 +28,7 @@ function KeyDID_Document(enclave, isInitialisation, publicKey) {
                 throw createOpenDSUErrorWrapper(`Failed to create Seed SSI`, e);
             }
             privateKey = seedSSI.getPrivateKey();
-            if (typeof enclave === "undefined") {
-                enclave = await $$.promisify(dbAPI.getMainEnclave)();
-            }
 
-            try {
-                await $$.promisify(enclave.storeDID)(this, privateKey);
-            } catch (e) {
-                throw createOpenDSUErrorWrapper(`Failed to store private key in enclave`, e);
-            }
             publicKey = crypto.encodeBase58(seedSSI.getPublicKey("raw"));
             this.dispatchEvent("initialised");
         } else {
