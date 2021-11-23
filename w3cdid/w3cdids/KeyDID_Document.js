@@ -6,6 +6,7 @@ function KeyDID_Document(enclave, isInitialisation, publicKey) {
     DID_mixin(this, enclave);
     ObservableMixin(this);
     let privateKey;
+    let domain;
     const openDSU = require("opendsu");
     const keySSISpace = openDSU.loadAPI("keyssi");
     const crypto = openDSU.loadAPI("crypto");
@@ -13,17 +14,22 @@ function KeyDID_Document(enclave, isInitialisation, publicKey) {
     const scAPI = openDSU.loadAPI("sc");
 
     const init = async () => {
-        if (isInitialisation) {
-            let didDomain;
-            try {
-                didDomain = await $$.promisify(scAPI.getDIDDomain)();
-            } catch (e) {
-                throw createOpenDSUErrorWrapper(`Failed to get did domain`, e);
-            }
+        if (publicKey) {
+            setTimeout(()=>{
+                this.dispatchEvent("initialised");
+            })
+            return;
+        }
+        try {
+            domain = await $$.promisify(scAPI.getDIDDomain)();
+        } catch (e) {
+            throw createOpenDSUErrorWrapper(`Failed to get did domain`, e);
+        }
 
+        if (isInitialisation) {
             let seedSSI;
             try {
-                seedSSI = await $$.promisify(keySSISpace.createSeedSSI)(didDomain);
+                seedSSI = await $$.promisify(keySSISpace.createSeedSSI)(domain);
             } catch (e) {
                 throw createOpenDSUErrorWrapper(`Failed to create Seed SSI`, e);
             }
@@ -56,6 +62,10 @@ function KeyDID_Document(enclave, isInitialisation, publicKey) {
 
     this.getMethodName = () => {
         return methodsNames.KEY_SUBTYPE;
+    }
+
+    this.getDomain = () => {
+        return domain;
     }
 
     this.getIdentifier = () => {

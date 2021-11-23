@@ -40,6 +40,7 @@ function createIdentity(didMethod, ...args) {
 
 function we_createIdentity(enclave, didMethod, ...args) {
     let callback = args.pop();
+
     const __createAndStoreDID = (enclave) => {
         methodRegistry[didMethod].create(enclave, ...args, (err, didDocument) => {
             if (err) {
@@ -50,13 +51,16 @@ function we_createIdentity(enclave, didMethod, ...args) {
         });
     }
     if (typeof enclave === "undefined") {
+        if (!dbAPI.mainEnclaveIsInitialised()) {
+            return methodRegistry[didMethod].create(enclave, ...args, callback);
+        }
         dbAPI.getMainEnclave((err, mainEnclave) => {
             if (err) {
                 return callback(err);
             }
 
             __createAndStoreDID(mainEnclave);
-        })
+        });
     } else {
         __createAndStoreDID(enclave);
     }
@@ -80,6 +84,10 @@ function we_resolveDID(enclave, identifier, callback) {
     }
 
     if (typeof enclave === "undefined") {
+        if (!dbAPI.mainEnclaveIsInitialised()) {
+            methodRegistry[method].resolve(undefined, tokens, callback);
+            return;
+        }
         dbAPI.getMainEnclave((err, mainEnclave) => {
             if (err) {
                 return callback(err);
@@ -105,7 +113,8 @@ registerDIDMethod(methodsNames.NAME_SUBTYPE, require("./didssi/ssiMethods").crea
 registerDIDMethod(methodsNames.GROUP_METHOD_NAME, require("./didssi/ssiMethods").create_GroupDID_Method());
 registerDIDMethod(methodsNames.KEY_SUBTYPE, require("./w3cdids/didMethods").create_KeyDID_Method());
 
-registerDIDMethod(methodsNames.DEMO_METHOD_NAME, require("./didssi/ssiMethods").create_NameDID_Method());
+registerDIDMethod(methodsNames.DEMO_METHOD_NAME, require("./w3cdids/didMethods").create_KeyDID_Method());
+// registerDIDMethod(methodsNames.DEMO_METHOD_NAME, require("./demo/diddemo").create_demo_DIDMethod());
 
 module.exports = {
     createIdentity,

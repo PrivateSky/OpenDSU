@@ -127,6 +127,7 @@ function W3CDID_Mixin(target, enclave) {
 
             mqHandler.deleteMessage(encryptedMessage.messageId, (err) => {
                 if (err) {
+                    console.log(err);
                     return callback(createOpenDSUErrorWrapper(`Failed to delete message`, err));
                 }
                 target.decryptMessage(message, callback);
