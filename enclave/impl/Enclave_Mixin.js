@@ -9,30 +9,20 @@ function Enclave_Mixin(target, did) {
     ObservableMixin(target);
     const CryptoSkills = w3cDID.CryptographicSkills;
 
-    if (!did) {
-        did = CryptoSkills.applySkill("key", CryptoSkills.NAMES.CREATE_DID_DOCUMENT).getIdentifier();
-    }
-
     const getPrivateInfoForDID = (did, callback) => {
-        target.storageDB.getAllRecords(DIDS_PRIVATE_KEYS, (err, records) => {
+        target.storageDB.getRecord(DIDS_PRIVATE_KEYS, did, (err, record) => {
             if (err) {
                 return callback(err);
             }
-            console.log(records);
-            target.storageDB.getRecord(DIDS_PRIVATE_KEYS, did, (err, record) => {
-                if (err) {
-                    return callback(err);
+
+            const privateKeysAsBuff = record.privateKeys.map(privateKey => {
+                if (privateKey) {
+                    return $$.Buffer.from(privateKey)
                 }
 
-                const privateKeysAsBuff = record.privateKeys.map(privateKey => {
-                    if (privateKey) {
-                        return $$.Buffer.from(privateKey)
-                    }
-
-                    return privateKey;
-                });
-                callback(undefined, privateKeysAsBuff);
+                return privateKey;
             });
+            callback(undefined, privateKeysAsBuff);
         });
     };
 
@@ -66,7 +56,15 @@ function Enclave_Mixin(target, did) {
     };
 
     target.getDID = (callback) => {
-        callback(undefined, did);
+        if (!did) {
+            did = CryptoSkills.applySkill("key", CryptoSkills.NAMES.CREATE_DID_DOCUMENT);
+            did.on("initialised", () => {
+                did = did.getIdentifier();
+                callback(undefined, did);
+            })
+        } else {
+            callback(undefined, did);
+        }
     }
 
     target.insertRecord = (forDID, table, pk, plainRecord, encryptedRecord, callback) => {
