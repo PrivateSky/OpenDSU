@@ -374,6 +374,15 @@ const getVaultDomain = (callback) => {
 const getDIDDomain = (callback) => {
     config.getEnv(constants.DID_DOMAIN, callback);
 }
+
+const securityContextIsInitialised = ()=>{
+    if (typeof $$.sc === "undefined") {
+        return false;
+    }
+
+    return $$.sc.isInitialised();
+}
+
 const getSecurityContext = () => {
     if (typeof $$.sc === "undefined") {
         $$.sc = new SecurityContext();
@@ -393,5 +402,6 @@ module.exports = {
     getVaultDomain,
     getSecurityContext,
     refreshSecurityContext,
-    getDIDDomain
+    getDIDDomain,
+    securityContextIsInitialised
 };
