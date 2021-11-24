@@ -39,7 +39,6 @@ assert.callback(
                 console.error(error);
             }
         });
-        testFinished()
     },
-    20000
+    2000000
 );
