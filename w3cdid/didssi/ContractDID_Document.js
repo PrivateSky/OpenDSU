@@ -13,6 +13,10 @@ function ContractDID_Document(name) {
     this.getIdentifier = () => {
         return `did:ssi:contract:${name}`;
     };
+    
+    this.getName = () => {
+        return name;
+    }
 
     this.sign = (data, callback) => {
         const timestamp = process.hrtime.bigint().toString(16);
