@@ -538,8 +538,12 @@ function SingleDSUStorageStrategy() {
                 } catch (newErr) {
                     retErr = createOpenDSUErrorWrapper(`Failed to parse record in ${recordPath}: ${res}`, retErr);
                     //let's try to check if the res contains the record twice... at some point there was a bug on this topic
-                    let halfOfRes = res.slice(0, res.length/2);
-                    let isDuplicated = (x === halfOfRes + halfOfRes);
+                    let serializedRecord = res;
+                    if(ArrayBuffer.isView(serializedRecord) || serializedRecord.buffer){
+                        serializedRecord = new TextDecoder().decode(serializedRecord);
+                    }
+                    let halfOfRes = serializedRecord.slice(0, serializedRecord.length/2);
+                    let isDuplicated = (serializedRecord === halfOfRes + halfOfRes);
                     if(isDuplicated){
                         try{
                             record = JSON.parse(halfOfRes);
