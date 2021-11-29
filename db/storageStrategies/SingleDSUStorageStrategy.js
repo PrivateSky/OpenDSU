@@ -537,6 +537,21 @@ function SingleDSUStorageStrategy() {
                     record = JSON.parse(res);
                 } catch (newErr) {
                     retErr = createOpenDSUErrorWrapper(`Failed to parse record in ${recordPath}: ${res}`, retErr);
+                    //let's try to check if the res contains the record twice... at some point there was a bug on this topic
+                    let halfOfRes = res.slice(0, res.length/2);
+                    let isDuplicated = (x === halfOfRes + halfOfRes);
+                    if(isDuplicated){
+                        try{
+                            record = JSON.parse(halfOfRes);
+                            console.log("We caught an error during record retrieval process and fix it. (duplicate content)");
+                            //we ignore the original error because we were able to fix it.
+                            retErr = undefined;
+                        }catch(err){
+                            console.log("We caught an error during record retrieval process and we failed to fix it!");
+                        }
+                    }else{
+                        console.log(retErr);
+                    }
                 }
             }
             callback(retErr, record);

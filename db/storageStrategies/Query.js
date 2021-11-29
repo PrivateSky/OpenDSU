@@ -49,7 +49,10 @@ function Query(queryArray) {
                 return callback(undefined, filteredRecords);
             }
             getNextRecordForValue(sortedValues[currentIndex], (err, record) => {
-                if (record === null) {
+                if (record === null || err) {
+                    if(err){
+                        console.log("We caught an error during record retrieval and we are skipping to the next from the list.", err);
+                    }
                     getNextRecord(currentIndex + 1);
                 } else {
                     processRecord(record);
@@ -67,7 +70,7 @@ function Query(queryArray) {
                     return;
                 }
             }
-            if (!record.__deleted) {
+            if (record && !record.__deleted) {
                 filteredRecords.push(record);
             }
         }
