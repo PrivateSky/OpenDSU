@@ -6,6 +6,9 @@ $$.__registerModule("opendsu", openDSU);
 //load w3cdid API from "opendsu"
 const w3cDID = openDSU.loadAPI("w3cdid");
 
+//load db API from "opendsu"
+const dbAPI = openDSU.loadAPI("db");
+
 const DOMAIN_CONFIG = {
     enable: ["mq"]
 };
@@ -25,16 +28,23 @@ tir.launchConfigurableApiHubTestNode({
 
     const dataToSend = "some data";
 
+    let enclave;
+    try{
+        enclave = await $$.promisify(dbAPI.getMainEnclave)();
+    }catch (e) {
+        return console.log(e);
+    }
+
     let firstMember;
     let secondMember;
     let groupDID_Document;
     try {
         //create instances of NameDID_Document for sender and receiver entities
-        firstMember = await $$.promisify(w3cDID.createIdentity)("name", domain, "member1");
-        secondMember = await $$.promisify(w3cDID.createIdentity)("name", domain, "member2");
+        firstMember = await $$.promisify(w3cDID.createIdentity)("ssi:name", domain, "member1");
+        secondMember = await $$.promisify(w3cDID.createIdentity)("ssi:name", domain, "member2");
 
         //create GroupDID_Document instance
-        groupDID_Document = await $$.promisify(w3cDID.createIdentity)("group", domain, "group_name");
+        groupDID_Document = await $$.promisify(w3cDID.createIdentity)("ssi:group", domain, "group_name");
 
         // add members to group
         await $$.promisify(groupDID_Document.addMember)(firstMember);
