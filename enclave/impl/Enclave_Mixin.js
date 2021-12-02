@@ -182,6 +182,11 @@ function Enclave_Mixin(target, did) {
     }
 
     target.storeDID = (forDID, storedDID, privateKeys, callback) => {
+        if (typeof privateKeys === "function") {
+            callback = privateKeys;
+            privateKeys = storedDID;
+            storedDID = forDID;
+        }
         if (!Array.isArray(privateKeys)) {
             privateKeys = [privateKeys];
         }
@@ -227,6 +232,11 @@ function Enclave_Mixin(target, did) {
     }
 
     target.signForDID = (forDID, didThatIsSigning, hash, callback) => {
+        if (typeof hash === "function") {
+            callback = hash;
+            hash = didThatIsSigning;
+            didThatIsSigning = forDID;
+        }
         getPrivateInfoForDID(didThatIsSigning.getIdentifier(), async (err, privateKeys) => {
             if (err) {
                 return callback(createOpenDSUErrorWrapper(`Failed to get private info for did ${didThatIsSigning.getIdentifier()}`, err));
@@ -238,6 +248,12 @@ function Enclave_Mixin(target, did) {
     }
 
     target.verifyForDID = (forDID, didThatIsVerifying, hash, signature, callback) => {
+        if (typeof hash === "function") {
+            callback = signature;
+            signature = hash;
+            hash = didThatIsVerifying;
+            didThatIsVerifying = forDID;
+        }
         didThatIsVerifying.getPublicKey("pem", (err, publicKey) => {
             if (err) {
                 return callback(createOpenDSUErrorWrapper(`Failed to read public key for did ${target.getIdentifier()}`, err));
@@ -266,6 +282,12 @@ function Enclave_Mixin(target, did) {
     }
 
     target.encryptMessage = (forDID, didFrom, didTo, message, callback) => {
+        if (typeof message === "function") {
+            callback = message;
+            message = didTo;
+            didTo = didFrom;
+            didFrom = forDID;
+        }
         getPrivateInfoForDID(didFrom.getIdentifier(), (err, privateKeys) => {
             if (err) {
                 return callback(createOpenDSUErrorWrapper(`Failed to get private info for did ${didFrom.getIdentifier()}`, err));
@@ -276,6 +298,11 @@ function Enclave_Mixin(target, did) {
     }
 
     target.decryptMessage = (forDID, didTo, encryptedMessage, callback) => {
+        if (typeof encryptedMessage === "function") {
+            callback = encryptedMessage;
+            encryptedMessage = didTo;
+            didTo = forDID;
+        }
         getPrivateInfoForDID(didTo.getIdentifier(), (err, privateKeys) => {
             if (err) {
                 return callback(createOpenDSUErrorWrapper(`Failed to get private info for did ${didTo.getIdentifier()}`, err));
@@ -288,7 +315,10 @@ function Enclave_Mixin(target, did) {
     // expose resolver APIs
     const resolverAPI = openDSU.loadAPI("resolver");
     Object.keys(resolverAPI).forEach(fnName => {
-        target[fnName] = resolverAPI[fnName];
+        target[fnName] = (...args)=>{
+            args.shift();
+            resolverAPI[fnName](...args);
+        }
     })
 
     // expose keyssi APIs
