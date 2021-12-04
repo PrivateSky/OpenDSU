@@ -274,9 +274,9 @@ function createBloomFilter(options) {
     return new BloomFilter(options);
 }
 
-const sha256JOSE = (data) => {
+const sha256JOSE = (data, encoding) => {
     const pskCrypto = require("pskcrypto");
-    return pskCrypto.hash("sha256", data);
+    return pskCrypto.hash("sha256", data, encoding);
 }
 
 const base64UrlEncodeJOSE = (data) => {
