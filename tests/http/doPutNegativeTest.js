@@ -26,12 +26,10 @@ assert.callback(
           const response = await httpSpace.fetch(
             `http://localhost:${port}/bricking/${dlDomain}/get-brick/${randomString}`
           );
-          const json = await response.json();
 
           assert.true(response, 'No response');
           assert.true(response.ok === false, 'Response error');
 
-          assert.true(json.message === 'Brick not found');
           endTest();
         } catch (error) {
           assert.true(false, 'Error during communication');
