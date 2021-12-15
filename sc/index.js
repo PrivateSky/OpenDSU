@@ -375,7 +375,7 @@ const getDIDDomain = (callback) => {
     config.getEnv(constants.DID_DOMAIN, callback);
 }
 
-const securityContextIsInitialised = ()=>{
+const securityContextIsInitialised = () => {
     if (typeof $$.sc === "undefined") {
         return false;
     }
@@ -396,6 +396,28 @@ const refreshSecurityContext = () => {
     return $$.sc;
 };
 
+const getMainEnclave = (callback) => {
+    const sc = getSecurityContext();
+    if (sc.isInitialised()) {
+        return sc.getMainEnclaveDB(callback);
+    } else {
+        sc.on("initialised", () => {
+            sc.getMainEnclaveDB(callback);
+        });
+    }
+}
+
+const getSharedEnclave = (callback) => {
+    const sc = getSecurityContext();
+    if (sc.isInitialised()) {
+        sc.getSharedEnclaveDB(callback);
+    } else {
+        sc.on("initialised", () => {
+            sc.getSharedEnclaveDB(callback);
+        });
+    }
+}
+
 module.exports = {
     getMainDSU,
     setMainDSU,
@@ -403,5 +425,7 @@ module.exports = {
     getSecurityContext,
     refreshSecurityContext,
     getDIDDomain,
-    securityContextIsInitialised
+    securityContextIsInitialised,
+    getMainEnclave,
+    getSharedEnclave
 };

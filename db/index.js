@@ -72,25 +72,11 @@ const mainEnclaveIsInitialised = ()=>{
 }
 
 const getMainEnclaveDB = (callback) => {
-    const sc = require("opendsu").loadAPI("sc").getSecurityContext();
-    if (sc.isInitialised()) {
-        return sc.getMainEnclaveDB(callback);
-    } else {
-        sc.on("initialised", () => {
-            sc.getMainEnclaveDB(callback);
-        });
-    }
+    require("opendsu").loadAPI("sc").getMainEnclave(callback);
 }
 
 const getSharedEnclaveDB = (callback) => {
-    const sc = require("opendsu").loadAPI("sc").getSecurityContext();
-    if (sc.isInitialised()) {
-        sc.getSharedEnclaveDB(callback);
-    } else {
-        sc.on("initialised", () => {
-            sc.getSharedEnclaveDB(callback);
-        });
-    }
+     require("opendsu").loadAPI("sc").getSharedEnclave(callback);
 }
 module.exports = {
     getBasicDB,

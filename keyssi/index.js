@@ -1,14 +1,13 @@
 const keySSIResolver = require("key-ssi-resolver");
-const crypto = require("../crypto");
 const keySSIFactory = keySSIResolver.KeySSIFactory;
 const SSITypes = keySSIResolver.SSITypes;
-const dbAPI = require("opendsu").loadAPI("db");
+const openDSU = require("opendsu");
 const parse = (ssiString, options) => {
     return keySSIFactory.create(ssiString, options);
 };
 
 const createSeedSSI = (domain, vn, hint, callback) => {
-    return we_createSeedSSI(dbAPI.getMainEnclave(), domain, vn, hint, callback);
+    return we_createSeedSSI(openDSU.loadAPI("sc").getMainEnclave(), domain, vn, hint, callback);
 };
 
 const we_createSeedSSI = (enclave, domain, vn, hint, callback) => {
@@ -109,7 +108,7 @@ const createTemplateWalletSSI = (domain, arrayWIthCredentials, hint) => {
 };
 
 const createConstSSI = (domain, constString, vn, hint) => {
-    return we_createConstSSI(dbAPI.getMainEnclave(), domain, constString, vn, hint)
+    return we_createConstSSI(openDSU.loadAPI("sc").getMainEnclave(), domain, constString, vn, hint)
 };
 
 const we_createConstSSI = (enclave, domain, constString, vn, hint, callback) => {
@@ -126,7 +125,7 @@ const we_createConstSSI = (enclave, domain, constString, vn, hint, callback) => 
 };
 
 const createArraySSI = (domain, arr, vn, hint, callback) => {
-    return we_createArraySSI(dbAPI.getMainEnclave(), domain, arr, vn, hint);
+    return we_createArraySSI(openDSU.loadAPI("sc").getMainEnclave(), domain, arr, vn, hint);
 }
 
 const we_createArraySSI = (enclave, domain, arr, vn, hint, callback) => {
