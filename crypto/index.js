@@ -102,7 +102,7 @@ const sha256 = (dataObj) => {
 const generateRandom = (length) => {
     const pskcrypto = require("pskcrypto");
     const randomBuffer = pskcrypto.randomBytes(length);
-    return pskcrypto.pskBase58Encode(randomBuffer);
+    return randomBuffer;
 }
 
 const encodeBase58 = (data) => {
