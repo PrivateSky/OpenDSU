@@ -10,7 +10,6 @@ const config = openDSU.loadAPI("config")
 const keySSISpace = openDSU.loadAPI("keyssi");
 const resolver = openDSU.loadAPI("resolver");
 const {getURLForSsappContext} = require("../utils/getURLForSsappContext");
-const path = require("path");
 
 function getMainDSU(callback) {
     callback = $$.makeSaneCallback(callback);
