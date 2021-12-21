@@ -10,6 +10,7 @@ const config = openDSU.loadAPI("config")
 const keySSISpace = openDSU.loadAPI("keyssi");
 const resolver = openDSU.loadAPI("resolver");
 const {getURLForSsappContext} = require("../utils/getURLForSsappContext");
+const path = require("path");
 
 function getMainDSU(callback) {
     callback = $$.makeSaneCallback(callback);
@@ -41,41 +42,44 @@ function getMainDSU(callback) {
 }
 
 function getMainDSUForNode(callback) {
-    let mainDSU;
     const path = require("path");
-    const crypto = require("opendsu").loadAPI("crypto");
-    const uid = crypto.generateRandom(5).toString("hex");
-    const BASE_DIR_PATH = path.join(require("os").tmpdir(), uid);
-    const MAIN_DSU_PATH = path.join(BASE_DIR_PATH, "wallet");
+    const resolver = require("opendsu").loadAPI("resolver");
     const DOMAIN = process.env.VAULT_DOMAIN || "vault";
     const fs = require("fs");
-    const resolver = require("opendsu").loadAPI("resolver");
+
+    if (!process.env.PSK_CONFIG_LOCATION) {
+        return createMainDSU(callback);
+    }
+
+    const MAIN_DSU_PATH = path.join(process.env.PSK_CONFIG_LOCATION, "../mainDSU");
+
+    function createMainDSU(callback) {
+        resolver.createSeedDSU(DOMAIN, (err, seedDSU) => {
+            if (err) {
+                return callback(err);
+            }
+            setMainDSU(seedDSU);
+
+            seedDSU.writeFile("/environment.json", JSON.stringify({
+                vaultDomain: DOMAIN,
+                didDomain: DOMAIN
+            }), err=> callback(err, seedDSU));
+        });
+    }
 
     fs.readFile(MAIN_DSU_PATH, (err, mainDSUSSI) => {
         if (err) {
-            resolver.createSeedDSU(DOMAIN, (err, seedDSU) => {
+            createMainDSU((err, seedDSU) => {
                 if (err) {
                     return callback(err);
                 }
-                setMainDSU(seedDSU);
 
-                seedDSU.writeFile("/environment.json", JSON.stringify({
-                    vaultDomain: DOMAIN,
-                    didDomain: DOMAIN
-                }), (err) => {
+                seedDSU.getKeySSIAsString((err, seedSSI)=>{
                     if (err) {
                         return callback(err);
                     }
-                    seedDSU.getKeySSIAsString((err, seedSSI) => {
-                        if (err) {
-                            return callback(err);
-                        }
-
-                        fs.mkdirSync(BASE_DIR_PATH, {recursive: true});
-                        setMainDSU(seedDSU);
-                        fs.writeFile(MAIN_DSU_PATH, seedSSI, (err) => callback(err, seedDSU));
-                    });
-                })
+                    fs.writeFile(MAIN_DSU_PATH, seedSSI, (err) => callback(err, seedDSU));
+                });
             })
 
             return;
@@ -397,6 +401,9 @@ const refreshSecurityContext = () => {
 };
 
 const getMainEnclave = (callback) => {
+    if(!$$.sc && !callback){
+        return;
+    }
     const sc = getSecurityContext();
     if (sc.isInitialised()) {
         return sc.getMainEnclaveDB(callback);
