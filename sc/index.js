@@ -62,7 +62,7 @@ function getMainDSUForNode(callback) {
             seedDSU.writeFile("/environment.json", JSON.stringify({
                 vaultDomain: DOMAIN,
                 didDomain: DOMAIN
-            }), err=> callback(err, seedDSU));
+            }), err => callback(err, seedDSU));
         });
     }
 
@@ -73,7 +73,7 @@ function getMainDSUForNode(callback) {
                     return callback(err);
                 }
 
-                seedDSU.getKeySSIAsString((err, seedSSI)=>{
+                seedDSU.getKeySSIAsString((err, seedSSI) => {
                     if (err) {
                         return callback(err);
                     }
@@ -400,7 +400,7 @@ const refreshSecurityContext = () => {
 };
 
 const getMainEnclave = (callback) => {
-    if(!$$.sc && !callback){
+    if (!$$.sc && !callback) {
         return;
     }
     const sc = getSecurityContext();
@@ -424,6 +424,37 @@ const getSharedEnclave = (callback) => {
     }
 }
 
+const configEnvironment = (config, callback) => {
+    getMainDSU((err, mainDSU) => {
+        if (err) {
+            return callback(createOpenDSUErrorWrapper("Failed to get main DSU", err));
+        }
+
+        mainDSU.readFile(constants.ENVIRONMENT_PATH, (err, env) => {
+            if (err) {
+                return callback(createOpenDSUErrorWrapper("Failed to read env", err));
+            }
+
+            try {
+                env = JSON.parse(env.toString());
+            } catch (e) {
+                return callback(createOpenDSUErrorWrapper("Failed to parse env", e));
+            }
+
+            Object.assign(env, config);
+            config = env;
+            mainDSU.writeFile(constants.ENVIRONMENT_PATH, JSON.stringify(config), (err) => {
+                if (err) {
+                    return callback(createOpenDSUErrorWrapper("Failed to write env", err));
+                }
+
+                const sc = refreshSecurityContext();
+                sc.on("initialised", () => callback(undefined, sc));
+            });
+        })
+    })
+}
+
 module.exports = {
     getMainDSU,
     setMainDSU,
@@ -433,5 +464,6 @@ module.exports = {
     getDIDDomain,
     securityContextIsInitialised,
     getMainEnclave,
-    getSharedEnclave
+    getSharedEnclave,
+    configEnvironment
 };
