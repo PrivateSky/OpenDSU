@@ -10,6 +10,13 @@ module.exports = {
                 callback(undefined, dsu, sharableSSI);
             }, 10000);
 
+        if (typeof keySSI === "string") {
+            try {
+                keySSI = keySSIApis.parse(keySSI);
+            } catch (e) {
+                return callback(createOpenDSUErrorWrapper(`Failed to parse keySSI ${keySSI}`, e));
+            }
+        }
         resolver.loadDSU(keySSI, (err, dsuInstance) => {
             if ((err || !dsuInstance) && keySSI.getTypeName() === constants.KEY_SSIS.SEED_SSI) {
                 return createSeedDSU();
