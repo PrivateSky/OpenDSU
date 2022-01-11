@@ -31,8 +31,7 @@ function executeFetch(url, options) {
     }`;
   }
 
-  const http = require("opendsu").loadAPI("http");
-  return http.fetch(url, options);
+  return fetch(url, options);
 }
 
 module.exports = {
