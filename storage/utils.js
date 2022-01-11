@@ -16,7 +16,7 @@ function promisify(fun) {
   };
 }
 
-function executeFetch(url, options) {
+function executeFetch(url, ...args) {
   // check if we need to add the BASE_URL to the prefix of the url
   const isBaseUrlSet =
     $$ &&
@@ -31,7 +31,8 @@ function executeFetch(url, options) {
     }`;
   }
 
-  return fetch(url, options);
+  const http = require("opendsu").loadAPI("http");
+  return http.fetch(url, ...args);
 }
 
 module.exports = {

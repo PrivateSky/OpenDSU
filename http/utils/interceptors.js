@@ -66,6 +66,10 @@ function setupInterceptors(handler){
                     args.push({headers: {}});
                 }
 
+                if (args.length === 2 && typeof args[1] === "undefined") {
+                    args[1] = {};
+                }
+
                 if(typeof args[1].headers === "undefined"){
                     args[1].headers = {};
                 }
