@@ -468,6 +468,34 @@ const configEnvironment = (config, refreshSC, callback) => {
     });
 }
 
+const setEnclave = (enclave, type, callback)=>{
+    const config = {};
+    enclave.getDID((err, did)=>{
+        if (err) {
+            return callback(err);
+        }
+
+        config[openDSU.constants[type].DID] = did;
+        enclave.getKeySSI((err, keySSI)=>{
+            if (err) {
+                return callback(err);
+            }
+
+            config[openDSU.constants[type].KEY_SSI] = keySSI;
+            config[openDSU.constants[type].TYPE] = enclave.getEnclaveType();
+            configEnvironment(config, callback);
+        })
+    })
+}
+
+const setMainEnclave = (enclave, callback) => {
+    setEnclave(enclave, "MAIN_ENCLAVE", callback);
+};
+
+const setSharedEnclave = (enclave, callback) => {
+    setEnclave(enclave, "SHARED_ENCLAVE", callback);
+};
+
 module.exports = {
     getMainDSU,
     setMainDSU,
@@ -477,6 +505,8 @@ module.exports = {
     getDIDDomain,
     securityContextIsInitialised,
     getMainEnclave,
+    setMainEnclave,
     getSharedEnclave,
+    setSharedEnclave,
     configEnvironment
 };
