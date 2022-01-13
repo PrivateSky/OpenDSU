@@ -9,7 +9,6 @@ function WalletDBEnclave(keySSI, did) {
     EnclaveMixin(this, did);
     let enclaveDSU;
     let initialised = false;
-
     const init = async () => {
         if (!keySSI) {
             try {
@@ -60,12 +59,16 @@ function WalletDBEnclave(keySSI, did) {
         callback(undefined, keySSI);
     }
 
+    this.getEnclaveType = () => {
+        return openDSU.constants.ENCLAVE_TYPES.WALLET_DB_ENCLAVE;
+    };
+
     this.isInitialised = () => {
         return initialised;
     };
 
     const bindAutoPendingFunctions = require("../../utils/BindAutoPendingFunctions").bindAutoPendingFunctions;
-    bindAutoPendingFunctions(this, ["on", "off", "beginBatch", "isInitialised"]);
+    bindAutoPendingFunctions(this, ["on", "off", "beginBatch", "isInitialised", "getEnclaveType"]);
 
     init();
 }

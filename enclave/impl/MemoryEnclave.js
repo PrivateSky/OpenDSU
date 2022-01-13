@@ -12,6 +12,10 @@ function MemoryEnclave() {
         })
     }
 
+    this.getEnclaveType = () => {
+        return openDSU.constants.ENCLAVE_TYPES.MEMORY_ENCLAVE;
+    };
+
     this.isInitialised = () => {
         return initialised
     }
