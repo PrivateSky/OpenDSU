@@ -29,7 +29,7 @@ function validateAnchoredSSI(lastTransferSSI, currentSSI) {
     if (!lastTransferSSI) {
         return true;
     }
-    if (lastTransferSSI.getPublicKeyHash() !== currentSSI.getPublicKeyHash()) {
+    if (lastTransferSSI.getSignature() !== currentSSI.getSignature()) {
         return false;
     }
 
@@ -45,14 +45,15 @@ function verifySignature(keySSI, newSSI, lastSSI) {
     }
     const timestamp = newSSI.getTimestamp();
     const signature = newSSI.getSignature();
-    let dataToVerify = timestamp;
+    let lastEntryInAnchor = '';
     if (lastSSI) {
-        dataToVerify = lastSSI.getIdentifier() + dataToVerify;
+        lastEntryInAnchor = lastSSI.getIdentifier();
     }
 
+    let dataToVerify;
     if (newSSI.getTypeName() === constants.KEY_SSIS.SIGNED_HASH_LINK_SSI) {
-        dataToVerify += keySSI.getAnchorId();
-        return keySSI.verify(dataToVerify, signature)
+        dataToVerify = keySSI.hash(keySSI.getAnchorId() + newSSI.getHash() + lastEntryInAnchor + timestamp);
+        return keySSI.verify(dataToVerify, signature);
     }
     if (newSSI.getTypeName() === constants.KEY_SSIS.TRANSFER_SSI) {
         dataToVerify += newSSI.getSpecificString();
