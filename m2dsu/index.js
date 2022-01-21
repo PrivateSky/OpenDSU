@@ -92,7 +92,7 @@ function MappingEngine(storageService, options) {
           let messageString = JSON.stringify(message);
           const maxDisplayLength = 1024;
           console.log(`Unable to find a suitable mapping to handle the following message: ${messageString.length < maxDisplayLength ? messageString : messageString.slice(0, maxDisplayLength) + "..."}`);
-          reject(errMap.newCustomError(errMap.errorTypes.INVALID_MESSAGE_FORMAT, [{field: "messageType", message: `Wrong value. Couldn't find any mapping for ${message.messageType}`}]))
+          reject(errMap.newCustomError(errMap.errorTypes.MISSING_MAPPING, [{field: "messageType", message: `Couldn't find any mapping for ${message.messageType}`}]))
         }
         return messageDigested;
       }
