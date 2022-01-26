@@ -115,19 +115,18 @@ function W3CDID_Mixin(target, enclave) {
             .getMQHandlerForDID(target);
         mqHandler.previewMessage((err, encryptedMessage) => {
             if (err) {
-                return mqHandler.deleteMessage(encryptedMessage.messageId, () => callback(err));
+                return callback(createOpenDSUErrorWrapper(`Failed to read message`, err));
             }
 
             let message;
             try {
                 message = JSON.parse(encryptedMessage.message);
             } catch (e) {
-                return callback(e);
+                return callback(createOpenDSUErrorWrapper(`Failed to parse received message`, err));
             }
 
             mqHandler.deleteMessage(encryptedMessage.messageId, (err) => {
                 if (err) {
-                    console.log(err);
                     return callback(createOpenDSUErrorWrapper(`Failed to delete message`, err));
                 }
                 target.decryptMessage(message, callback);
