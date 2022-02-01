@@ -8,10 +8,7 @@ function KeyDID_Document(enclave, isInitialisation, publicKey) {
     let privateKey;
     let domain;
     const openDSU = require("opendsu");
-    const keySSISpace = openDSU.loadAPI("keyssi");
     const crypto = openDSU.loadAPI("crypto");
-    const dbAPI = openDSU.loadAPI("db");
-    const scAPI = openDSU.loadAPI("sc");
 
     const init = async () => {
         if (isInitialisation) {
