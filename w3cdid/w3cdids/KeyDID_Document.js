@@ -14,32 +14,21 @@ function KeyDID_Document(enclave, isInitialisation, publicKey) {
     const scAPI = openDSU.loadAPI("sc");
 
     const init = async () => {
-        if (publicKey) {
-            setTimeout(()=>{
+        if (isInitialisation) {
+            const keyPair = crypto.generateKeyPair();
+            privateKey = keyPair.privateKey;
+            publicKey = crypto.encodeBase58(keyPair.publicKey);
+            setTimeout(() => {
                 this.dispatchEvent("initialised");
             })
-            return;
-        }
-        try {
-            domain = await $$.promisify(scAPI.getDIDDomain)();
-        } catch (e) {
-            throw createOpenDSUErrorWrapper(`Failed to get did domain`, e);
-        }
-
-        if (isInitialisation) {
-            let seedSSI;
-            try {
-                seedSSI = await $$.promisify(keySSISpace.createSeedSSI)(domain);
-            } catch (e) {
-                throw createOpenDSUErrorWrapper(`Failed to create Seed SSI`, e);
-            }
-            privateKey = seedSSI.getPrivateKey();
-
-            publicKey = crypto.encodeBase58(seedSSI.getPublicKey("raw"));
-            this.dispatchEvent("initialised");
         } else {
-            this.dispatchEvent("initialised");
-        }
+            if (!publicKey) {
+                throw Error("Public key is missing from argument list.")
+            }
+            publicKey = publicKey.slice(4);
+            setTimeout(() => {
+                this.dispatchEvent("initialised");
+            });}
     };
 
     const getRawPublicKey = () => {
@@ -69,7 +58,7 @@ function KeyDID_Document(enclave, isInitialisation, publicKey) {
     }
 
     this.getIdentifier = () => {
-        return `did:key:${publicKey}`;
+        return `did:key:zQ3s${publicKey}`;
     };
 
     this.getPrivateKeys = () => {

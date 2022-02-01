@@ -115,6 +115,10 @@ const decodeBase58 = (data) => {
     return decodeFn(data);
 };
 
+const generateKeyPair = () => {
+    const ecGenerator = crypto.createKeyPairGenerator();
+    return ecGenerator.generateKeyPair();
+}
 
 /**
  *
@@ -133,7 +137,8 @@ const convertPublicKey = (rawPublicKey, outputFormat, curveName) => {
  */
 const convertPrivateKey = (rawPrivateKey, outputFormat) => {
     const ecGenerator = crypto.createKeyPairGenerator();
-    return ecGenerator.convertPrivateKey(rawPrivateKey, {outputFormat});
+    const rawPublicKey = ecGenerator.getPublicKey(rawPrivateKey);
+    return ecGenerator.getPemKeys(rawPrivateKey, rawPublicKey, {outputFormat}).privateKey;
 }
 
 const createJWT = (seedSSI, scope, credentials, options, callback) => {
@@ -286,6 +291,7 @@ const base64UrlEncodeJOSE = (data) => {
     return data.toString("base64").replaceAll('+', '-').replaceAll('/', '_').replaceAll('=', '');
 }
 
+
 module.exports = {
     getCryptoFunctionForKeySSI,
     hash,
@@ -313,6 +319,7 @@ module.exports = {
     createBloomFilter,
     JWT_ERRORS,
     deriveEncryptionKey,
+    generateKeyPair,
     convertPrivateKey,
     convertPublicKey,
     ecies_encrypt_ds,
