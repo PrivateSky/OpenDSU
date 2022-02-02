@@ -1,9 +1,7 @@
-const bdns = require("../bdns");
 const keyssi = require("../keyssi");
 const {fetch, doPut} = require("../http");
 const constants = require("../moduleConstants");
 const promiseRunner = require("../utils/promise-runner");
-const cachedAnchoring = require("./cachedAnchoring");
 const config = require("../config");
 const {validateHashLinks, verifySignature} = require("./anchoring-utils");
 
@@ -21,6 +19,7 @@ const buildGetVersionFunction = function(processingFunction){
         const dlDomain = keySSI.getDLDomain();
         const anchorId = keySSI.getAnchorId();
 
+        const bdns = require("../bdns");
         // if (dlDomain === constants.DOMAINS.VAULT && isValidVaultCache()) {
         //     return cachedAnchoring.versions(anchorId, callback);
         // }
@@ -137,6 +136,7 @@ const addVersion = (SSICapableOfSigning, newSSI, lastSSI, zkpValue, callback) =>
     //     return cachedAnchoring.addVersion(anchorId, newSSI ? newSSI.getIdentifier() : undefined, callback);
     // }
 
+    const bdns = require("../bdns");
     bdns.getAnchoringServices(dlDomain, (err, anchoringServicesArray) => {
         if (err) {
             return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to get anchoring services from bdns`, err));
