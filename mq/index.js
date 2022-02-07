@@ -81,8 +81,6 @@ function MQHandler(didDocument, domain, pollingTimeout) {
     let expiryTime;
     let queueName = didDocument.getHash();
 
-    domain = domain || didDocument.getDomain();
-
     function getURL(queueName, action, signature, messageID, callback) {
         let url
         if (typeof signature === "function") {
@@ -96,34 +94,50 @@ function MQHandler(didDocument, domain, pollingTimeout) {
             messageID = undefined;
         }
 
-        bdns.getMQEndpoints(domain, (err, mqEndpoints) => {
-            if (err) {
-                return callback(err);
-            }
+        if (!domain) {
+            const sc = require("opendsu").loadAPI("sc");
+            sc.getDIDDomain((err, didDomain) => {
+                if (err) {
+                    return callback(err);
+                }
 
-            url = `${mqEndpoints[0]}/mq/${domain}`
-            switch (action) {
-                case "token":
-                    url = `${url}/${queueName}/token`;
-                    break;
-                case "get":
-                    url = `${url}/get/${queueName}/${signature}`;
-                    break;
-                case "put":
-                    url = `${url}/put/${queueName}`;
-                    break;
-                case "take":
-                    url = `${url}/take/${queueName}/${signature}`;
-                    break;
-                case "delete":
-                    url = `${url}/delete/${queueName}/${messageID}/${signature}`;
-                    break;
-                default:
-                    throw Error(`Invalid action received ${action}`);
-            }
+                domain = didDomain;
+                __createURL();
+            })
+        } else {
+            __createURL();
+        }
 
-            callback(undefined, url);
-        })
+        function __createURL() {
+            bdns.getMQEndpoints(domain, (err, mqEndpoints) => {
+                if (err) {
+                    return callback(err);
+                }
+
+                url = `${mqEndpoints[0]}/mq/${domain}`
+                switch (action) {
+                    case "token":
+                        url = `${url}/${queueName}/token`;
+                        break;
+                    case "get":
+                        url = `${url}/get/${queueName}/${signature}`;
+                        break;
+                    case "put":
+                        url = `${url}/put/${queueName}`;
+                        break;
+                    case "take":
+                        url = `${url}/take/${queueName}/${signature}`;
+                        break;
+                    case "delete":
+                        url = `${url}/delete/${queueName}/${messageID}/${signature}`;
+                        break;
+                    default:
+                        throw Error(`Invalid action received ${action}`);
+                }
+
+                callback(undefined, url);
+            })
+        }
     }
 
     function ensureAuth(callback) {
