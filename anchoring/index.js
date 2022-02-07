@@ -5,6 +5,12 @@ const promiseRunner = require("../utils/promise-runner");
 const config = require("../config");
 const {validateHashLinks, verifySignature} = require("./anchoring-utils");
 
+const getAnchoringBehaviour = (persistenceStrategy) => {
+        const Aab = require('./anchoringAbstractBehaviour').AnchoringAbstractBehaviour;
+        return new Aab(persistenceStrategy);
+    };
+
+
 const isValidVaultCache = () => {
     return typeof config.get(constants.CACHE.VAULT_TYPE) !== "undefined" && config.get(constants.CACHE.VAULT_TYPE) !== constants.CACHE.NO_CACHE;
 }
@@ -236,6 +242,11 @@ const getLatestVersion = (domain, ...args) => {
     callContractMethod(domain, "getLatestVersion", ...args);
 }
 
+function getAnchoringX(){
+    //todo: See below
+    //return anchoring behaviour using the persistence as apihub calls
+    //execute the integration testing using the extended FS implementation (fsx)
+}
 module.exports = {
     createAnchor,
     createNFT,
@@ -243,5 +254,7 @@ module.exports = {
     transferTokenOwnership,
     getAllVersions,
     getLastVersion,
-    getLatestVersion
+    getLatestVersion,
+    getAnchoringBehaviour,
+    getAnchoringX
 }
