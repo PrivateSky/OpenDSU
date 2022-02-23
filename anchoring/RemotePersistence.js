@@ -5,10 +5,6 @@ function RemotePersistence() {
     const http = openDSU.loadAPI("http");
     const promiseRunner = require("../utils/promise-runner");
 
-    this.createAnchor = (capableOfSigningKeySSI, anchorValue, callback) => {
-        updateAnchor(capableOfSigningKeySSI, anchorValue, "createAnchor", callback);
-    }
-
     const getAnchoringServices = (dlDomain, callback) => {
         const bdns = openDSU.loadAPI("bdns");
         bdns.getAnchoringServices(dlDomain, (err, anchoringServicesArray) => {
@@ -24,10 +20,10 @@ function RemotePersistence() {
         });
     }
 
-    const updateAnchor = (capableOfSigningKeySSI, anchorValue, anchorAction, callback) => {
-        if (typeof capableOfSigningKeySSI === "string") {
+    const updateAnchor = (anchorSSI, anchorValue, anchorAction, callback) => {
+        if (typeof anchorSSI === "string") {
             try {
-                capableOfSigningKeySSI = keySSISpace.parse(capableOfSigningKeySSI);
+                anchorSSI = keySSISpace.parse(anchorSSI);
             } catch (e) {
                 return callback(e);
             }
@@ -41,8 +37,8 @@ function RemotePersistence() {
             }
         }
 
-        const dlDomain = capableOfSigningKeySSI.getDLDomain();
-        const anchorId = capableOfSigningKeySSI.getAnchorId();
+        const dlDomain = anchorSSI.getDLDomain();
+        const anchorId = anchorSSI.getAnchorId();
 
         getAnchoringServices(dlDomain, (err, anchoringServicesArray) => {
             if (err) {
@@ -75,22 +71,34 @@ function RemotePersistence() {
         }
     };
 
+    this.createAnchor = (capableOfSigningKeySSI, anchorValue, callback) => {
+        updateAnchor(capableOfSigningKeySSI, anchorValue, "create-anchor", callback);
+    }
+
     this.appendAnchor = (capableOfSigningKeySSI, anchorValue, callback) => {
-        updateAnchor(capableOfSigningKeySSI, anchorValue, "appendAnchor", callback);
+        updateAnchor(capableOfSigningKeySSI, anchorValue, "append-to-anchor", callback);
     }
 
     const getFetchAnchor = (anchorId, dlDomain, actionName, callback) => {
         return function (service) {
-            return http.fetch(`${service}/anchor/${dlDomain}/${actionName}/${anchorId}`)
-                .then(response => {
-                    if (actionName === "get-all-versions") {
-                        return response.json()
+            return new Promise((resolve, reject) => {
+                http.doGet(`${service}/anchor/${dlDomain}/${actionName}/${anchorId}`, (err, data) => {
+                    if (err) {
+                        return reject(err);
                     }
 
-                    return response;
-                })
-                .then(anchorValues => callback(undefined, anchorValues))
-                .catch(err => callback(err));
+                    try{
+                        data = JSON.parse(data);
+                    }catch (e) {
+                        return reject(e);
+                    }
+
+                    if (actionName === "get-last-version") {
+                        data = data.message;
+                    }
+                    return resolve(data);
+                });
+            })
         }
     }
 
