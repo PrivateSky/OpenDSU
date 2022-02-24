@@ -9,11 +9,21 @@ function AnchoringAbstractBehaviour(persistenceStrategy) {
         //convert to keySSI
         let anchorIdKeySSI = anchorId;
         if (typeof anchorId === "string"){
-            anchorIdKeySSI = keySSI.parse(anchorId);
+            try{
+                anchorIdKeySSI = keySSI.parse(anchorId);
+            }
+            catch (err){
+                return callback(err);
+            }
         }
         let anchorValueSSIKeySSI = anchorValueSSI;
         if (typeof anchorValueSSI === "string"){
-            anchorValueSSIKeySSI = keySSI.parse(anchorValueSSI);
+            try{
+                anchorValueSSIKeySSI = keySSI.parse(anchorValueSSI);
+            }
+            catch(err){
+                return callback(err);
+            }
         }
 
         if (!anchorIdKeySSI.canAppend()){
@@ -41,11 +51,19 @@ function AnchoringAbstractBehaviour(persistenceStrategy) {
         //convert to keySSI
         let anchorIdKeySSI = anchorId;
         if (typeof anchorId === "string"){
-            anchorIdKeySSI = keySSI.parse(anchorId);
+            try {
+                anchorIdKeySSI = keySSI.parse(anchorId);
+            } catch(err){
+                return callback(err);
+            }
         }
         let anchorValueSSIKeySSI = anchorValueSSI;
         if (typeof anchorValueSSI === "string"){
-            anchorValueSSIKeySSI = keySSI.parse(anchorValueSSI);
+            try {
+                anchorValueSSIKeySSI = keySSI.parse(anchorValueSSI);
+            } catch (err){
+                return callback(err);
+            }
         }
 
         if (!anchorIdKeySSI.canAppend()){
@@ -84,7 +102,11 @@ function AnchoringAbstractBehaviour(persistenceStrategy) {
     self.getAllVersions = function(anchorId, callback){
         let anchorIdKeySSI = anchorId;
         if (typeof anchorId === "string"){
-            anchorIdKeySSI = keySSI.parse(anchorId);
+            try {
+                anchorIdKeySSI = keySSI.parse(anchorId);
+            } catch (err){
+                return callback(err);
+            }
         }
         persistenceStrategy.getAllVersions(anchorId, (err, data) => {
             if (err){
