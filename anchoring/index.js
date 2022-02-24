@@ -242,10 +242,13 @@ const getLatestVersion = (domain, ...args) => {
     callContractMethod(domain, "getLatestVersion", ...args);
 }
 
+
 function getAnchoringX(){
     //todo: See below
     //return anchoring behaviour using the persistence as apihub calls
     //execute the integration testing using the extended FS implementation (fsx)
+    const RemotePersistence = require("./RemotePersistence");
+    return getAnchoringBehaviour(new RemotePersistence());
 }
 module.exports = {
     createAnchor,
