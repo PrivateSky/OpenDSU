@@ -14,7 +14,7 @@ assert.callback("Should get null or empty array version for non existing anchors
 
         ab.getLastVersion(anchorId, (err, data) => {
             assert.true(typeof err === 'undefined');
-            assert.true(data === null);
+            assert.true(data === null || data === undefined);
             ab.getAllVersions(anchorId, (err, data) => {
                 assert.true(typeof err === 'undefined');
                 assert.true(Array.isArray(data));

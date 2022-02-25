@@ -16,7 +16,7 @@ assert.callback("Should create new anchor and read all versions back", async (ca
             assert.true(typeof err === 'undefined');
                 ab.getAllVersions(anchorId, (err, data) => {
                         assert.true(typeof err === 'undefined');
-                        assert.true(data[0] === hashlink);
+                        assert.true(data[0].getIdentifier() === hashlink);
                         callback();
                 });
 

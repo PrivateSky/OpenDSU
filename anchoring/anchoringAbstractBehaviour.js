@@ -1,6 +1,8 @@
+const {createOpenDSUErrorWrapper} = require("../error");
+
 function AnchoringAbstractBehaviour(persistenceStrategy) {
     const self = this;
-    const keySSI = require('../keyssi/index');
+    const keySSISpace = require("opendsu").loadAPI("keyssi");
     self.createAnchor = function (anchorId, anchorValueSSI, callback) {
         if (typeof anchorId === 'undefined' || typeof anchorValueSSI === 'undefined' || anchorId === null || anchorValueSSI === null) {
             return callback(Error(`Invalid call for create anchor ${anchorId}:${anchorValueSSI}`));
@@ -8,15 +10,15 @@ function AnchoringAbstractBehaviour(persistenceStrategy) {
         //convert to keySSI
         let anchorIdKeySSI = anchorId;
         if (typeof anchorId === "string") {
-            anchorIdKeySSI = keySSI.parse(anchorId);
+            anchorIdKeySSI = keySSISpace.parse(anchorId);
         }
         let anchorValueSSIKeySSI = anchorValueSSI;
         if (typeof anchorValueSSI === "string") {
-            anchorValueSSIKeySSI = keySSI.parse(anchorValueSSI);
+            anchorValueSSIKeySSI = keySSISpace.parse(anchorValueSSI);
         }
 
         if (!anchorIdKeySSI.canAppend()) {
-            return persistenceStrategy.createAnchor(anchorIdKeySSI.getIdentifier(), anchorValueSSIKeySSI.getIdentifier(), (err) => {
+            return persistenceStrategy.createAnchor(anchorIdKeySSI.getAnchorId(), anchorValueSSIKeySSI.getIdentifier(), (err) => {
                 return callback(err);
             });
         }
@@ -27,7 +29,7 @@ function AnchoringAbstractBehaviour(persistenceStrategy) {
         if (!signer.verify(dataToVerify, signature)) {
             return callback(Error("Failed to verify the signature!"));
         }
-        persistenceStrategy.createAnchor(anchorIdKeySSI.getIdentifier(), anchorValueSSIKeySSI.getIdentifier(), (err) => {
+        persistenceStrategy.createAnchor(anchorIdKeySSI.getAnchorId(), anchorValueSSIKeySSI.getIdentifier(), (err) => {
             return callback(err);
         });
     }
@@ -39,11 +41,11 @@ function AnchoringAbstractBehaviour(persistenceStrategy) {
         //convert to keySSI
         let anchorIdKeySSI = anchorId;
         if (typeof anchorId === "string") {
-            anchorIdKeySSI = keySSI.parse(anchorId);
+            anchorIdKeySSI = keySSISpace.parse(anchorId);
         }
         let anchorValueSSIKeySSI = anchorValueSSI;
         if (typeof anchorValueSSI === "string") {
-            anchorValueSSIKeySSI = keySSI.parse(anchorValueSSI);
+            anchorValueSSIKeySSI = keySSISpace.parse(anchorValueSSI);
         }
 
         if (!anchorIdKeySSI.canAppend()) {
@@ -57,18 +59,18 @@ function AnchoringAbstractBehaviour(persistenceStrategy) {
             if (typeof data === 'undefined' || data === null) {
                 data = [];
             }
-            const historyOfKeySSI = data.map(el => keySSI.parse(el));
+            const historyOfKeySSI = data.map(el => keySSISpace.parse(el));
             const signer = determineSigner(anchorIdKeySSI, historyOfKeySSI);
             const signature = anchorValueSSIKeySSI.getSignature();
             if (typeof data[data.length - 1] === 'undefined') {
                 return callback(`Cannot update non existing anchor ${anchorId}`);
             }
-            const lastSignedHashLinkKeySSI = keySSI.parse(data[data.length - 1]);
+            const lastSignedHashLinkKeySSI = keySSISpace.parse(data[data.length - 1]);
             const dataToVerify = anchorValueSSIKeySSI.getDataToSign(anchorIdKeySSI, lastSignedHashLinkKeySSI);
             if (!signer.verify(dataToVerify, signature)) {
                 return callback(Error("Failed to verify the signature!"));
             }
-            persistenceStrategy.appendAnchor(anchorIdKeySSI.getIdentifier(), anchorValueSSIKeySSI.getIdentifier(), (err) => {
+            persistenceStrategy.appendAnchor(anchorIdKeySSI.getAnchorId(), anchorValueSSIKeySSI.getIdentifier(), (err) => {
                 return callback(err);
             });
         })
@@ -78,8 +80,10 @@ function AnchoringAbstractBehaviour(persistenceStrategy) {
     self.getAllVersions = function (anchorId, callback) {
         let anchorIdKeySSI = anchorId;
         if (typeof anchorId === "string") {
-            anchorIdKeySSI = keySSI.parse(anchorId);
+            anchorIdKeySSI = keySSISpace.parse(anchorId);
         }
+        anchorId = anchorIdKeySSI.getAnchorId();
+
         persistenceStrategy.getAllVersions(anchorId, (err, data) => {
             if (err) {
                 return callback(err);
@@ -89,9 +93,15 @@ function AnchoringAbstractBehaviour(persistenceStrategy) {
             }
             if (!anchorIdKeySSI.canAppend()) {
                 //skip validation for non signing SSI
-                return callback(undefined, data);
+                let anchorValues;
+                try {
+                    anchorValues = data.map(el => keySSISpace.parse(el));
+                } catch (e) {
+                    return callback(e);
+                }
+                return callback(undefined, anchorValues);
             }
-            const historyOfKeySSI = data.map(el => keySSI.parse(el));
+            const historyOfKeySSI = data.map(el => keySSISpace.parse(el));
             const progressiveHistoryOfKeySSI = [];
             let previousSignedHashLinkKeySSI = null;
             for (let i = 0; i <= historyOfKeySSI.length - 1; i++) {
@@ -107,20 +117,30 @@ function AnchoringAbstractBehaviour(persistenceStrategy) {
                 previousSignedHashLinkKeySSI = anchorValueSSIKeySSI;
             }
             //all history was validated
-            return callback(undefined, historyOfKeySSI.map(el => el.getIdentifier()));
+            return callback(undefined, historyOfKeySSI);
         });
     }
 
     self.getLastVersion = function (anchorId, callback) {
+        let anchorIdKeySSI = anchorId;
+        if (typeof anchorId === "string") {
+            anchorIdKeySSI = keySSISpace.parse(anchorId);
+        }
+        anchorId = anchorIdKeySSI.getAnchorId();
         persistenceStrategy.getLastVersion(anchorId, (err, data) => {
             if (err) {
                 return callback(err);
             }
             if (typeof data === 'undefined' || data === null) {
-                return callback(`Cannot update non existing anchor ${anchorId}`);
+                return callback();
             }
-
-            callback(undefined, data);
+            let anchorValueSSI;
+            try {
+                anchorValueSSI = keySSISpace.parse(data);
+            } catch (e) {
+                return callback(createOpenDSUErrorWrapper("Failed to parse anchor value", e));
+            }
+            callback(undefined, anchorValueSSI);
         });
     }
 

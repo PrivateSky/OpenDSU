@@ -7,17 +7,14 @@ $$.__registerModule("opendsu", openDSU);
 const scAPI = openDSU.loadAPI("sc");
 const crypto = openDSU.loadAPI("crypto")
 
-assert.callback("ETHx API test", (callback) => {
-    dc.createTestFolder('ethx', async (err, folder) => {
+assert.callback("FSx API test", (callback) => {
+    dc.createTestFolder('fsx', async (err, folder) => {
         const domain = "default";
         const config = {
             domains: [{
                 name: domain, config: {
                     anchoring: {
-                        "type": "ETHX",
-                        "option": {
-                            "endpoint": "http://localhost:3000"
-                        }
+                        "type": "FS"
                     }
                 }
             }],
