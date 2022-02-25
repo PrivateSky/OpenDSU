@@ -10,7 +10,7 @@ assert.callback("Should fail to get versions from inconsistent persistence", asy
     const ab = new AnchoringAbstractBehaviour(cmp);
 
     ab.getLastVersion(anchorId, (err, data) => {
-        assert.true(typeof err !== 'undefined');
+        assert.true(typeof err === 'undefined');
         ab.getAllVersions(anchorId, (err, data) => {
             assert.true(typeof err !== 'undefined');
             callback();

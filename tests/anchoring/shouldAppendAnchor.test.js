@@ -19,12 +19,12 @@ assert.callback("Should append anchor", async (callback) => {
                         assert.true(typeof err === 'undefined');
                         ab.getAllVersions(anchorId, (err, data) => {
                                 assert.true(typeof err === 'undefined');
-                                assert.true(data[0] === hashlink);
-                                assert.true(data[1] === hashlink2);
+                                assert.true(data[0].getIdentifier() === hashlink);
+                                assert.true(data[1].getIdentifier() === hashlink2);
                                 assert.true(data.length === 2);
                                 ab.getLastVersion(anchorId, (err, data) => {
                                         assert.true(typeof err === 'undefined');
-                                        assert.true(data === hashlink2);
+                                        assert.true(data.getIdentifier() === hashlink2);
                                         callback();
                                 });
                         });

@@ -16,10 +16,10 @@ assert.callback("Should create new anchor of type CZA and read versions back", a
                 assert.true(typeof err === 'undefined');
                 ab.getLastVersion(anchorId, (err, data) =>{
                         assert.true(typeof err === 'undefined');
-                        assert.true(data === hashlink);
+                        assert.true(data.getIdentifier() === hashlink);
                         ab.getAllVersions(anchorId,(err, data) =>{
                                 assert.true(typeof err === 'undefined');
-                                assert.true(data[0] === hashlink);
+                                assert.true(data[0].getIdentifier() === hashlink);
                                 assert.true(data.length === 1);
                                 callback();
                         })
