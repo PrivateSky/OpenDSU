@@ -1,5 +1,4 @@
 const openDSU = require("opendsu");
-const bdns = openDSU.loadApi("bdns");
 const {fetch, doPut} = openDSU.loadApi("http");
 const constants = require("../moduleConstants");
 const cache = require("../cache/").getCacheForVault(constants.CACHE.ENCRYPTED_BRICKS_CACHE);
@@ -52,6 +51,7 @@ const getBrick = (hashLinkSSI, authToken, callback) => {
     }
 
     function __getBrickFromEndpoint() {
+        const bdns = openDSU.loadApi("bdns");
         bdns.getBrickStorages(dlDomain, (err, brickStorageArray) => {
             if (err) {
                 return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to get brick storage services from bdns`, err));
@@ -149,6 +149,7 @@ const putBrick = (domain, brick, authToken, callback) => {
         return cachedBricking.putBrick(brick, callback);
     }
 
+    const bdns = openDSU.loadApi("bdns");
     bdns.getBrickStorages(domain, (err, brickStorageArray) => {
         if (err) {
             return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to get brick storage services from bdns`, err));
