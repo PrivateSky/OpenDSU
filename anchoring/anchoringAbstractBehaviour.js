@@ -68,13 +68,10 @@ function AnchoringAbstractBehaviour(persistenceStrategy) {
             const lastSignedHashLinkKeySSI = keySSISpace.parse(data[data.length - 1]);
             const dataToVerify = anchorValueSSIKeySSI.getDataToSign(anchorIdKeySSI, lastSignedHashLinkKeySSI);
             if (!signer.verify(dataToVerify, signature)) {
-                return callback(Error("Failed to verify the signature!"));
+                return callback({statusCode: 428, message: "Versions out of sync"});
             }
-            persistenceStrategy.appendAnchor(anchorIdKeySSI.getAnchorId(), anchorValueSSIKeySSI.getIdentifier(), (err) => {
-                return callback(err);
-            });
+            persistenceStrategy.appendAnchor(anchorIdKeySSI.getAnchorId(), anchorValueSSIKeySSI.getIdentifier(), callback);
         })
-
     }
 
     self.getAllVersions = function (anchorId, callback) {
@@ -160,14 +157,12 @@ function AnchoringAbstractBehaviour(persistenceStrategy) {
             let hashLinkSSI = historyOfKeySSIValues[i];
             if (hashLinkSSI.isTransfer()) {
                 return {
-                    wasTransferred: true,
-                    signVerifier: hashLinkSSI
+                    wasTransferred: true, signVerifier: hashLinkSSI
                 };
             }
         }
         return {
-            wasTransferred: false,
-            signVerifier: undefined
+            wasTransferred: false, signVerifier: undefined
         }
     }
 }
