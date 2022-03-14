@@ -96,7 +96,6 @@ module.exports = {
                 return callback(err);
             }
 
-            const mainDSU_SSI = await $$.promisify(mainDSU.getKeySSIAsString)()
             try {
                 keySSI = await $$.promisify(mainDSU.readFile)(DB_KEY_SSI_PATH);
                 keySSI = keySSI.toString();
@@ -121,13 +120,6 @@ module.exports = {
 
                 try {
                     await $$.promisify(mainDSU.writeFile)(DB_KEY_SSI_PATH, keySSI.getIdentifier());
-                } catch (e) {
-                    return callback(createOpenDSUErrorWrapper(`Failed to store key SSI in mainDSU for db <${dbName}>`, e));
-                }
-
-                let files;
-                try {
-                    files = await $$.promisify(mainDSU.listFiles)("/db");
                 } catch (e) {
                     return callback(createOpenDSUErrorWrapper(`Failed to store key SSI in mainDSU for db <${dbName}>`, e));
                 }
