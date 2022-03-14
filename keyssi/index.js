@@ -98,6 +98,9 @@ const buildTemplateWalletSSI = (domain, arrayWIthCredentials, hint) => {
 };
 
 const createTemplateWalletSSI = (domain, arrayWIthCredentials, hint) => {
+    if(!Array.isArray(arrayWIthCredentials)) {
+        arrayWIthCredentials = [arrayWIthCredentials];
+    }
     try {
         let ssi = createArraySSI(domain, arrayWIthCredentials, undefined, hint);
         ssi.cast(SSITypes.WALLET_SSI);
