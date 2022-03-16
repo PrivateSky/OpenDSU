@@ -2,7 +2,7 @@
  * @module dt
  */
 
-const {_getByName } = require('./commands');
+const {_getByName} = require('./commands');
 const {_getResolver, _getKeySSISpace} = require('./commands/utils');
 
 /**
@@ -29,17 +29,22 @@ const {_getResolver, _getKeySSISpace} = require('./commands/utils');
  * @param {Archive} [sourceDSU] if provided will perform all OPERATIONS from the sourceDSU as source and not the fs
  * @param {VarStore} [varStore]
  */
-const DossierBuilder = function(sourceDSU, varStore){
+const DossierBuilder = function (sourceDSU, varStore) {
 
     const _varStore = varStore || new (require('./commands/VarStore'))();
 
     let createDossier = function (conf, commands, callback) {
         console.log("creating a new dossier...")
-        _getResolver().createDSU(_getKeySSISpace().createTemplateSeedSSI(conf.domain), (err, bar) => {
-            if (err)
+        _getResolver((err, resolver) => {
+            if (err) {
                 return callback(err);
-            updateDossier(bar, conf, commands, callback);
-        });
+            }
+            resolver.createDSU(_getKeySSISpace().createTemplateSeedSSI(conf.domain), (err, bar) => {
+                if (err)
+                    return callback(err);
+                updateDossier(bar, conf, commands, callback);
+            });
+        })
     };
 
     /**
@@ -48,7 +53,7 @@ const DossierBuilder = function(sourceDSU, varStore){
      * @param data
      * @param callback
      */
-    const writeFile = function(filePath, data, callback){
+    const writeFile = function (filePath, data, callback) {
         new (_getByName('createfile'))(_varStore).execute([filePath, data], (err) => err
             ? callback(err)
             : callback(undefined, data));
@@ -59,7 +64,7 @@ const DossierBuilder = function(sourceDSU, varStore){
      * @param filePath
      * @param callback
      */
-    const readFile = function(filePath, callback){
+    const readFile = function (filePath, callback) {
         new (_getByName('readfile'))(_varStore).execute(filePath, callback);
     }
 
@@ -80,7 +85,7 @@ const DossierBuilder = function(sourceDSU, varStore){
      * @param {string[]} next the remaining commands to be executed
      * @param {function(err, Archive)} callback
      */
-    let runCommand = function(bar, command, next, callback){
+    let runCommand = function (bar, command, next, callback) {
         let args = command.split(/\s+/);
         const cmdName = args.shift();
         const cmd = _getByName(cmdName);
@@ -95,11 +100,11 @@ const DossierBuilder = function(sourceDSU, varStore){
      * @param {object} cfg is no sourceDSU is provided must contain a seed field
      * @param {function(err, KeySSI)} callback
      */
-    let saveDSU = function(bar, cfg, callback){
+    let saveDSU = function (bar, cfg, callback) {
         bar.getKeySSIAsString((err, barKeySSI) => {
             if (err)
                 return callback(err);
-            if(sourceDSU || cfg.skipFsWrite)
+            if (sourceDSU || cfg.skipFsWrite)
                 return callback(undefined, barKeySSI);
             storeKeySSI(cfg.seed, barKeySSI, callback);
         });
@@ -112,7 +117,7 @@ const DossierBuilder = function(sourceDSU, varStore){
      * @param {string[]} commands
      * @param {function(err, KeySSI)} callback
      */
-    let updateDossier = function(bar, cfg, commands, callback) {
+    let updateDossier = function (bar, cfg, commands, callback) {
         if (commands.length === 0) {
             return bar.commitBatch((err) => {
                 if (err) {
@@ -132,7 +137,7 @@ const DossierBuilder = function(sourceDSU, varStore){
         }
 
         let cmd = commands.shift();
-        runCommand(bar, cmd, commands,(err, updated_bar) => {
+        runCommand(bar, cmd, commands, (err, updated_bar) => {
             if (err) {
                 return callback(err);
             }
@@ -154,13 +159,13 @@ const DossierBuilder = function(sourceDSU, varStore){
      * @param {string[]|object[]} [commands]
      * @param {function(err, KeySSI)} callback
      */
-    this.buildDossier = function(configOrDSU, commands, callback){
-        if (typeof commands === 'function'){
+    this.buildDossier = function (configOrDSU, commands, callback) {
+        if (typeof commands === 'function') {
             callback = commands;
             commands = [];
         }
 
-        let builder = function(keySSI){
+        let builder = function (keySSI) {
             try {
                 keySSI = _getKeySSISpace().parse(keySSI);
             } catch (err) {
@@ -168,22 +173,29 @@ const DossierBuilder = function(sourceDSU, varStore){
                 return createDossier(configOrDSU, commands, callback);
             }
 
-            if (keySSI.getDLDomain() !== configOrDSU.domain) {
+            if (keySSI.getDLDomain() && keySSI.getDLDomain() !== configOrDSU.domain) {
                 console.log("Domain change detected.");
                 return createDossier(configOrDSU, commands, callback);
             }
 
-            _getResolver().loadDSU(keySSI, (err, bar) => {
-                if (err){
-                    console.log("DSU not available. Creating a new DSU for", keySSI.getIdentifier());
-                    return _getResolver().createDSU(keySSI, {useSSIAsIdentifier: true}, (err, bar)=>{
-                        if(err)
-                            return callback(err);
-                        updateDossier(bar, configOrDSU, commands, callback);
-                    });
+            _getResolver((err, resolver) => {
+                if (err) {
+                    return callback(err);
                 }
-                console.log("Dossier updating...");
-                updateDossier(bar, configOrDSU, commands, callback);
+                resolver.loadDSU(keySSI, (err, bar) => {
+                    configOrDSU.skipFsWrite = true;
+                    if (err) {
+                        console.log("DSU not available. Creating a new DSU for", keySSI.getIdentifier());
+
+                        return resolver.createDSU(keySSI, {useSSIAsIdentifier: true}, (err, bar) => {
+                            if (err)
+                                return callback(err);
+                            updateDossier(bar, configOrDSU, commands, callback);
+                        });
+                    }
+                    console.log("Dossier updating...");
+                    updateDossier(bar, configOrDSU, commands, callback);
+                });
             });
         }
 

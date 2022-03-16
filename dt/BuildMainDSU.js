@@ -1,4 +1,4 @@
-function NodeMainDSU() {
+function BuildMainDSU() {
     const secret = process.env.BUILD_SECRET_KEY || "nosecretfordevelopers";
     const openDSU = require("opendsu");
     const resolver = openDSU.loadAPI("resolver");
@@ -71,4 +71,4 @@ function NodeMainDSU() {
     }
 }
 
-module.exports = NodeMainDSU;
+module.exports = BuildMainDSU;

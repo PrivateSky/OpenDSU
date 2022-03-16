@@ -62,25 +62,6 @@ const createDSU = (templateKeySSI, options, callback) => {
         }
 
         addInCache(undefined, dsuInstance);
-        // const sc = require("opendsu").loadAPI("sc").getSecurityContext();
-        // if (sc.isInitialised()) {
-        //     dsuInstance.getKeySSIAsObject((err, seedSSI) => {
-        //         if (err) {
-        //             return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to get seed SSI`, err));
-        //         }
-        //
-        //         sc.registerKeySSI(undefined, seedSSI, (err) => {
-        //             if (err) {
-        //                 return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to register seed ssi`, err));
-        //             }
-        //
-        //
-        //             addInCache(undefined, dsuInstance);
-        //         })
-        //     });
-        // } else {
-        //     addInCache(undefined, dsuInstance);
-        // }
     });
 };
 

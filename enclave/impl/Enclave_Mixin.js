@@ -3,8 +3,10 @@ function Enclave_Mixin(target, did) {
     const keySSISpace = openDSU.loadAPI("keyssi")
     const w3cDID = openDSU.loadAPI("w3cdid")
     const KEY_SSIS_TABLE = "keyssis";
+    const SREAD_SSIS_TABLE = "sreadssis";
     const SEED_SSIS_TABLE = "seedssis";
     const DIDS_PRIVATE_KEYS = "dids_private";
+
     const ObservableMixin = require("../../utils/ObservableMixin");
     ObservableMixin(target);
     const CryptoSkills = w3cDID.CryptographicSkills;
@@ -139,20 +141,26 @@ function Enclave_Mixin(target, did) {
         }
 
         const keySSIIdentifier = seedSSI.getIdentifier();
+        const sReadSSIIdentifier = seedSSI.derive().getIdentifier();
 
         function registerDerivedKeySSIs(derivedKeySSI) {
             target.storageDB.insertRecord(KEY_SSIS_TABLE, derivedKeySSI.getIdentifier(), {capableOfSigningKeySSI: keySSIIdentifier}, (err) => {
                 if (err) {
                     return callback(err);
                 }
+                target.storageDB.insertRecord(SREAD_SSIS_TABLE, derivedKeySSI.getIdentifier(), {sReadSSI: sReadSSIIdentifier}, (err) => {
+                    if (err) {
+                        return callback(err);
+                    }
 
-                try {
-                    derivedKeySSI = derivedKeySSI.derive();
-                } catch (e) {
-                    return callback();
-                }
+                    try {
+                        derivedKeySSI = derivedKeySSI.derive();
+                    } catch (e) {
+                        return callback();
+                    }
 
-                registerDerivedKeySSIs(derivedKeySSI);
+                    registerDerivedKeySSIs(derivedKeySSI);
+                });
             });
         }
 
@@ -179,6 +187,31 @@ function Enclave_Mixin(target, did) {
         const keySSIIdentifier = keySSI.getIdentifier();
 
         target.storageDB.insertRecord(KEY_SSIS_TABLE, keySSIIdentifier, {keySSI: keySSIIdentifier}, callback)
+    }
+
+    target.storeReadForAliasSSI = (forDID, sReadSSI, aliasSSI, callback) => {
+        if (typeof sReadSSI === "string") {
+            try {
+                sReadSSI = keySSISpace.parse(sReadSSI);
+            } catch (e) {
+                return callback(createOpenDSUErrorWrapper(`Failed to parse SReadSSI ${sReadSSI}`, e))
+            }
+        }
+        const keySSIIdentifier = sReadSSI.getIdentifier();
+        target.storageDB.insertRecord(SREAD_SSIS_TABLE, aliasSSI, {alias: keySSIIdentifier}, callback)
+    }
+
+    target.getReadForKeySSI = (forDID, keySSI, callback) => {
+        if (typeof keySSI === "string") {
+
+        }
+        target.storageDB.getRecord(SREAD_SSIS_TABLE, keySSI, (err, record) => {
+            if (err) {
+                return callback(err);
+            }
+
+            callback(undefined, record[keySSI]);
+        });
     }
 
     target.storeDID = (forDID, storedDID, privateKeys, callback) => {
@@ -315,11 +348,12 @@ function Enclave_Mixin(target, did) {
     // expose resolver APIs
     const resolverAPI = openDSU.loadAPI("resolver");
     Object.keys(resolverAPI).forEach(fnName => {
-        target[fnName] = (...args)=>{
+        target[fnName] = (...args) => {
             args.shift();
             resolverAPI[fnName](...args);
         }
     })
+
 
     // expose keyssi APIs
     Object.keys(keySSISpace).forEach(fnName => {
@@ -346,6 +380,56 @@ function Enclave_Mixin(target, did) {
             }
         }
     })
+
+
+    target.createDSU = (keySSI, options, callback) => {
+        if (typeof keySSI === "string") {
+            try {
+                keySSI = keySSISpace.parse(keySSI);
+            } catch (e) {
+                return callback(e);
+            }
+        }
+
+        if (keySSI.isAlias()) {
+            const scAPI = require("opendsu").loadAPI("sc");
+            scAPI.getVaultDomain(async (err, vaultDomain) => {
+                if (err) {
+                    return callback(err);
+                }
+
+                let seedSSI;
+                try {
+                    seedSSI = await $$.promisifY(target.we_createSeedSSI)(target, vaultDomain);
+                    await $$.promisify(target.storeReadForAliasSSI)(undefined, seedSSI.derive(), keySSI);
+                } catch (e) {
+                    return callback(e);
+                }
+
+                resolverAPI.createDSUForExistingSSI(seedSSI, callback);
+            })
+            return
+        }
+
+        resolverAPI.createDSU(keySSI, options, callback);
+    }
+
+    target.loadDSU = (keySSI, options, callback) => {
+        if (typeof keySSI === "string") {
+            try {
+                keySSI = keySSISpace.parse(keySSI);
+            } catch (e) {
+                return callback(e);
+            }
+        }
+
+        target.getReadForKeySSI(undefined, keySSI.getIdentifier(), (err, sReadSSI) => {
+            if (err) {
+                return callback(err);
+            }
+            resolverAPI.loadDSU(sReadSSI, options, callback);
+        })
+    }
 }
 
 module.exports = Enclave_Mixin;

@@ -131,29 +131,6 @@ function SecurityContext(target) {
         }
     };
 
-    target.storeSReadForAlias = (forDID, sReadSSI, alias, callback) => {
-        if (sharedEnclave) {
-            sharedEnclave.storeSReadForAlias(forDID, sReadSSI, alias, callback);
-        } else {
-            enclave.storeSReadForAlias(forDID, sReadSSI, alias, callback);
-        }
-    };
-
-    target.getSReadForAlias = (forDID, alias, callback) => {
-        if (sharedEnclave) {
-            sharedEnclave.getSReadForAlias(forDID, alias, (err, sReadSSI) => {
-                if (err) {
-                    enclave.getSReadForAlias(forDID, alias, callback);
-                    return;
-                }
-
-                callback(undefined, sReadSSI);
-            });
-        } else {
-            enclave.getSReadForAlias(forDID, alias, callback);
-        }
-    };
-
     target.signForKeySSI = (forDID, keySSI, data, callback) => {
         enclave.signForKeySSI(forDID, keySSI, data, callback);
     }
@@ -255,8 +232,16 @@ function SecurityContext(target) {
         }
     }
 
+    target.sharedEnclaveExists = ()=>{
+        if (typeof sharedEnclave === "undefined") {
+            return false;
+        }
+
+        return true;
+    }
+
     const bindAutoPendingFunctions = require("../../utils/BindAutoPendingFunctions").bindAutoPendingFunctions;
-    bindAutoPendingFunctions(target, ["on", "off", "isInitialised", "init"]);
+    bindAutoPendingFunctions(target, ["on", "off", "isInitialised", "init", "sharedEnclaveExists"]);
     target.init();
     return target;
 }

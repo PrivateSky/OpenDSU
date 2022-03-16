@@ -32,7 +32,7 @@ const securityContextIsInitialised = () => {
     return $$.sc.isInitialised();
 }
 
-const getSecurityContext = (secret) => {
+const getSecurityContext = () => {
     if (typeof $$.sc === "undefined") {
         $$.sc = new SecurityContext();
     }
@@ -68,6 +68,11 @@ const getSharedEnclave = (callback) => {
             sc.getSharedEnclaveDB(callback);
         });
     }
+}
+
+const sharedEnclaveExists = ()=>{
+    const sc = getSecurityContext();
+    return sc.sharedEnclaveExists();
 }
 
 const configEnvironment = (config, refreshSC, callback) => {
@@ -156,5 +161,6 @@ module.exports = {
     setMainEnclave,
     getSharedEnclave,
     setSharedEnclave,
-    configEnvironment
+    configEnvironment,
+    sharedEnclaveExists
 };

@@ -24,7 +24,7 @@ const _getFS = function(){
  * Provides Util functions and Methods as well as caching for the open DSU resolver and {@Link DSUBuilder}
  */
 
-let resolver, keyssi;
+let resolver, keyssi, sharedEnclave;
 
 /**
  * Wrapper around
@@ -44,10 +44,17 @@ const _err = function(msg, err, callback){
  * for singleton use
  * @returns {function} resolver api
  */
-const _getResolver = function(){
-    if (!resolver)
-        resolver = require('opendsu').loadApi('resolver');
-    return resolver;
+const _getResolver = function(callback){
+    if (!resolver){
+        const scAPI = require("opendsu").loadAPI("sc");
+        if (!scAPI.sharedEnclaveExists()) {
+            resolver = require('opendsu').loadApi('resolver');
+            return callback(undefined, resolver);
+        }
+        _getSharedEnclave(callback);
+        return;
+    }
+    callback(undefined, resolver);
 }
 
 /**
@@ -58,6 +65,26 @@ const _getKeySSISpace = function(){
     if (!keyssi)
         keyssi = require('opendsu').loadApi('keyssi');
     return keyssi;
+}
+
+/**
+ * for singleton use
+ * @returns {function} sc api
+ */
+const _getSharedEnclave = function(callback){
+    if (!sharedEnclave){
+        const scAPI = require('opendsu').loadApi('sc');
+        scAPI.getSharedEnclave((err, _sharedEnclave)=>{
+            if (err) {
+                return callback(err);
+            }
+
+            sharedEnclave = _sharedEnclave;
+            callback(undefined, sharedEnclave);
+        })
+        return;
+    }
+    callback(undefined, sharedEnclave);
 }
 
 const KEY_TYPE = {

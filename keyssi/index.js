@@ -98,7 +98,7 @@ const buildTemplateWalletSSI = (domain, arrayWIthCredentials, hint) => {
 };
 
 const createTemplateWalletSSI = (domain, arrayWIthCredentials, hint) => {
-    if(!Array.isArray(arrayWIthCredentials)) {
+    if (!Array.isArray(arrayWIthCredentials)) {
         arrayWIthCredentials = [arrayWIthCredentials];
     }
     try {
@@ -245,6 +245,11 @@ const createPublicKeySSI = (compatibleFamilyName, publicKey, vn) => {
     return publicKeySSI;
 };
 
+const createAliasSSI = (domain, alias, callback) => {
+    const aliasSSI = keySSIFactory.createType(SSITypes.ALIAS_SSI);
+    aliasSSI.initialize(domain, alias, callback);
+    return aliasSSI;
+}
 
 module.exports = {
     parse,
@@ -268,5 +273,6 @@ module.exports = {
     createPublicKeySSI,
     we_createSeedSSI,
     we_createConstSSI,
-    we_createArraySSI
+    we_createArraySSI,
+    createAliasSSI
 };

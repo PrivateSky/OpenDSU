@@ -39,8 +39,19 @@ function getMainDSU(callback) {
 }
 
 function getMainDSUForNode(callback) {
-    const RemoteMainDSU = require("./NodeMainDSU");
-    const mainDSU = new RemoteMainDSU();
+    if (process.env.MAIN_WALLET) {
+        const resolver = require("opendsu").loadAPI("resolver");
+        return resolver.loadDSU(process.env.MAIN_WALLET, (err, mainDSU) => {
+            if (err) {
+                return callback(err);
+            }
+
+            setMainDSU(mainDSU);
+            callback(undefined, mainDSU);
+        });
+    }
+    const InMemoryMainDSU = require("./InMemoryMainDSU");
+    const mainDSU = new InMemoryMainDSU();
     setMainDSU(mainDSU);
     callback(undefined, mainDSU);
 }
