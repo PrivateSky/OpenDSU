@@ -93,6 +93,13 @@ errorTypes = {
   }
 }
 
+function getErrorCodes() {
+  let errCodes = Object.values(errorTypes).map(item => {
+    return item.errorCode
+  });
+  return errCodes;
+}
+
 function getErrorKeyByCode(errCode) {
   try {
     let errObj = Object.values(errorTypes).find(item => item.errorCode === errCode)
