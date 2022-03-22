@@ -174,6 +174,11 @@ function Enclave_Mixin(target, did) {
     }
 
     target.storeKeySSI = (forDID, keySSI, callback) => {
+        if (arguments.length === 2) {
+            callback = keySSI;
+            keySSI = forDID;
+            forDID = undefined;
+        }
         if (typeof keySSI === "string") {
             try {
                 keySSI = keySSISpace.parse(keySSI);
@@ -197,8 +202,16 @@ function Enclave_Mixin(target, did) {
                 return callback(createOpenDSUErrorWrapper(`Failed to parse SReadSSI ${sReadSSI}`, e))
             }
         }
+
+        if (typeof aliasSSI === "string") {
+            try {
+                aliasSSI = keySSISpace.parse(aliasSSI);
+            } catch (e) {
+                return callback(createOpenDSUErrorWrapper(`Failed to parse SReadSSI ${aliasSSI}`, e))
+            }
+        }
         const keySSIIdentifier = sReadSSI.getIdentifier();
-        target.storageDB.insertRecord(SREAD_SSIS_TABLE, aliasSSI, {alias: keySSIIdentifier}, callback)
+        target.storageDB.insertRecord(SREAD_SSIS_TABLE, aliasSSI.getIdentifier(), {sReadSSI: keySSIIdentifier}, callback)
     }
 
     target.getReadForKeySSI = (forDID, keySSI, callback) => {
@@ -210,7 +223,7 @@ function Enclave_Mixin(target, did) {
                 return callback(err);
             }
 
-            callback(undefined, record[keySSI]);
+            callback(undefined, record.sReadSSI);
         });
     }
 
@@ -382,7 +395,7 @@ function Enclave_Mixin(target, did) {
     })
 
 
-    target.createDSU = (keySSI, options, callback) => {
+    target.createDSU = (forDID, keySSI, options, callback) => {
         if (typeof keySSI === "string") {
             try {
                 keySSI = keySSISpace.parse(keySSI);
@@ -400,7 +413,7 @@ function Enclave_Mixin(target, did) {
 
                 let seedSSI;
                 try {
-                    seedSSI = await $$.promisifY(target.we_createSeedSSI)(target, vaultDomain);
+                    seedSSI = await $$.promisify(target.createSeedSSI)(target, vaultDomain);
                     await $$.promisify(target.storeReadForAliasSSI)(undefined, seedSSI.derive(), keySSI);
                 } catch (e) {
                     return callback(e);
@@ -414,7 +427,11 @@ function Enclave_Mixin(target, did) {
         resolverAPI.createDSU(keySSI, options, callback);
     }
 
-    target.loadDSU = (keySSI, options, callback) => {
+    target.loadDSU = (forDID, keySSI, options, callback) => {
+        if (typeof options === "function") {
+            callback = options;
+            options = undefined;
+        }
         if (typeof keySSI === "string") {
             try {
                 keySSI = keySSISpace.parse(keySSI);

@@ -6,13 +6,13 @@
  * cache of node's fs object
  */
 
-let  _fileSystem = undefined;
+let _fileSystem = undefined;
 
 /**
  * Caches and returns node's fs object if the environment is right
  * @return {fs}
  */
-const _getFS = function(){
+const _getFS = function () {
     if ($$.environmentType !== 'nodejs')
         throw new Error("Wrong environment for this function. Please make sure you know what you are doing...");
     if (!_fileSystem)
@@ -36,7 +36,7 @@ let resolver, keyssi, sharedEnclave;
  * @param callback
  * @protected
  */
-const _err = function(msg, err, callback){
+const _err = function (msg, err, callback) {
     return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(msg, err));
 }
 
@@ -44,8 +44,8 @@ const _err = function(msg, err, callback){
  * for singleton use
  * @returns {function} resolver api
  */
-const _getResolver = function(callback){
-    if (!resolver){
+const _getResolver = function (callback) {
+    if (!resolver) {
         const scAPI = require("opendsu").loadAPI("sc");
         if (!scAPI.sharedEnclaveExists()) {
             resolver = require('opendsu').loadApi('resolver');
@@ -61,7 +61,7 @@ const _getResolver = function(callback){
  * for singleton use
  * @returns {function} keyssi api
  */
-const _getKeySSISpace = function(){
+const _getKeySSISpace = function () {
     if (!keyssi)
         keyssi = require('opendsu').loadApi('keyssi');
     return keyssi;
@@ -71,10 +71,10 @@ const _getKeySSISpace = function(){
  * for singleton use
  * @returns {function} sc api
  */
-const _getSharedEnclave = function(callback){
-    if (!sharedEnclave){
+const _getSharedEnclave = function (callback) {
+    if (!sharedEnclave) {
         const scAPI = require('opendsu').loadApi('sc');
-        scAPI.getSharedEnclave((err, _sharedEnclave)=>{
+        scAPI.getSharedEnclave((err, _sharedEnclave) => {
             if (err) {
                 return callback(err);
             }
@@ -103,6 +103,7 @@ module.exports = {
     _getFS,
     _getResolver,
     _getKeySSISpace,
+    _getSharedEnclave,
     _err,
     KEY_TYPE,
     DSU_TYPE

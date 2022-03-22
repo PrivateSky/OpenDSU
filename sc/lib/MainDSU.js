@@ -52,6 +52,7 @@ function getMainDSUForNode(callback) {
     }
     const InMemoryMainDSU = require("./InMemoryMainDSU");
     const mainDSU = new InMemoryMainDSU();
+    console.log("Warning: Initializing in memory wallet ...");
     setMainDSU(mainDSU);
     callback(undefined, mainDSU);
 }

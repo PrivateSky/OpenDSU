@@ -2,6 +2,7 @@
  * @module dt
  */
 
+
 /**
  * Provides a Environment Independent and Versatile Dossier Building API.
  *
@@ -13,8 +14,19 @@
  * @param {Archive} [sourceDSU] should only be provided when cloning a DSU
  * @return {DossierBuilder}
  */
-const getDossierBuilder = (sourceDSU, ) => {
-    return new (require("./DossierBuilder"))(sourceDSU)
+const getDossierBuilder = (sourceDSU, callback) => {
+    if (typeof sourceDSU === "function") {
+        callback = sourceDSU;
+        sourceDSU = undefined;
+    }
+    const BuildWallet = require("./BuildMainDSU");
+    BuildWallet.initialiseWallet(err => {
+        if (err) {
+            return callback(err);
+        }
+        const dossierBuilder = new (require("./DossierBuilder"))(sourceDSU);
+        callback(undefined, dossierBuilder);
+    })
 }
 
 module.exports = {

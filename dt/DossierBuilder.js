@@ -3,7 +3,7 @@
  */
 
 const {_getByName} = require('./commands');
-const {_getResolver, _getKeySSISpace} = require('./commands/utils');
+const {_getSharedEnclave, _getKeySSISpace} = require('./commands/utils');
 
 /**
  * Automates the Dossier Building process
@@ -35,11 +35,11 @@ const DossierBuilder = function (sourceDSU, varStore) {
 
     let createDossier = function (conf, commands, callback) {
         console.log("creating a new dossier...")
-        _getResolver((err, resolver) => {
+        _getSharedEnclave((err, sharedEnclave) => {
             if (err) {
                 return callback(err);
             }
-            resolver.createDSU(_getKeySSISpace().createTemplateSeedSSI(conf.domain), (err, bar) => {
+            sharedEnclave.createDSU(_getKeySSISpace().createTemplateSeedSSI(conf.domain), (err, bar) => {
                 if (err)
                     return callback(err);
                 updateDossier(bar, conf, commands, callback);
@@ -178,16 +178,16 @@ const DossierBuilder = function (sourceDSU, varStore) {
                 return createDossier(configOrDSU, commands, callback);
             }
 
-            _getResolver((err, resolver) => {
+            _getSharedEnclave((err, sharedEnclave) => {
                 if (err) {
                     return callback(err);
                 }
-                resolver.loadDSU(keySSI, (err, bar) => {
+                sharedEnclave.loadDSU(keySSI, (err, bar) => {
                     configOrDSU.skipFsWrite = true;
                     if (err) {
                         console.log("DSU not available. Creating a new DSU for", keySSI.getIdentifier());
 
-                        return resolver.createDSU(keySSI, {useSSIAsIdentifier: true}, (err, bar) => {
+                        return sharedEnclave.createDSU(keySSI, {useSSIAsIdentifier: true}, (err, bar) => {
                             if (err)
                                 return callback(err);
                             updateDossier(bar, configOrDSU, commands, callback);

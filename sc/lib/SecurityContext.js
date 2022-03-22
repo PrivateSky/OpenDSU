@@ -132,7 +132,14 @@ function SecurityContext(target) {
     };
 
     target.signForKeySSI = (forDID, keySSI, data, callback) => {
-        enclave.signForKeySSI(forDID, keySSI, data, callback);
+        enclave.signForKeySSI(forDID, keySSI, data, (err, signature) => {
+            if (err) {
+                sharedEnclave.signForKeySSI(forDID, keySSI, data, callback);
+                return;
+            }
+
+            callback(undefined, signature);
+        });
     }
 
     target.signAsDID = (didDocument, data, callback) => {
@@ -232,7 +239,7 @@ function SecurityContext(target) {
         }
     }
 
-    target.sharedEnclaveExists = ()=>{
+    target.sharedEnclaveExists = () => {
         if (typeof sharedEnclave === "undefined") {
             return false;
         }

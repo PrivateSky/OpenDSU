@@ -1,23 +1,33 @@
-function BuildMainDSU() {
+const openDSU = require("opendsu");
+const resolver = openDSU.loadAPI("resolver");
+const keySSISpace = openDSU.loadAPI("keyssi");
+const scAPI = openDSU.loadAPI("sc");
+const enclaveAPI = openDSU.loadAPI("enclave");
+
+function BuildWallet() {
     const secret = process.env.BUILD_SECRET_KEY || "nosecretfordevelopers";
-    const openDSU = require("opendsu");
-    const resolver = openDSU.loadAPI("resolver");
-    const keySSISpace = openDSU.loadAPI("keyssi");
     const vaultDomain = process.env.VAULT_DOMAIN || "vault";
 
-    const __ensureEnvIsInitialised = async (writableDSU) => {
-        let env;
-        try {
-            env = await $$.promisify(writableDSU.readFile)("/environment.json");
-        } catch (e) {
-            await $$.promisify(writableDSU.writeFile)("/environment.json", JSON.stringify({
-                vaultDomain: vaultDomain,
-                didDomain: vaultDomain
-            }))
-        }
+    let writableDSU;
+
+    const __ensureEnvIsInitialised = (writableDSU, callback) => {
+        writableDSU.readFile("/environment.json", async (err, env) => {
+            if (err) {
+                try {
+                    await $$.promisify(writableDSU.writeFile)("/environment.json", JSON.stringify({
+                        vaultDomain: vaultDomain,
+                        didDomain: vaultDomain
+                    }))
+                } catch (e) {
+                    return callback(e);
+                }
+            }
+
+            callback();
+        });
     }
 
-    const ensureWalletIsCreated = (callback) => {
+    this.initialise = (callback) => {
         const walletSSI = keySSISpace.createTemplateWalletSSI(vaultDomain, secret);
         resolver.loadDSU(walletSSI, async (err, wallet) => {
             if (err) {
@@ -34,41 +44,61 @@ function BuildMainDSU() {
                 }
             }
 
-            const writableDSU = wallet.getWritableDSU();
+            writableDSU = wallet.getWritableDSU();
+            __ensureEnvIsInitialised(writableDSU, callback);
+        })
+    }
+
+    this.ensureSharedEnclaveExists = (callback) => {
+        writableDSU.readFile("/environment.json", async (err, env) => {
+            if (err) {
+                return callback(err);
+            }
+
             try {
-                await __ensureEnvIsInitialised(writableDSU);
+                env = JSON.parse(env.toString());
             } catch (e) {
                 return callback(e);
             }
 
-            callback(undefined, writableDSU);
-        })
-    }
-    this.writeFile = (path, data, callback) => {
-        ensureWalletIsCreated((err, writableDSU) => {
-            if (err) {
-                return callback(err);
+            if (typeof env[openDSU.constants.SHARED_ENCLAVE.KEY_SSI] === "undefined") {
+                const sharedEnclave = enclaveAPI.initialiseWalletDBEnclave();
+                sharedEnclave.on("initialised", async () => {
+                    try {
+                        await $$.promisify(scAPI.setSharedEnclave)(sharedEnclave);
+                        callback();
+                    } catch (e) {
+                        callback(createOpenDSUErrorWrapper("Failed to set shared enclave", e));
+                    }
+                })
+            } else {
+                callback();
             }
+        });
+    }
 
-            writableDSU.writeFile(path, data, callback);
-        })
+    this.writeFile = (path, data, callback) => {
+        writableDSU.writeFile(path, data, callback);
     }
 
     this.readFile = (path, callback) => {
-        ensureWalletIsCreated(async (err, writableDSU) => {
-            if (err) {
-                return callback(err);
-            }
-
-            let data;
-            try {
-                data = await $$.promisify(writableDSU.readFile)(path);
-            } catch (e) {
-                callback(e);
-            }
-            callback(undefined, data.toString());
-        })
+        writableDSU.readFile(path, callback);
     }
 }
 
-module.exports = BuildMainDSU;
+const initialiseWallet = (callback) => {
+    const scAPI = require("opendsu").loadAPI("sc");
+    const buildWallet = new BuildWallet();
+    buildWallet.initialise(err => {
+        if (err) {
+            return callback(err);
+        }
+
+        scAPI.setMainDSU(buildWallet);
+        buildWallet.ensureSharedEnclaveExists(callback);
+    });
+}
+
+module.exports = {
+    initialiseWallet
+};
