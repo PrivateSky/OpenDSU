@@ -30,7 +30,7 @@ assert.callback('Writing DSU with SReadSSI via SC', (testFinished) => {
                 } catch (e) {
                     error = e;
                 }
-                assert.true(error !== undefined);
+                assert.true(error === undefined);
                 testFinished();
             }, 2000);
         });
