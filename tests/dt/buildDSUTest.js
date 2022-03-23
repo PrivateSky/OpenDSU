@@ -17,13 +17,14 @@ assert.callback('Build DSU test', (testFinished) => {
                 "option": {}
             }
         }
-        const getCommands = function(data){
+        const getCommands = function (data) {
             if (!data)
                 return [];
             return data.split(/\r?\n/).filter(cmd => !!cmd.trim());
         };
 
         await tir.launchConfigurableApiHubTestNodeAsync({domains: [{name: "vault", config: vaultDomainConfig}]});
+        process.env.BUILD_SECRET = "secret";
         const dossierBuilder = await $$.promisify(dt.getDossierBuilder)();
         const path = require("path");
         const fs = require("fs");
@@ -36,12 +37,20 @@ assert.callback('Build DSU test', (testFinished) => {
             "domain": "vault",
             "bundles": bundlesPath
         }
-        const commands = getCommands(commandData);
-        const data = await $$.promisify(dossierBuilder.buildDossier)(config, commands);
-        const dsu = await $$.promisify(resolver.loadDSU)(data);
+        let commands = getCommands(commandData);
+        let data = await $$.promisify(dossierBuilder.buildDossier)(config, commands);
+        let dsu = await $$.promisify(resolver.loadDSU)(data);
         let fileData = await $$.promisify(dsu.readFile)("/file");
         assert.true(fileData.toString() === "some data");
+
+        commands = getCommands(commandData);
+        data = await $$.promisify(dossierBuilder.buildDossier)(config, commands);
+        dsu = await $$.promisify(resolver.loadDSU)(data);
+        fileData = await $$.promisify(dsu.readFile)("/file");
+        assert.true(fileData.toString() === "some data");
+
+        fs.rmSync("code", {recursive: true});
         testFinished();
     });
-}, 50000);
+}, 500000);
 

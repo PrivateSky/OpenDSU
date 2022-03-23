@@ -174,11 +174,12 @@ function Enclave_Mixin(target, did) {
     }
 
     target.storeKeySSI = (forDID, keySSI, callback) => {
-        if (arguments.length === 2) {
+        if (typeof keySSI === "function") {
             callback = keySSI;
             keySSI = forDID;
             forDID = undefined;
         }
+
         if (typeof keySSI === "string") {
             try {
                 keySSI = keySSISpace.parse(keySSI);
@@ -186,6 +187,7 @@ function Enclave_Mixin(target, did) {
                 return callback(createOpenDSUErrorWrapper(`Failed to parse keySSI ${keySSI}`, e))
             }
         }
+
         if (keySSI.getTypeName() === openDSU.constants.KEY_SSIS.SEED_SSI) {
             return target.storeSeedSSI(forDID, keySSI, undefined, callback);
         }
@@ -396,6 +398,10 @@ function Enclave_Mixin(target, did) {
 
 
     target.createDSU = (forDID, keySSI, options, callback) => {
+        if (typeof options === "function") {
+            callback = options;
+            options = undefined;
+        }
         if (typeof keySSI === "string") {
             try {
                 keySSI = keySSISpace.parse(keySSI);
@@ -424,7 +430,23 @@ function Enclave_Mixin(target, did) {
             return
         }
 
-        resolverAPI.createDSU(keySSI, options, callback);
+        if (keySSI.isTemplate()) {
+            target.createSeedSSI(undefined, keySSI.getDLDomain(), (err, seedSSI) => {
+                if (err) {
+                    return callback(err);
+                }
+
+                resolverAPI.createDSUForExistingSSI(seedSSI, callback);
+            })
+        } else {
+            target.storeKeySSI(undefined, keySSI, (err) => {
+                if (err) {
+                    return callback(err);
+                }
+
+                resolverAPI.createDSU(keySSI, options, callback);
+            })
+        }
     }
 
     target.loadDSU = (forDID, keySSI, options, callback) => {
