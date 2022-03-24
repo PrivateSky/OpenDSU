@@ -30,8 +30,14 @@ const getDossierBuilder = (sourceDSU, callback) => {
     })
 }
 
+const initialiseBuildWallet = (callback) => {
+    const BuildWallet = require("./BuildMainDSU");
+    BuildWallet.initialiseWallet(callback);
+}
+
 module.exports = {
     getDossierBuilder,
+    initialiseBuildWallet,
     Commands: require('./commands'),
     AppBuilderService: require('./AppBuilderService')
 }

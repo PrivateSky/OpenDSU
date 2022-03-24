@@ -217,10 +217,21 @@ function Enclave_Mixin(target, did) {
     }
 
     target.getReadForKeySSI = (forDID, keySSI, callback) => {
-        if (typeof keySSI === "string") {
-
+        if (typeof keySSI === "function") {
+            callback = keySSI;
+            keySSI = forDID;
+            forDID = undefined;
         }
-        target.storageDB.getRecord(SREAD_SSIS_TABLE, keySSI, (err, record) => {
+
+        if (typeof keySSI === "string") {
+            try {
+                keySSI = keySSISpace.parse(keySSI);
+            } catch (e) {
+                return callback(createOpenDSUErrorWrapper(`Failed to parse keySSI ${keySSI}`, e))
+            }
+        }
+
+        target.storageDB.getRecord(SREAD_SSIS_TABLE, keySSI.getIdentifier(), (err, record) => {
             if (err) {
                 return callback(err);
             }
