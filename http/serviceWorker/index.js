@@ -41,5 +41,6 @@ function generateMethodForRequestWithData(httpMethod) {
 module.exports = {
 	fetch: fetch,
 	doPost: generateMethodForRequestWithData('POST'),
-	doPut: generateMethodForRequestWithData('PUT')
+	doPut: generateMethodForRequestWithData('PUT'),
+	doGet: require("./../browser").doGet
 }
