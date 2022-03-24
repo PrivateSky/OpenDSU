@@ -9,19 +9,23 @@
  * Meant to be integrated into OpenDSU
  */
 
+const BuildWallet = require("./BuildMainDSU");
 /**
  * Returns a DossierBuilder Instance
  * @param {Archive} [sourceDSU] should only be provided when cloning a DSU
  * @param callback
  * @return {DossierBuilder}
  */
-const getDossierBuilder = (sourceDSU, callback) => {
+const getDossierBuilder = (sourceDSU) => {
+    return new (require("./DossierBuilder"))(sourceDSU);
+}
+
+const getDossierBuilderAsync = (sourceDSU, callback) => {
     if (typeof sourceDSU === "function") {
         callback = sourceDSU;
         sourceDSU = undefined;
     }
-    const BuildWallet = require("./BuildMainDSU");
-    BuildWallet.initialiseWallet(err => {
+    initialiseBuildWallet(err => {
         if (err) {
             return callback(err);
         }
@@ -38,6 +42,7 @@ const initialiseBuildWallet = (callback) => {
 module.exports = {
     getDossierBuilder,
     initialiseBuildWallet,
+    getDossierBuilderAsync,
     Commands: require('./commands'),
     AppBuilderService: require('./AppBuilderService')
 }

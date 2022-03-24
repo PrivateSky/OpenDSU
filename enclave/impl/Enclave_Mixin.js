@@ -69,6 +69,15 @@ function Enclave_Mixin(target, did) {
         }
     }
 
+    target.refresh = (forDID, callback)=>{
+        if (typeof forDID === "function") {
+            callback = forDID;
+            forDID = undefined;
+        }
+
+        target.storageDB.refresh(callback);
+    }
+
     target.insertRecord = (forDID, table, pk, plainRecord, encryptedRecord, callback) => {
         if (typeof encryptedRecord === "function") {
             callback = encryptedRecord;
@@ -371,15 +380,6 @@ function Enclave_Mixin(target, did) {
         });
     };
 
-    // expose resolver APIs
-    const resolverAPI = openDSU.loadAPI("resolver");
-    Object.keys(resolverAPI).forEach(fnName => {
-        target[fnName] = (...args) => {
-            args.shift();
-            resolverAPI[fnName](...args);
-        }
-    })
-
 
     // expose keyssi APIs
     Object.keys(keySSISpace).forEach(fnName => {
@@ -407,6 +407,7 @@ function Enclave_Mixin(target, did) {
         }
     })
 
+    const resolverAPI = openDSU.loadAPI("resolver");
 
     target.createDSU = (forDID, keySSI, options, callback) => {
         if (typeof options === "function") {

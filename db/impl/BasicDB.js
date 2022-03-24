@@ -40,6 +40,10 @@ function BasicDB(storageStrategy) {
         this.dispatchEvent("initialised");
     });
 
+    this.refresh = (callback)=>{
+        storageStrategy.refresh(callback);
+    }
+
     this.getAllRecords = (tableName, callback) => {
         storageStrategy.getAllRecords(tableName, callback);
     }
