@@ -7,14 +7,14 @@
  */
 const Command = require('./Command');
 const ReadFileCommand = require('./readFile');
-const { _err, _getFS, _getKeySSISpace } = require('./utils');
+const {_err, _getFS, _getKeySSISpace} = require('./utils');
 
 /**
  * Mounts a DSU onto the provided path
  *
  * @class MountCommand
  */
-class MountCommand extends Command{
+class MountCommand extends Command {
     constructor(varStore, source) {
         super(varStore, source, true);
         if (!source)
@@ -27,7 +27,7 @@ class MountCommand extends Command{
      * @param {function(err, string[])} callback
      * @private
      */
-    _listMounts(arg, callback){
+    _listMounts(arg, callback) {
         let self = this;
         let basePath = arg.seed_path.split("*");
         const listMethod = this.source ? this.source.listMountedDSUs : _getFS().readdir;
@@ -43,7 +43,7 @@ class MountCommand extends Command{
      * @return {*}
      * @private
      */
-    _transform_mount_arguments(arg, args){
+    _transform_mount_arguments(arg, args) {
         return this.source
             ? args.map(m => {
                 return {
@@ -65,7 +65,7 @@ class MountCommand extends Command{
      * @param {function(err, string|string[]|object)} callback
      * @protected
      */
-    _parseCommand(command, next, callback){
+    _parseCommand(command, next, callback) {
         let arg = {
             "seed_path": command[0],
             "mount_point": command[1]
@@ -92,22 +92,35 @@ class MountCommand extends Command{
      * @protected
      */
     _runCommand(arg, bar, options, callback) {
-        let self = this;
-        if (typeof options === 'function'){
+        if (typeof options === 'function') {
             callback = options;
             options = undefined;
         }
 
-        const doMount = function(seed, callback){
-            console.log("Mounting seed " + seed + " to " + arg.mount_point);
-            bar.mount(arg.mount_point, seed, err => err
-                ? _err(`Could not perform mount of ${seed} at ${arg.seed_path}`, err, callback)
-                : callback(undefined, bar));
+        const doMount = function (seed, callback) {
+            const scAPI = require("opendsu").loadAPI("sc");
+            scAPI.getSharedEnclave((err, sharedEnclave) => {
+                if (err) {
+                    return callback(err);
+                }
+
+                sharedEnclave.getReadForKeySSI(seed, (err, readSSI) => {
+                    if (err) {
+                        return callback(err);
+                    }
+
+                    console.log("Mounting sread " + readSSI + " to " + arg.mount_point);
+                    bar.mount(arg.mount_point, readSSI, err => err
+                        ? _err(`Could not perform mount of ${readSSI} at ${arg.seed_path}`, err, callback)
+                        : callback(undefined, bar));
+                })
+            })
+
         };
         try {
             if (_getKeySSISpace().parse(arg.seed_path))
                 return doMount(arg.seed_path, callback);
-        } catch (e){
+        } catch (e) {
             new ReadFileCommand(this.varStore, this.source).execute(arg.seed_path, (err, seed) => {
                 if (err)
                     return _err(`Could not read seed from ${arg.seed_path}`, err, callback);

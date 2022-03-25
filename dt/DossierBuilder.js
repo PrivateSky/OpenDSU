@@ -104,9 +104,22 @@ const DossierBuilder = function (sourceDSU, varStore) {
         bar.getKeySSIAsString((err, barKeySSI) => {
             if (err)
                 return callback(err);
-            if (sourceDSU || cfg.skipFsWrite)
-                return callback(undefined, barKeySSI);
-            storeKeySSI(cfg.seed, barKeySSI, callback);
+            const scAPI = require("opendsu").loadAPI("sc");
+            scAPI.getSharedEnclave((err, sharedEnclave) => {
+                if (err) {
+                    return callback(err);
+                }
+
+                sharedEnclave.getReadForKeySSI(barKeySSI, (err, readSSI) => {
+                    if (err) {
+                        return callback(err);
+                    }
+
+                    if (sourceDSU || cfg.skipFsWrite)
+                        return callback(undefined, readSSI);
+                    storeKeySSI(cfg.seed, readSSI, callback);
+                })
+            })
         });
     };
 
