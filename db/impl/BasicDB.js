@@ -31,8 +31,9 @@ function uid(bytes = 32) {
 }  */
 
 
-function BasicDB(storageStrategy) {
+function BasicDB(storageStrategy, conflictSolvingStrategy, options) {
     let self = this;
+    options = options || {events: false};
     ObservableMixin(this);
 
     storageStrategy.on("initialised", () => {
@@ -40,7 +41,7 @@ function BasicDB(storageStrategy) {
         this.dispatchEvent("initialised");
     });
 
-    this.refresh = (callback)=>{
+    this.refresh = (callback) => {
         storageStrategy.refresh(callback);
     }
 
@@ -100,7 +101,9 @@ function BasicDB(storageStrategy) {
                     return callback(createOpenDSUErrorWrapper(`Failed to insert record with key ${key} in table ${tableName} `, err));
                 }
 
-                self.dispatchEvent("change", JSON.stringify({table: tableName, pk: key}));
+                if (options.events) {
+                    self.dispatchEvent("change", JSON.stringify({table: tableName, pk: key}));
+                }
                 callback(undefined, res);
             });
         });
@@ -141,7 +144,9 @@ function BasicDB(storageStrategy) {
                     return callback(createOpenDSUErrorWrapper(`Failed to update record with key ${key} in table ${tableName} `, err));
                 }
 
-                self.dispatchEvent("change", JSON.stringify({table: tableName, pk: key}));
+                if (options.events) {
+                    self.dispatchEvent("change", JSON.stringify({table: tableName, pk: key}));
+                }
                 callback(undefined, newRecord);
             });
         });
@@ -189,7 +194,9 @@ function BasicDB(storageStrategy) {
                     return callback(createOpenDSUErrorWrapper(`Failed to update with key ${key} in table ${tableName} `, err));
                 }
 
-                self.dispatchEvent("change", JSON.stringify({table: tableName, pk: key}));
+                if (options.events) {
+                    self.dispatchEvent("change", JSON.stringify({table: tableName, pk: key}));
+                }
                 callback();
             });
         })

@@ -1,24 +1,19 @@
 let util = require("./impl/DSUDBUtil")
-const {SingleDSUStorageStrategy} = require("./storageStrategies/SingleDSUStorageStrategy");
-const {TimestampMergingStrategy: ConflictStrategy} = require("./conflictSolvingStrategies/timestampMergingStrategy");
 
-
-function getBasicDB(storageStrategy, conflictSolvingStrategy) {
+function getBasicDB(storageStrategy, conflictSolvingStrategy, options) {
     let BasicDB = require("./impl/BasicDB");
-    return new BasicDB(storageStrategy, conflictSolvingStrategy);
+    return new BasicDB(storageStrategy, conflictSolvingStrategy, options);
 }
 
 function getMultiUserDB(keySSI, dbName) {
     throw "Not implemented yet";
-    let storageStrategy = require("./storageStrategies/MultiUserStorageStrategy");
-    let conflictStrategy = require("./conflictSolvingStrategies/timestampMergingStrategy");
 }
 
-let getSharedDB = function (keySSI, dbName) {
+let getSharedDB = function (keySSI, dbName, options) {
     let SingleDSUStorageStrategy = require("./storageStrategies/SingleDSUStorageStrategy").SingleDSUStorageStrategy;
     let storageStrategy = new SingleDSUStorageStrategy();
     let ConflictStrategy = require("./conflictSolvingStrategies/timestampMergingStrategy").TimestampMergingStrategy;
-    let db = getBasicDB(storageStrategy, new ConflictStrategy());
+    let db = getBasicDB(storageStrategy, new ConflictStrategy(), options);
 
     util.ensure_WalletDB_DSU_Initialisation(keySSI, dbName, function (err, _storageDSU, sharableSSI) {
         if (err) {
@@ -35,11 +30,11 @@ let getSharedDB = function (keySSI, dbName) {
     return db;
 };
 
-let getSimpleWalletDB = (dbName) => {
+let getSimpleWalletDB = (dbName, options) => {
     let SingleDSUStorageStrategy = require("./storageStrategies/SingleDSUStorageStrategy").SingleDSUStorageStrategy;
     let storageStrategy = new SingleDSUStorageStrategy();
     let ConflictStrategy = require("./conflictSolvingStrategies/timestampMergingStrategy").TimestampMergingStrategy;
-    let db = getBasicDB(storageStrategy, new ConflictStrategy());
+    let db = getBasicDB(storageStrategy, new ConflictStrategy(), options);
 
     util.initialiseWalletDB(dbName, (err, _storageDSU, keySSI) => {
         if (err) {
