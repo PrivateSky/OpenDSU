@@ -199,13 +199,18 @@ const DossierBuilder = function (sourceDSU, varStore) {
             });
         }
 
-        if (configOrDSU.constructor && configOrDSU.constructor.name === 'Archive')
-            return updateDossier(configOrDSU, {skipFsWrite: true}, commands, callback);
+        require("./index").initialiseBuildWallet(err => {
+            if (err) {
+                return callback(err);
+            }
+            if (configOrDSU.constructor && configOrDSU.constructor.name === 'Archive')
+                return updateDossier(configOrDSU, {skipFsWrite: true}, commands, callback);
 
-        readFile(configOrDSU.seed, (err, content) => {
-            if (err || content.length === 0)
-                return createDossier(configOrDSU, commands, callback);
-            builder(content.toString());
+            readFile(configOrDSU.seed, (err, content) => {
+                if (err || content.length === 0)
+                    return createDossier(configOrDSU, commands, callback);
+                builder(content.toString());
+            });
         });
     };
 };
