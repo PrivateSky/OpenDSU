@@ -62,13 +62,7 @@ const getMainEnclave = (callback) => {
 const getSharedEnclave = (callback) => {
     const sc = getSecurityContext();
     if (sc.isInitialised()) {
-        sc.getSharedEnclaveDB((err, sharedEnclave)=>{
-            if (err) {
-                return callback(err);
-            }
-
-            sharedEnclave.refresh(err => callback(err, sharedEnclave));
-        });
+        sc.getSharedEnclaveDB(callback);
     } else {
         sc.on("initialised", () => {
             sc.getSharedEnclaveDB(callback);
@@ -76,7 +70,7 @@ const getSharedEnclave = (callback) => {
     }
 }
 
-const sharedEnclaveExists = ()=>{
+const sharedEnclaveExists = () => {
     const sc = getSecurityContext();
     return sc.sharedEnclaveExists();
 }
