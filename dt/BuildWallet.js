@@ -42,14 +42,13 @@ function BuildWallet() {
                 } catch (e) {
                     return callback(e);
                 }
-
-                writableDSU = wallet.getWritableDSU();
-                for (let prop in writableDSU) {
-                    this[prop] = writableDSU[prop];
-                }
             }
 
             writableDSU = wallet.getWritableDSU();
+            for (let prop in writableDSU) {
+                this[prop] = writableDSU[prop];
+            }
+
             __ensureEnvIsInitialised(writableDSU, callback);
         })
     }
