@@ -101,6 +101,14 @@ function BuildWallet() {
     this.ensureSharedEnclaveExists = (callback) => {
         ensureEnclaveExists("SHARED_ENCLAVE", callback);
     }
+
+    this.writeFile = (path, data, callback) => {
+        writableDSU.writeFile(path, data, callback);
+    }
+
+    this.readFile = (path, callback) => {
+        writableDSU.readFile(path, callback);
+    }
 }
 
 const initialiseWallet = (callback) => {
