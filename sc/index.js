@@ -161,6 +161,7 @@ module.exports = {
     setMainEnclave,
     getSharedEnclave,
     setSharedEnclave,
+    setEnclave,
     configEnvironment,
     sharedEnclaveExists
 };
