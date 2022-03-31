@@ -8,6 +8,8 @@ const jwtUtils = require("./jwt");
 const constants = require("../moduleConstants");
 const config = require("./index");
 
+const vcJWT = require("./jwtVc/jwt");
+
 const templateSeedSSI = keySSIFactory.createType(SSITypes.SEED_SSI);
 templateSeedSSI.load(SSITypes.SEED_SSI, "default");
 
@@ -293,6 +295,9 @@ const base64UrlEncodeJOSE = (data) => {
 
 
 module.exports = {
+    vc_createJWT: vcJWT.vc_createJWT,
+    vc_JWT_ERRORS: vcJWT.vc_JWT_ERRORS,
+
     getCryptoFunctionForKeySSI,
     hash,
     hashSync,
