@@ -34,6 +34,7 @@ function generateMethodForRequestWithData(httpMethod) {
 						try {
 							response = response !== '' ? JSON.parse(rawData) : response;
 						} catch (e) {
+							console.log("Caught an error during JSON.parse", rawData);
 							console.log('May or not be important, for safety check it! Failed to parse the error from the response due to', e);
 							// the received response is not a JSON, so we keep it as it is
 						}
