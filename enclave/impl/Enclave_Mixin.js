@@ -78,6 +78,18 @@ function Enclave_Mixin(target, did) {
         target.storageDB.refresh(callback);
     }
 
+    target.addIndex = (forDID, table, field, forceReindex, callback)=>{
+        if (typeof forceReindex === "function") {
+            callback = forceReindex;
+            forceReindex = false;
+        }
+        target.storageDB.addIndex(table, field, forceReindex, callback);
+    }
+
+    target.getIndexedFields = (forDID, table, callback)=>{
+        target.storageDB.getIndexedFields(table, callback);
+    }
+
     target.insertRecord = (forDID, table, pk, plainRecord, encryptedRecord, callback) => {
         if (typeof encryptedRecord === "function") {
             callback = encryptedRecord;
