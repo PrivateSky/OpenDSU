@@ -177,7 +177,7 @@ function SecurityContext(target) {
 
     const wrapEnclave = (asDID, enclave) => {
         const wrappedEnclave = {};
-        let asyncDBMethods = ["insertRecord", "updateRecord", "getRecord", "deleteRecord", "filter", "commitBatch", "cancelBatch", "getKeySSI", "readKey", "writeKey", "getAllRecords"];
+        let asyncDBMethods = ["insertRecord", "updateRecord", "getRecord", "deleteRecord", "filter", "commitBatch", "cancelBatch", "getKeySSI", "readKey", "writeKey", "getAllRecords", "addIndex"];
         for (let i = 0; i < asyncDBMethods.length; i++) {
             wrappedEnclave[asyncDBMethods[i]] = (...args) => {
                 enclave[asyncDBMethods[i]](asDID, ...args);
