@@ -34,10 +34,6 @@ const getBrick = (hashLinkSSI, authToken, callback) => {
         authToken = undefined;
     }
 
-    if (dlDomain === constants.DOMAINS.VAULT && isValidVaultCache()) {
-        return cachedBricking.getBrick(brickHash, callback);
-    }
-
     if (typeof cache === "undefined") {
         __getBrickFromEndpoint();
     } else {
@@ -105,28 +101,39 @@ const getMultipleBricks = (hashLinkSSIList, authToken, callback) => {
     const dlDomain = hashLinkSSIList[0].getDLDomain();
     const bricksHashes = hashLinkSSIList.map((hashLinkSSI) => hashLinkSSI.getHash());
 
-    if (dlDomain === constants.DOMAINS.VAULT && isValidVaultCache()) {
-        return cachedBricking.getMultipleBricks(bricksHashes, callback);
+    function executeGetBricks(hashLinkSSIList){
+        // The bricks need to be returned in the same order they were requested
+        let brickPromise = Promise.resolve();
+        for (const hl of hashLinkSSIList) {
+            // TODO: FIX ME
+            // This is a HACK. It should cover 99% of the cases
+            // but it might still fail if the brick data transfer
+            // is delayed due to network issues and the next iteration
+            // resolves faster. The correct solution involves changing
+            // multiple layers
+            brickPromise = brickPromise.then(() => {
+                return new Promise((resolve) => {
+                    getBrick(hl, authToken, (err, brick) => {
+                        callback(err, brick);
+                        resolve();
+                    });
+                })
+            })
+        }
     }
 
-    // The bricks need to be returned in the same order they were requested
-    let brickPromise = Promise.resolve();
-    for (const hl of hashLinkSSIList) {
-        // TODO: FIX ME
-        // This is a HACK. It should cover 99% of the cases
-        // but it might still fail if the brick data transfer
-        // is delayed due to network issues and the next iteration
-        // resolves faster. The correct solution involves changing
-        // multiple layers
-        brickPromise = brickPromise.then(() => {
-            return new Promise((resolve) => {
-                getBrick(hl, authToken, (err, brick) => {
-                    callback(err, brick);
-                    resolve();
-                });
-            })
-        })
+    if (dlDomain === constants.DOMAINS.VAULT && isValidVaultCache()) {
+        return cachedBricking.getMultipleBricks(bricksHashes, (err, brickData)=>{
+            let newTarget = [hashLinkSSIList.shift()];
+            if(err || !brickData){
+                executeGetBricks(newTarget);
+                return;
+            }
+            callback(err, brickData);
+        });
     }
+
+    executeGetBricks(hashLinkSSIList);
 };
 
 

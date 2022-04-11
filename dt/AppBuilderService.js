@@ -37,7 +37,7 @@ const {_getResolver, _getKeySSISpace} = require('./commands/utils');
  * </pre>
  */
 const OPTIONS = {
-    anchoring: "default",
+    anchoring: process.env.VAULT_DOMAIN || "vault",
     publicSecretsKey: '-$Identity-',
     environmentKey: "-$Environment-",
     basePath: "",
