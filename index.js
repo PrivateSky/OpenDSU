@@ -59,6 +59,7 @@ if(!PREVENT_DOUBLE_LOADING_OF_OPENDSU.INITIALISED){
             case "m2dsu":return require("./m2dsu"); break;
             case "workers":return require("./workers"); break;
             case "storage": return require("./storage"); break;
+            case "jwt": return require("./jwt"); break;
             default: throw new Error("Unknown API space " + apiSpaceName);
         }
     }

@@ -1,5 +1,5 @@
-const {JWT_DEFAULTS, JWT_ERRORS} = require("./jwtConstants");
-const {dateTimeFormatter, encodeBase58, decodeBase58, safeParseEncodedJson} = require("./jwtUtils");
+const {JWT_DEFAULTS, JWT_ERRORS, JWT_LABELS} = require("./jwtConstants");
+const {dateTimeFormatter, encodeBase58} = require("./jwtUtils");
 
 /**
  * This method creates the header of a JWT according to the W3c Standard
@@ -60,6 +60,46 @@ function getRequiredJWTPayloadModel(options) {
 }
 
 /**
+ * This method provides the format of the issuer in order to be processed accordingly.
+ * Allowed formats:
+ * DID Identifier format
+ * SSI format
+ * @param issuer {string}
+ * @returns {null | string}
+ */
+function getIssuerFormat(issuer) {
+    if (issuer.indexOf("did:") === 0) {
+        return JWT_LABELS.ISSUER_DID;
+    }
+
+    if (issuer.indexOf("ssi:") === 0) {
+        return JWT_LABELS.ISSUER_SSI;
+    }
+
+    return null;
+}
+
+/**
+ * This method provides the format of the subject in order to be processed accordingly.
+ * Allowed formats:
+ * DID Identifier format
+ * sReadSSI format
+ * @param subject {string}
+ * @returns {null | string}
+ */
+function getSubjectFormat(subject) {
+    if (subject.indexOf("did:") === 0) {
+        return JWT_LABELS.SUBJECT_DID;
+    }
+
+    if (subject.indexOf("ssi:") === 0) {
+        return JWT_LABELS.SUBJECT_SSI;
+    }
+
+    return null;
+}
+
+/**
  * This method prepares jwt header, payload and the encoded parts of them
  * @param jwtOptions {Object}
  * @returns {{jwtPayload: {sub: *, nbf: *, iss: *, exp: *, vc: {credentialSubject: {id: *}, issuanceDate: null|string, type, "@context", issuer: *, expirationDate: null|string}, iat: *}, jwtHeader: {typ, alg}, jwtEncodedSegments: *[]}}
@@ -68,42 +108,32 @@ function prepareJWTSegments(jwtOptions) {
     const jwtHeader = getRequiredJWTHeader(jwtOptions);
     const jwtPayload = getRequiredJWTPayloadModel(jwtOptions);
 
-    const jwtEncodedSegments = [encodeBase58(jwtHeader), encodeBase58(jwtPayload)];
+    const jwtEncodedSegments = [encodeBase58(JSON.stringify(jwtHeader)), encodeBase58(JSON.stringify(jwtPayload))];
     return {jwtHeader, jwtPayload, jwtEncodedSegments};
 }
 
 /**
- * This method decodes the JWT and returns the segments
- * @param jwt {string}
- * @param callback {Function}
- * @returns {*}
+ * This method validates the issuer and subject format and using the provided options, creates the header, payload and the encoded parts that are ready to be signed
+ * @param issuer
+ * @param subject
+ * @param options
  */
-function parseJWTSegments(jwt, callback) {
-    if (!jwt) return callback(JWT_ERRORS.EMPTY_JWT_PROVIDED);
-    if (typeof jwt !== "string") return callback(JWT_ERRORS.INVALID_JWT_FORMAT);
+function jwtBuilder(issuer, subject, options) {
+    const jwtOptions = {
+        sub: subject, iss: issuer, ...options
+    };
 
-    const segments = jwt.split(".");
-    if (segments.length !== 3) return callback(JWT_ERRORS.INVALID_JWT_FORMAT);
-
-    const header = safeParseEncodedJson(segments[0]);
-    if (header instanceof Error || !header) return callback(JWT_ERRORS.INVALID_JWT_HEADER);
-
-    const payload = safeParseEncodedJson(segments[1]);
-    if (payload instanceof Error || !payload) return callback(JWT_ERRORS.INVALID_JWT_PAYLOAD);
-
-    const signatureInput = `${segments[0]}.${segments[1]}`;
-    const signature = decodeBase58(segments[2], true);
-    if (!signature) {
-        // the signature couldn't be decoded due to an invalid signature
-        return callback(JWT_ERRORS.INVALID_JWT_SIGNATURE);
+    const {jwtHeader, jwtPayload, jwtEncodedSegments} = prepareJWTSegments(jwtOptions);
+    const encodedJwtHeaderAndBody = jwtEncodedSegments.join(".");
+    return {
+        jwtHeader,
+        jwtPayload,
+        encodedJwtHeaderAndBody
     }
-
-    callback(null, {header, payload, signature, signatureInput});
 }
 
 module.exports = {
-    getRequiredJWTHeader,
-    getRequiredJWTPayloadModel,
-    prepareJWTSegments,
-    parseJWTSegments
+    getIssuerFormat,
+    getSubjectFormat,
+    jwtBuilder
 };
