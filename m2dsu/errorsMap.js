@@ -148,11 +148,15 @@ function addNewErrorType(key, code, message, detailsFn) {
   }
 
 }
+function setErrorMessage(key, message){
+  errorTypes[key].message = message;
+}
 
 module.exports = {
   errorTypes,
   newCustomError,
   getErrorKeyByCode,
   getErrorKeyByMessage,
+  setErrorMessage,
   addNewErrorType
 }
