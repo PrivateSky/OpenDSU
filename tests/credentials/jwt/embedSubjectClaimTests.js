@@ -1,14 +1,14 @@
-require("../../../../psknode/bundles/testsRuntime");
+require("../../../../../psknode/bundles/testsRuntime");
 
 const assert = require("double-check").assert;
 const keySSIResolver = require("key-ssi-resolver");
 const keySSIFactory = keySSIResolver.KeySSIFactory;
 const SSITypes = keySSIResolver.SSITypes;
 
-const openDSU = require("../../index");
+const openDSU = require("../../../index");
 const keySSISpace = openDSU.loadApi("keyssi");
-const jwt = openDSU.loadApi("jwt");
-const {createJWT, JWT_ERRORS} = jwt;
+const credentials = openDSU.loadApi("credentials");
+const {createVc, JWT_ERRORS} = credentials;
 
 const templateSeedSSI = keySSIFactory.createType(SSITypes.SEED_SSI);
 templateSeedSSI.load(SSITypes.SEED_SSI, "default");
@@ -43,7 +43,9 @@ assert.callback("Embed subject claim with success test", (callback) => {
         }
 
         const {issuerSeedSSI, subjectSeedSSI} = result;
-        createJWT(issuerSeedSSI, subjectSeedSSI, jwtOptions, (createJwtError, jwtInstance) => {
+        jwtOptions.issuer = issuerSeedSSI;
+        jwtOptions.subject = subjectSeedSSI;
+        createVc("jwt", jwtOptions, (createJwtError, jwtInstance) => {
             if (createJwtError) {
                 console.error(createJwtError);
                 throw createJwtError;
@@ -74,7 +76,9 @@ assert.callback("Bad context - Embed subject claim with error test", (callback) 
         }
 
         const {issuerSeedSSI, subjectSeedSSI} = result;
-        createJWT(issuerSeedSSI, subjectSeedSSI, jwtOptions, (createJwtError, jwtInstance) => {
+        jwtOptions.issuer = issuerSeedSSI;
+        jwtOptions.subject = subjectSeedSSI;
+        createVc("jwt", jwtOptions, (createJwtError, jwtInstance) => {
             if (createJwtError) {
                 console.error(createJwtError);
                 throw createJwtError;
@@ -101,7 +105,9 @@ assert.callback("Bad type - Embed subject claim with error test", (callback) => 
         }
 
         const {issuerSeedSSI, subjectSeedSSI} = result;
-        createJWT(issuerSeedSSI, subjectSeedSSI, jwtOptions, (createJwtError, jwtInstance) => {
+        jwtOptions.issuer = issuerSeedSSI;
+        jwtOptions.subject = subjectSeedSSI;
+        createVc("jwt", jwtOptions, (createJwtError, jwtInstance) => {
             if (createJwtError) {
                 console.error(createJwtError);
                 throw createJwtError;
@@ -128,7 +134,9 @@ assert.callback("Bad claims - Embed subject claim with error test", (callback) =
         }
 
         const {issuerSeedSSI, subjectSeedSSI} = result;
-        createJWT(issuerSeedSSI, subjectSeedSSI, jwtOptions, (createJwtError, jwtInstance) => {
+        jwtOptions.issuer = issuerSeedSSI;
+        jwtOptions.subject = subjectSeedSSI;
+        createVc("jwt", jwtOptions, (createJwtError, jwtInstance) => {
             if (createJwtError) {
                 console.error(createJwtError);
                 throw createJwtError;
@@ -155,7 +163,9 @@ assert.callback("Try to update subject id with error test", (callback) => {
         }
 
         const {issuerSeedSSI, subjectSeedSSI} = result;
-        createJWT(issuerSeedSSI, subjectSeedSSI, jwtOptions, (createJwtError, jwtInstance) => {
+        jwtOptions.issuer = issuerSeedSSI;
+        jwtOptions.subject = subjectSeedSSI;
+        createVc("jwt", jwtOptions, (createJwtError, jwtInstance) => {
             if (createJwtError) {
                 console.error(createJwtError);
                 throw createJwtError;

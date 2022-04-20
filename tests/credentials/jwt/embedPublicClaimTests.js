@@ -1,14 +1,14 @@
-require("../../../../psknode/bundles/testsRuntime");
+require("../../../../../psknode/bundles/testsRuntime");
 
 const assert = require("double-check").assert;
 const keySSIResolver = require("key-ssi-resolver");
 const keySSIFactory = keySSIResolver.KeySSIFactory;
 const SSITypes = keySSIResolver.SSITypes;
 
-const openDSU = require("../../index");
+const openDSU = require("../../../index");
 const keySSISpace = openDSU.loadApi("keyssi");
-const jwt = openDSU.loadApi("jwt");
-const {createJWT, JWT_ERRORS} = jwt;
+const credentials = openDSU.loadApi("credentials");
+const {createVc, JWT_ERRORS} = credentials;
 
 const templateSeedSSI = keySSIFactory.createType(SSITypes.SEED_SSI);
 templateSeedSSI.load(SSITypes.SEED_SSI, "default");
@@ -43,7 +43,9 @@ assert.callback("Embed public claim with success test", (callback) => {
         }
 
         const {issuerSeedSSI, subjectSeedSSI} = result;
-        createJWT(issuerSeedSSI, subjectSeedSSI, jwtOptions, (createJwtError, jwtInstance) => {
+        jwtOptions.issuer = issuerSeedSSI;
+        jwtOptions.subject = subjectSeedSSI;
+        createVc("jwt", jwtOptions, (createJwtError, jwtInstance) => {
             if (createJwtError) {
                 console.error(createJwtError);
                 throw createJwtError;
@@ -70,7 +72,9 @@ assert.callback("Update an existing public claim with success test", (callback) 
         }
 
         const {issuerSeedSSI, subjectSeedSSI} = result;
-        createJWT(issuerSeedSSI, subjectSeedSSI, jwtOptions, (createJwtError, jwtInstance) => {
+        jwtOptions.issuer = issuerSeedSSI;
+        jwtOptions.subject = subjectSeedSSI;
+        createVc("jwt", jwtOptions, (createJwtError, jwtInstance) => {
             if (createJwtError) {
                 console.error(createJwtError);
                 throw createJwtError;
@@ -97,7 +101,9 @@ assert.callback("Embed public claim with error test", (callback) => {
         }
 
         const {issuerSeedSSI, subjectSeedSSI} = result;
-        createJWT(issuerSeedSSI, subjectSeedSSI, jwtOptions, (createJwtError, jwtInstance) => {
+        jwtOptions.issuer = issuerSeedSSI;
+        jwtOptions.subject = subjectSeedSSI;
+        createVc("jwt", jwtOptions, (createJwtError, jwtInstance) => {
             if (createJwtError) {
                 console.error(createJwtError);
                 throw createJwtError;
@@ -120,7 +126,9 @@ assert.callback("Update immutable claim with error test", (callback) => {
         }
 
         const {issuerSeedSSI, subjectSeedSSI} = result;
-        createJWT(issuerSeedSSI, subjectSeedSSI, jwtOptions, (createJwtError, jwtInstance) => {
+        jwtOptions.issuer = issuerSeedSSI;
+        jwtOptions.subject = subjectSeedSSI;
+        createVc("jwt", jwtOptions, (createJwtError, jwtInstance) => {
             if (createJwtError) {
                 console.error(createJwtError);
                 throw createJwtError;
@@ -145,7 +153,9 @@ assert.callback("Extend JWT expiration date test", (callback) => {
         }
 
         const {issuerSeedSSI, subjectSeedSSI} = result;
-        createJWT(issuerSeedSSI, subjectSeedSSI, jwtOptions, (createJwtError, jwtInstance) => {
+        jwtOptions.issuer = issuerSeedSSI;
+        jwtOptions.subject = subjectSeedSSI;
+        createVc("jwt", jwtOptions, (createJwtError, jwtInstance) => {
             if (createJwtError) {
                 console.error(createJwtError);
                 throw createJwtError;
