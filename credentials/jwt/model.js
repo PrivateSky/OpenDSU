@@ -132,17 +132,17 @@ function jwtBuilder(options, callback) {
     const jwtHeader = getRequiredJWTHeader(options);
     const jwtPayload = getRequiredJWTPayloadModel(options);
 
-    const encodedJwtHeaderAndBody = [
+    const encodedJWTHeaderAndBody = [
         encodeBase58(JSON.stringify(jwtHeader)),
         encodeBase58(JSON.stringify(jwtPayload))
     ].join(".");
 
-    signJWT(options.iss, encodedJwtHeaderAndBody, (err, signature) => {
+    signJWT(options.iss, encodedJWTHeaderAndBody, (err, signature) => {
         if (err) {
             return callback(err);
         }
 
-        const encodedJWT = [encodedJwtHeaderAndBody, signature].join(".");
+        const encodedJWT = [encodedJWTHeaderAndBody, signature].join(".");
         callback(undefined, encodedJWT);
     });
 }
@@ -289,13 +289,13 @@ function parseJWTSegments(jwt, callback) {
     const jwtPayload = safeParseEncodedJson(segments[1]);
     if (jwtPayload instanceof Error || !jwtPayload) return callback(JWT_ERRORS.INVALID_JWT_PAYLOAD);
 
-    const encodedJwtHeaderAndBody = `${segments[0]}.${segments[1]}`;
+    const encodedJWTHeaderAndBody = `${segments[0]}.${segments[1]}`;
     const jwtSignature = decodeBase58(segments[2], true);
     if (!jwtSignature) {
         return callback(JWT_ERRORS.INVALID_JWT_SIGNATURE);
     }
 
-    callback(undefined, {jwtHeader, jwtPayload, jwtSignature, encodedJwtHeaderAndBody});
+    callback(undefined, {jwtHeader, jwtPayload, jwtSignature, encodedJWTHeaderAndBody});
 }
 
 /**
@@ -309,14 +309,14 @@ function jwtParser(encodedJWT, callback) {
             return callback(err);
         }
 
-        const {jwtHeader, jwtPayload, jwtSignature, encodedJwtHeaderAndBody} = result;
+        const {jwtHeader, jwtPayload, jwtSignature, encodedJWTHeaderAndBody} = result;
         if (!jwtHeader.typ || !jwtHeader.alg) return callback(JWT_ERRORS.INVALID_JWT_HEADER);
         if (!jwtPayload.iss) return callback(JWT_ERRORS.INVALID_JWT_ISSUER);
-        if (isJwtExpired(jwtPayload)) return callback(JWT_ERRORS.JWT_TOKEN_EXPIRED);
-        if (isJwtNotActive(jwtPayload)) return callback(JWT_ERRORS.JWT_TOKEN_NOT_ACTIVE);
+        if (isJWTExpired(jwtPayload)) return callback(JWT_ERRORS.JWT_TOKEN_EXPIRED);
+        if (isJWTNotActive(jwtPayload)) return callback(JWT_ERRORS.JWT_TOKEN_NOT_ACTIVE);
         if (!jwtPayload.vc) return callback(JWT_ERRORS.INVALID_JWT_PAYLOAD);
 
-        verifyJWT(jwtPayload.iss, jwtSignature, encodedJwtHeaderAndBody, callback);
+        verifyJWT(jwtPayload.iss, jwtSignature, encodedJWTHeaderAndBody, callback);
     });
 }
 
@@ -395,7 +395,7 @@ function verifyUsingDID(issuer, signature, signedData, callback) {
  * @param payload {Object}
  * @returns {boolean}
  */
-function isJwtExpired(payload) {
+function isJWTExpired(payload) {
     return new Date(payload.exp * 1000) < new Date();
 }
 
@@ -404,7 +404,7 @@ function isJwtExpired(payload) {
  * @param payload {Object}
  * @returns {boolean}
  */
-function isJwtNotActive(payload) {
+function isJWTNotActive(payload) {
     return new Date(payload.nbf * 1000) >= new Date();
 }
 

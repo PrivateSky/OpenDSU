@@ -1,5 +1,5 @@
-function JwtVcType() {
-    const {createJWT, resolveJWT} = require("./jwt");
+function JWTVcType() {
+    const {createJWT, verifyJWT} = require("./jwt");
 
     this.create = (options, callback) => {
         const jwtInstance = createJWT(options);
@@ -13,8 +13,8 @@ function JwtVcType() {
         });
     };
 
-    this.resolve = (encodedJWT, callback) => {
-        const jwtInstance = resolveJWT(encodedJWT);
+    this.verify = (encodedJWT, callback) => {
+        const jwtInstance = verifyJWT(encodedJWT);
 
         jwtInstance.on("error", (err) => {
             callback(err);
@@ -42,7 +42,7 @@ function PresentationType() {
         });
     };
 
-    this.resolve = (encodedPresentation, callback) => {
+    this.verify = (encodedPresentation, callback) => {
         console.log("Not implemented!");
         const instance = {}; // Resolve presentation
 
@@ -56,8 +56,8 @@ function PresentationType() {
     };
 }
 
-function createJwtVcType() {
-    return new JwtVcType();
+function createJWTVcType() {
+    return new JWTVcType();
 }
 
 function createPresentationType() {
@@ -66,9 +66,9 @@ function createPresentationType() {
 
 module.exports = {
     UNKNOWN_VERIFIABLE_CREDENTIAL_TYPE: "UNKNOWN_VERIFIABLE_CREDENTIAL_TYPE",
-    JWT: "jwt",
+    JWT: "JWT",
     PRESENTATION: "presentation",
 
-    createJwtVcType,
+    createJWTVcType,
     createPresentationType
 };

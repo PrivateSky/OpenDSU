@@ -10,24 +10,24 @@ function createVc(type, options, callback) {
     vcTypeRegistry[type].create(options, callback);
 }
 
-function resolveVc(type, encodedVc, callback) {
+function verifyVc(type, encodedVc, callback) {
     if (!vcTypeRegistry[type]) {
         return callback(vcTypes.UNKNOWN_VERIFIABLE_CREDENTIAL_TYPE);
     }
 
-    vcTypeRegistry[type].resolve(encodedVc, callback);
+    vcTypeRegistry[type].verify(encodedVc, callback);
 }
 
 function registerCredentialTypes(method, implementation) {
     vcTypeRegistry[method] = implementation;
 }
 
-registerCredentialTypes(vcTypes.JWT, vcTypes.createJwtVcType());
+registerCredentialTypes(vcTypes.JWT, vcTypes.createJWTVcType());
 registerCredentialTypes(vcTypes.PRESENTATION, vcTypes.createPresentationType());
 
 module.exports = {
     createVc,
-    resolveVc,
+    verifyVc,
 
     jwt_getReadableIdentity: jwt.getReadableIdentity,
     jwt_parseJWTSegments: jwt.parseJWTSegments,

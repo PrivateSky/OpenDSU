@@ -171,14 +171,14 @@ function createJWT(options) {
  * This method is parsing an encoded verifiable credential according to the requested type and returns the instance of the verifiable credential. <br />
  * @param encodedJWT {string}
  */
-function resolveJWT(encodedJWT) {
+function verifyJWT(encodedJWT) {
     const options = {encodedJWT: encodedJWT};
     return new JwtVC(options);
 }
 
 module.exports = {
     createJWT,
-    resolveJWT,
+    verifyJWT,
 
     getReadableIdentity,
     parseJWTSegments,
