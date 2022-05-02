@@ -36,68 +36,65 @@ function MappingEngine(storageService, options) {
     return instance;
   }
 
-  function digestMessage(message) {
+  async function getMappingFunction(message) {
+    const knownMappings = mappingRegistry.getMappings();
+
+    for (let i = 0; i < knownMappings.length; i++) {
+      let mapping = knownMappings[i];
+      let {matchFunction, mappingFunction} = mapping;
+      let applyMapping = await matchFunction(message);
+
+      if (applyMapping) {
+        return mappingFunction;
+      }
+    }
+  }
+
+  function commitMapping(mappingInstance) {
+    let touchedDSUs = mappingInstance.registeredDSUs;
     return new Promise((resolve, reject) => {
-
-      async function process() {
-        const mappings = mappingRegistry.getMappings();
-        let messageDigested = false;
-
-        for (let i = 0; i < mappings.length; i++) {
-          let mapping = mappings[i];
-          let {matchFunction, mappingFunction} = mapping;
-					let applyMapping = await matchFunction(message);
-
-          if (applyMapping) {
-            const instance = buildMappingInstance();
-            try {
-              await mappingFunction.call(instance, message);
-
-
-              //if all good until this point, we need to commit any registeredDSU during the message mapping
-              const commitPromises = [];
-              for (let i = 0; i < instance.registeredDSUs.length; i++) {
-                const commitBatch = $$.promisify(instance.registeredDSUs[i].commitBatch);
-                commitPromises.push(commitBatch());
-              }
-
-              Promise.all(commitPromises)
-                .then(async results => {
-                    for (let i = 0; i < results.length; i++) {
-                      let result = results[i];
-                      if (result && result.status === "rejected") {
-                        await $$.promisify(instance.registeredDSUs[i].cancelBatch)();
-                        let getDSUIdentifier = $$.promisify(instance.registeredDSUs[i].getKeySSIAsString);
-                        return reject(errorHandler.createOpenDSUErrorWrapper(`Cancel batch on dsu identified with ${await getDSUIdentifier()}`, error));
-                      }
-                    }
-                    resolve(true);
-                  }
-                ).catch(err => {
-                return reject(errorHandler.createOpenDSUErrorWrapper(`Caught error during commit batch on registered DSUs`, err));
-              });
-            } catch (err) {
-              if (err.debug_message) {
-                reject(err);
-              } else {
-                reject(errorHandler.createOpenDSUErrorWrapper(`Caught error during mapping`, err));
-              }
-            }
-            messageDigested = true;
-            //we apply only the first mapping found to be suited for the message that we try to digest
-            break;
-          }
-        }
-        if (!messageDigested) {
-          let messageString = JSON.stringify(message);
-          const maxDisplayLength = 1024;
-          console.log(`Unable to find a suitable mapping to handle the following message: ${messageString.length < maxDisplayLength ? messageString : messageString.slice(0, maxDisplayLength) + "..."}`);
-          reject(errMap.newCustomError(errMap.errorTypes.MISSING_MAPPING, [{field: "messageType", message: `Couldn't find any mapping for ${message.messageType}`}]))
-        }
-        return messageDigested;
+      //if all good until this point, we need to commit any registeredDSU during the message mapping
+      const commitPromises = [];
+      for (let i = 0; i < touchedDSUs.length; i++) {
+        const commitBatch = $$.promisify(touchedDSUs[i].commitBatch);
+        commitPromises.push(commitBatch());
       }
 
-      return process();
+      Promise.all(commitPromises)
+        .then(async results => {
+            for (let i = 0; i < results.length; i++) {
+              let result = results[i];
+              if (result && result.status === "rejected") {
+                await $$.promisify(touchedDSUs[i].cancelBatch)();
+                let getDSUIdentifier = $$.promisify(touchedDSUs[i].getKeySSIAsString);
+                return reject(errorHandler.createOpenDSUErrorWrapper(`Cancel batch on dsu identified with ${await getDSUIdentifier()}`, error));
+              }
+            }
+            resolve(true);
+          }
+        ).catch(err => {
+        return reject(errorHandler.createOpenDSUErrorWrapper(`Caught error during commit batch on registered DSUs`, err));
+      });
+    });
+  }
+
+  function executeMappingFor(message) {
+    return new Promise(async (resolve, reject) => {
+
+      const mappingFnc = await getMappingFunction(message);
+      if (mappingFnc) {
+        const instance = buildMappingInstance();
+        await mappingFnc.call(instance, message);
+        return resolve({registeredDSUs: instance.registeredDSUs});
+      } else {
+        let messageString = JSON.stringify(message);
+        const maxDisplayLength = 1024;
+        console.log(`Unable to find a suitable mapping to handle the following message: ${messageString.length < maxDisplayLength ? messageString : messageString.slice(0, maxDisplayLength) + "..."}`);
+        reject(errMap.newCustomError(errMap.errorTypes.MISSING_MAPPING, [{
+          field: "messageType",
+          message: `Couldn't find any mapping for ${message.messageType}`
+        }]));
+      }
     });
   }
 
@@ -129,15 +126,16 @@ function MappingEngine(storageService, options) {
       inProgress = false;
     }
 
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
         if (inProgress) {
           throw errMap.newCustomError(errMap.errorTypes.DIGESTING_MESSAGES);
         }
         inProgress = true;
         storageService.beginBatch();
 
-        //digests will contain promises for each of message digest
-        let digests = [];
+        //commitPromisses will contain promises for each of message
+        let commitPromisses = [];
+        let mappingsInstances = [];
 
         for (let i = 0; i < messages.length; i++) {
           let message = messages[i];
@@ -150,11 +148,11 @@ function MappingEngine(storageService, options) {
           }
 
           try {
-            digests.push(digestMessage(message));
+            let mappingInstance = await executeMappingFor(message);
+            mappingsInstances.push(mappingInstance);
           } catch (err) {
             errorHandler.reportUserRelevantError("Caught error during message digest", err);
           }
-
         }
 
         function digestConfirmation(results) {
@@ -190,7 +188,10 @@ function MappingEngine(storageService, options) {
           });
         }
 
-        Promise.allSettled(digests)
+        for (let i = 0; i < mappingsInstances.length; i++) {
+          commitPromisses.push(commitMapping(mappingsInstances[i]));
+        }
+        Promise.allSettled(commitPromisses)
           .then(digestConfirmation)
           .catch(handleErrorsDuringPromiseResolving);
 
