@@ -11,7 +11,7 @@ const scAPI = openDSU.loadAPI("sc");
 const crypto = openDSU.loadApi("crypto");
 
 const credentials = openDSU.loadApi("credentials");
-const {createVc, resolveVc, jwt_getReadableIdentity, jwt_parseJWTSegments, JWT_ERRORS} = credentials;
+const {createVc, verifyVc, jwt_getReadableIdentity, jwt_parseJWTSegments, JWT_ERRORS} = credentials;
 
 const domain = "default";
 const jwtOptions = {
@@ -52,14 +52,14 @@ assert.callback("[DID] Create and Resolve JWT success test", (callback) => {
         const {issuerDidDocument, subjectDidDocument} = result;
         jwtOptions.issuer = issuerDidDocument;
         jwtOptions.subject = subjectDidDocument;
-        createVc("jwt", jwtOptions, (createJwtError, jwtInstance) => {
-            if (createJwtError) {
-                console.error(createJwtError);
-                throw createJwtError;
+        createVc("JWT", jwtOptions, (createJWTError, jwtInstance) => {
+            if (createJWTError) {
+                console.error(createJWTError);
+                throw createJWTError;
             }
 
             const jwt = jwtInstance.getJWT();
-            resolveVc("jwt", jwt, (err, resolvedJwtInstance) => {
+            verifyVc("JWT", jwt, (err, resolvedJWTInstance) => {
                 if (err) {
                     console.error(err);
                     throw err;
@@ -71,7 +71,7 @@ assert.callback("[DID] Create and Resolve JWT success test", (callback) => {
                         throw err;
                     }
 
-                    const resolvedJWT = resolvedJwtInstance.getJWT();
+                    const resolvedJWT = resolvedJWTInstance.getJWT();
                     jwt_parseJWTSegments(resolvedJWT, (err, resolvedResult) => {
                         if (err) {
                             console.error(err);
@@ -103,7 +103,7 @@ assert.callback("[DID] Create JWT and validate the content of the payload test",
         const {issuerDidDocument, subjectDidDocument} = result;
         jwtOptions.issuer = issuerDidDocument.getIdentifier();
         jwtOptions.subject = subjectDidDocument.getIdentifier();
-        createVc("jwt", jwtOptions, (err, jwtInstance) => {
+        createVc("JWT", jwtOptions, (err, jwtInstance) => {
             if (err) {
                 console.error(err);
                 throw err;

@@ -46,9 +46,9 @@ assert.callback("[SSI] Invalid Subject format test", (callback) => {
         const {issuerSeedSSI, subjectSeedSSI} = result;
         jwtOptions.issuer = issuerSeedSSI.getIdentifier(true);
         jwtOptions.subject = "invalidSubject:" + subjectSeedSSI.getIdentifier(true);
-        createVc("jwt", jwtOptions, (createJwtError, jwtInstance) => {
-            assert.notNull(createJwtError);
-            assert.equal(createJwtError, JWT_ERRORS.INVALID_SUBJECT_FORMAT);
+        createVc("JWT", jwtOptions, (createJWTError, jwtInstance) => {
+            assert.notNull(createJWTError);
+            assert.equal(createJWTError, JWT_ERRORS.INVALID_SUBJECT_FORMAT);
             callback();
         });
     });

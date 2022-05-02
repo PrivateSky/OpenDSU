@@ -46,10 +46,10 @@ assert.callback("[SSI] Create JWT and validate the content of the payload test",
         const {issuerSeedSSI, subjectSeedSSI} = result;
         jwtOptions.issuer = issuerSeedSSI;
         jwtOptions.subject = subjectSeedSSI;
-        createVc("jwt", jwtOptions, (createJwtError, jwtInstance) => {
-            if (createJwtError) {
-                console.error(createJwtError);
-                throw createJwtError;
+        createVc("JWT", jwtOptions, (createJWTError, jwtInstance) => {
+            if (createJWTError) {
+                console.error(createJWTError);
+                throw createJWTError;
             }
 
             const jwt = jwtInstance.getJWT();

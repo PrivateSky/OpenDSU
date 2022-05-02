@@ -45,10 +45,10 @@ assert.callback("Embed public claim with success test", (callback) => {
         const {issuerSeedSSI, subjectSeedSSI} = result;
         jwtOptions.issuer = issuerSeedSSI;
         jwtOptions.subject = subjectSeedSSI;
-        createVc("jwt", jwtOptions, (createJwtError, jwtInstance) => {
-            if (createJwtError) {
-                console.error(createJwtError);
-                throw createJwtError;
+        createVc("JWT", jwtOptions, (createJWTError, jwtInstance) => {
+            if (createJWTError) {
+                console.error(createJWTError);
+                throw createJWTError;
             }
 
             jwtInstance.embedClaim({publicClaim: "test"}, (embedClaimError, embedResult) => {
@@ -74,10 +74,10 @@ assert.callback("Update an existing public claim with success test", (callback) 
         const {issuerSeedSSI, subjectSeedSSI} = result;
         jwtOptions.issuer = issuerSeedSSI;
         jwtOptions.subject = subjectSeedSSI;
-        createVc("jwt", jwtOptions, (createJwtError, jwtInstance) => {
-            if (createJwtError) {
-                console.error(createJwtError);
-                throw createJwtError;
+        createVc("JWT", jwtOptions, (createJWTError, jwtInstance) => {
+            if (createJWTError) {
+                console.error(createJWTError);
+                throw createJWTError;
             }
 
             jwtInstance.embedClaim({nbf: Date.now()}, (embedClaimError, embedResult) => {
@@ -103,10 +103,10 @@ assert.callback("Embed public claim with error test", (callback) => {
         const {issuerSeedSSI, subjectSeedSSI} = result;
         jwtOptions.issuer = issuerSeedSSI;
         jwtOptions.subject = subjectSeedSSI;
-        createVc("jwt", jwtOptions, (createJwtError, jwtInstance) => {
-            if (createJwtError) {
-                console.error(createJwtError);
-                throw createJwtError;
+        createVc("JWT", jwtOptions, (createJWTError, jwtInstance) => {
+            if (createJWTError) {
+                console.error(createJWTError);
+                throw createJWTError;
             }
 
             jwtInstance.embedClaim("INVALID_CLAIM_OPTIONS", (embedClaimError) => {
@@ -128,10 +128,10 @@ assert.callback("Update immutable claim with error test", (callback) => {
         const {issuerSeedSSI, subjectSeedSSI} = result;
         jwtOptions.issuer = issuerSeedSSI;
         jwtOptions.subject = subjectSeedSSI;
-        createVc("jwt", jwtOptions, (createJwtError, jwtInstance) => {
-            if (createJwtError) {
-                console.error(createJwtError);
-                throw createJwtError;
+        createVc("JWT", jwtOptions, (createJWTError, jwtInstance) => {
+            if (createJWTError) {
+                console.error(createJWTError);
+                throw createJWTError;
             }
 
             jwtInstance.embedClaim({
@@ -155,10 +155,10 @@ assert.callback("Extend JWT expiration date test", (callback) => {
         const {issuerSeedSSI, subjectSeedSSI} = result;
         jwtOptions.issuer = issuerSeedSSI;
         jwtOptions.subject = subjectSeedSSI;
-        createVc("jwt", jwtOptions, (createJwtError, jwtInstance) => {
-            if (createJwtError) {
-                console.error(createJwtError);
-                throw createJwtError;
+        createVc("JWT", jwtOptions, (createJWTError, jwtInstance) => {
+            if (createJWTError) {
+                console.error(createJWTError);
+                throw createJWTError;
             }
 
             jwtInstance.extendExpirationDate(6000, (embedClaimError, embedResult) => {

@@ -11,7 +11,7 @@ const scAPI = openDSU.loadAPI("sc");
 const crypto = openDSU.loadApi("crypto");
 
 const credentials = openDSU.loadApi("credentials");
-const {createVc, resolveVc, JWT_ERRORS} = credentials;
+const {createVc, verifyVc, JWT_ERRORS} = credentials;
 
 const domain = "default";
 const jwtOptions = {
@@ -52,16 +52,16 @@ assert.callback("[DID] Create and Resolve JWT fail test", (callback) => {
         const {issuerDidDocument, subjectDidDocument} = result;
         jwtOptions.issuer = issuerDidDocument;
         jwtOptions.subject = subjectDidDocument;
-        createVc("jwt", jwtOptions, (createJwtError, jwtInstance) => {
-            if (createJwtError) {
-                console.error(createJwtError);
-                throw createJwtError;
+        createVc("JWT", jwtOptions, (createJWTError, jwtInstance) => {
+            if (createJWTError) {
+                console.error(createJWTError);
+                throw createJWTError;
             }
 
             const jwt = jwtInstance.getJWT() + "_INVALID";
-            resolveVc("jwt", jwt, (resolveJwtError, resolvedJwtInstance) => {
-                assert.notNull(resolveJwtError);
-                assert.equal(resolveJwtError, JWT_ERRORS.INVALID_JWT_SIGNATURE);
+            verifyVc("JWT", jwt, (resolveJWTError, resolvedJWTInstance) => {
+                assert.notNull(resolveJWTError);
+                assert.equal(resolveJWTError, JWT_ERRORS.INVALID_JWT_SIGNATURE);
                 callback();
             });
         });

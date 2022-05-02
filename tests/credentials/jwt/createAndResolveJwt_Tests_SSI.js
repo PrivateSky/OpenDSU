@@ -8,7 +8,7 @@ const SSITypes = keySSIResolver.SSITypes;
 const openDSU = require("../../../index");
 const keySSISpace = openDSU.loadApi("keyssi");
 const credentials = openDSU.loadApi("credentials");
-const {createVc, resolveVc, jwt_parseJWTSegments, JWT_ERRORS} = credentials;
+const {createVc, verifyVc, jwt_parseJWTSegments, JWT_ERRORS} = credentials;
 
 const templateSeedSSI = keySSIFactory.createType(SSITypes.SEED_SSI);
 templateSeedSSI.load(SSITypes.SEED_SSI, "default");
@@ -45,14 +45,14 @@ assert.callback("[SSI] Create and Resolve JWT success test", (callback) => {
         const {issuerSeedSSI, subjectSeedSSI} = result;
         jwtOptions.issuer = issuerSeedSSI;
         jwtOptions.subject = subjectSeedSSI;
-        createVc("jwt", jwtOptions, (createJwtError, jwtInstance) => {
-            if (createJwtError) {
-                console.error(createJwtError);
-                throw createJwtError;
+        createVc("JWT", jwtOptions, (createJWTError, jwtInstance) => {
+            if (createJWTError) {
+                console.error(createJWTError);
+                throw createJWTError;
             }
 
             const jwt = jwtInstance.getJWT();
-            resolveVc("jwt", jwt, (err, resolvedJwtInstance) => {
+            verifyVc("JWT", jwt, (err, resolvedJWTInstance) => {
                 if (err) {
                     console.error(err);
                     throw err;
@@ -64,7 +64,7 @@ assert.callback("[SSI] Create and Resolve JWT success test", (callback) => {
                         throw err;
                     }
 
-                    const resolvedJWT = resolvedJwtInstance.getJWT();
+                    const resolvedJWT = resolvedJWTInstance.getJWT();
                     jwt_parseJWTSegments(resolvedJWT, (err, resolvedResult) => {
                         if (err) {
                             console.error(err);
@@ -96,16 +96,16 @@ assert.callback("[SSI] Create and Resolve JWT fail test", (callback) => {
         const {issuerSeedSSI, subjectSeedSSI} = result;
         jwtOptions.issuer = issuerSeedSSI;
         jwtOptions.subject = subjectSeedSSI;
-        createVc("jwt", jwtOptions, (createJwtError, jwtInstance) => {
-            if (createJwtError) {
-                console.error(createJwtError);
-                throw createJwtError;
+        createVc("JWT", jwtOptions, (createJWTError, jwtInstance) => {
+            if (createJWTError) {
+                console.error(createJWTError);
+                throw createJWTError;
             }
 
             const jwt = jwtInstance.getJWT() + "_INVALID";
-            resolveVc("jwt", jwt, (resolveJwtError, resolvedJwtInstance) => {
-                assert.notNull(resolveJwtError);
-                assert.equal(resolveJwtError, JWT_ERRORS.INVALID_JWT_SIGNATURE);
+            verifyVc("JWT", jwt, (resolveJWTError, resolvedJWTInstance) => {
+                assert.notNull(resolveJWTError);
+                assert.equal(resolveJWTError, JWT_ERRORS.INVALID_JWT_SIGNATURE);
                 callback();
             });
         });

@@ -11,7 +11,7 @@ const scAPI = openDSU.loadAPI("sc");
 const crypto = openDSU.loadApi("crypto");
 
 const credentials = openDSU.loadApi("credentials");
-const {createVc, resolveVc, JWT_ERRORS} = credentials;
+const {createVc, verifyVc, JWT_ERRORS} = credentials;
 
 const domain = "default";
 const jwtOptions = {
@@ -52,9 +52,9 @@ assert.callback("[DID] Invalid Issuer format test", (callback) => {
         const {issuerDidDocument, subjectDidDocument} = result;
         jwtOptions.issuer = "invalidIssuer:" + issuerDidDocument.getIdentifier();
         jwtOptions.subject = subjectDidDocument;
-        createVc("jwt", jwtOptions, (createJwtError, jwtInstance) => {
-            assert.notNull(createJwtError);
-            assert.equal(createJwtError, JWT_ERRORS.INVALID_ISSUER_FORMAT);
+        createVc("JWT", jwtOptions, (createJWTError, jwtInstance) => {
+            assert.notNull(createJWTError);
+            assert.equal(createJWTError, JWT_ERRORS.INVALID_ISSUER_FORMAT);
             callback();
         });
     });
@@ -70,9 +70,9 @@ assert.callback("[DID] Invalid Subject format test", (callback) => {
         const {issuerDidDocument, subjectDidDocument} = result;
         jwtOptions.issuer = issuerDidDocument.getIdentifier();
         jwtOptions.subject = "invalidIssuer:" + subjectDidDocument;
-        createVc("jwt", jwtOptions, (createJwtError, jwtInstance) => {
-            assert.notNull(createJwtError);
-            assert.equal(createJwtError, JWT_ERRORS.INVALID_SUBJECT_FORMAT);
+        createVc("JWT", jwtOptions, (createJWTError, jwtInstance) => {
+            assert.notNull(createJWTError);
+            assert.equal(createJWTError, JWT_ERRORS.INVALID_SUBJECT_FORMAT);
             callback();
         });
     });

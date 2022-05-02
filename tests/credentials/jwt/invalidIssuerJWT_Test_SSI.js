@@ -9,7 +9,7 @@ const openDSU = require("../../../index");
 const keySSISpace = openDSU.loadApi("keyssi");
 const credentials = openDSU.loadApi("credentials");
 const crypto = openDSU.loadApi("crypto");
-const {createVc, jwt_getReadableIdentity, jwt_parseJWTSegments, JWT_ERRORS} = credentials;
+const {createVc, JWT_ERRORS} = credentials;
 
 const templateSeedSSI = keySSIFactory.createType(SSITypes.SEED_SSI);
 templateSeedSSI.load(SSITypes.SEED_SSI, "default");
@@ -46,9 +46,9 @@ assert.callback("[SSI] Invalid Issuer format test", (callback) => {
         const {issuerSeedSSI, subjectSeedSSI} = result;
         jwtOptions.issuer = "invalidIssuer:" + issuerSeedSSI.getIdentifier(true);
         jwtOptions.subject = subjectSeedSSI;
-        createVc("jwt", jwtOptions, (createJwtError, jwtInstance) => {
-            assert.notNull(createJwtError);
-            assert.equal(createJwtError, JWT_ERRORS.INVALID_ISSUER_FORMAT);
+        createVc("JWT", jwtOptions, (createJWTError, jwtInstance) => {
+            assert.notNull(createJWTError);
+            assert.equal(createJWTError, JWT_ERRORS.INVALID_ISSUER_FORMAT);
             callback();
         });
     });
