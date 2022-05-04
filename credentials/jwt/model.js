@@ -209,19 +209,6 @@ function signUsingDID(issuer, dataToSign, callback) {
 }
 
 /**
- * @param header
- * @param payload
- * @param signature
- */
-function jwtEncoder(header, payload, signature) {
-    return [
-        encodeBase58(JSON.stringify(header)),
-        encodeBase58(JSON.stringify(payload)),
-        encodeBase58(JSON.stringify(signature))
-    ].join(".");
-}
-
-/**
  * This method returns the readable format of an SSI or a DID
  * @param identity {string | KeySSI | DIDDocument}
  */
@@ -412,6 +399,5 @@ module.exports = {
     jwtParser,
     getIssuerFormat,
     getSubjectFormat,
-    jwtEncoder,
     signJWT
 };

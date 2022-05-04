@@ -1,6 +1,6 @@
 const {JWT_ERRORS, IMMUTABLE_PUBLIC_CLAIMS} = require("./constants");
-const {dateTimeFormatter, isValidURL} = require("../utils");
-const {jwtBuilder, jwtParser, jwtEncoder, signJWT} = require("./model");
+const {dateTimeFormatter, isValidURL, encodeBase58} = require("../utils");
+const {jwtBuilder, jwtParser, signJWT} = require("./model");
 
 function JwtVC(issuer, subject, options, isInitialisation = false) {
 
@@ -13,7 +13,11 @@ function JwtVC(issuer, subject, options, isInitialisation = false) {
                 return callback(err);
             }
 
-            const encodedJWT = jwtEncoder(this.jwtHeader, this.jwtPayload, jwtSignature);
+            const encodedJWT = [
+                encodeBase58(JSON.stringify(this.jwtHeader)),
+                encodeBase58(JSON.stringify(this.jwtPayload)),
+                jwtSignature
+            ].join(".");
             callback(undefined, encodedJWT);
         });
     };
