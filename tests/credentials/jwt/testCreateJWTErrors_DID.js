@@ -11,12 +11,9 @@ const scAPI = openDSU.loadAPI("sc");
 const crypto = openDSU.loadApi("crypto");
 
 const credentials = openDSU.loadApi("credentials");
-const {createVc, verifyVc, JWT_ERRORS} = credentials;
+const {createVc, JWT_ERRORS} = credentials;
 
 const domain = "default";
-const jwtOptions = {
-    exp: 1678812494957
-};
 
 function launchApiHubAndCreateDIDs(callback) {
     dc.createTestFolder("JWT", async (err, folder) => {
@@ -42,27 +39,35 @@ function launchApiHubAndCreateDIDs(callback) {
     });
 }
 
-assert.callback("[DID] Create and Resolve JWT fail test", (callback) => {
+assert.callback("[DID] Test create JWT verifiable credential errors", (callback) => {
     launchApiHubAndCreateDIDs((err, result) => {
         if (err) {
-            console.error(err);
             throw err;
         }
 
+        const jwtOptions = {exp: 1678812494957};
         const {issuerDidDocument, subjectDidDocument} = result;
-        jwtOptions.issuer = issuerDidDocument;
-        jwtOptions.subject = subjectDidDocument;
-        createVc("JWT", jwtOptions, (createJWTError, jwtInstance) => {
-            if (createJWTError) {
-                console.error(createJWTError);
-                throw createJWTError;
-            }
+        const issuer = issuerDidDocument.getIdentifier();
+        const subject = subjectDidDocument.getIdentifier();
+        createVc("JWT", null, subject, jwtOptions, (invalidIssuerFormatError) => {
+            assert.notNull(invalidIssuerFormatError);
+            assert.equal(invalidIssuerFormatError, JWT_ERRORS.INVALID_ISSUER_FORMAT);
 
-            const jwt = jwtInstance.getJWT() + "_INVALID";
-            verifyVc("JWT", jwt, (resolveJWTError, resolvedJWTInstance) => {
-                assert.notNull(resolveJWTError);
-                assert.equal(resolveJWTError, JWT_ERRORS.INVALID_JWT_SIGNATURE);
-                callback();
+            createVc("JWT", "invalidIssuer" + issuer, subject, jwtOptions, (invalidIssuerFormatError) => {
+                assert.notNull(invalidIssuerFormatError);
+                assert.equal(invalidIssuerFormatError, JWT_ERRORS.INVALID_ISSUER_FORMAT);
+
+                createVc("JWT", issuer, null, jwtOptions, (invalidSubjectFormatError) => {
+                    assert.notNull(invalidSubjectFormatError);
+                    assert.equal(invalidSubjectFormatError, JWT_ERRORS.INVALID_SUBJECT_FORMAT);
+
+                    createVc("JWT", issuer, "invalidSubject" + subject, jwtOptions, (invalidSubjectFormatError) => {
+                        assert.notNull(invalidSubjectFormatError);
+                        assert.equal(invalidSubjectFormatError, JWT_ERRORS.INVALID_SUBJECT_FORMAT);
+
+                        callback();
+                    });
+                });
             });
         });
     });

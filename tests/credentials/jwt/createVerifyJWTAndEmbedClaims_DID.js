@@ -42,67 +42,53 @@ function launchApiHubAndCreateDIDs(callback) {
 assert.callback("[DID] Create JWT, embed public and subject claims and verify JWT success test", (callback) => {
     launchApiHubAndCreateDIDs((err, result) => {
         if (err) {
-            console.error(err);
             throw err;
         }
 
-        const jwtOptions = {
-            exp: 1678812494957
-        };
+        const jwtOptions = {exp: 1678812494957};
         const {issuerDidDocument, subjectDidDocument} = result;
-        jwtOptions.issuer = issuerDidDocument;
-        jwtOptions.subject = subjectDidDocument;
-        createVc("JWT", jwtOptions, (createJWTError, jwtInstance) => {
+        createVc("JWT", issuerDidDocument, subjectDidDocument, jwtOptions, (createJWTError, jwtInstance) => {
             if (createJWTError) {
-                console.error(createJWTError);
                 throw createJWTError;
             }
 
-            jwtInstance.extendExpirationDate(6000, (embedClaimError, embedResult) => {
+            jwtInstance.extendExpirationDate(6000, (embedClaimError, extendExpirationDateResult) => {
                 if (embedClaimError) {
-                    console.error(embedClaimError);
                     throw embedClaimError;
                 }
 
-                assert.true(embedResult);
-
-                jwtInstance.embedClaim({nbf: Date.now()}, (embedClaimError, embedResult) => {
+                jwtInstance.embedClaim("nbf", Date.now(), (embedClaimError, embedExistingPublicClaimResult) => {
                     if (embedClaimError) {
-                        console.error(embedClaimError);
                         throw embedClaimError;
                     }
 
-                    assert.true(embedResult);
-
-                    jwtInstance.embedClaim({publicClaim: "test"}, (embedClaimError, embedResult) => {
+                    jwtInstance.embedClaim("publicClaim", "test", (embedClaimError, embedNewPublicClaimResult) => {
                         if (embedClaimError) {
-                            console.error(embedClaimError);
                             throw embedClaimError;
                         }
 
-                        assert.true(embedResult);
-
-                        jwtInstance.embedCredentialSubjectClaim({
-                            context: "https://some.uri.test",
-                            type: "TestSubjectClaim",
-                            claims: {test: "test"}
-                        }, (embedClaimError, embedResult) => {
+                        jwtInstance.embedCredentialSubjectClaim("https://some.uri.test", "TestSubjectClaim", {test: "test"}, (embedClaimError, embedCredentialSubjectClaimResult) => {
                             if (embedClaimError) {
-                                console.error(embedClaimError);
                                 throw embedClaimError;
                             }
 
-                            assert.true(embedResult);
-
-                            const jwt = jwtInstance.getJWT();
-                            verifyVc("JWT", jwt, (err, resolvedJWTInstance) => {
+                            jwtInstance.getEncodedJWT((err, encodedJWT) => {
                                 if (err) {
-                                    console.error(err);
                                     throw err;
                                 }
 
-                                assert.notNull(resolvedJWTInstance);
-                                callback();
+                                verifyVc("JWT", encodedJWT, (err, verifiedJWTInstance) => {
+                                    if (err) {
+                                        throw err;
+                                    }
+
+                                    assert.notNull(verifiedJWTInstance);
+                                    assert.true(extendExpirationDateResult);
+                                    assert.true(embedExistingPublicClaimResult);
+                                    assert.true(embedNewPublicClaimResult);
+                                    assert.true(embedCredentialSubjectClaimResult);
+                                    callback();
+                                });
                             });
                         });
                     });

@@ -14,9 +14,6 @@ const credentials = openDSU.loadApi("credentials");
 const {createVc, verifyVc, JWT_ERRORS} = credentials;
 
 const domain = "default";
-const jwtOptions = {
-    exp: 1678812494957
-};
 
 function launchApiHubAndCreateDIDs(callback) {
     dc.createTestFolder("JWT", async (err, folder) => {
@@ -42,38 +39,47 @@ function launchApiHubAndCreateDIDs(callback) {
     });
 }
 
-assert.callback("[DID] Invalid Issuer format test", (callback) => {
+assert.callback("[DID] Test verify JWT verifiable credential errors", (callback) => {
     launchApiHubAndCreateDIDs((err, result) => {
         if (err) {
-            console.error(err);
             throw err;
         }
 
+        const jwtOptions = {exp: 1678812494957};
         const {issuerDidDocument, subjectDidDocument} = result;
-        jwtOptions.issuer = "invalidIssuer:" + issuerDidDocument.getIdentifier();
-        jwtOptions.subject = subjectDidDocument;
-        createVc("JWT", jwtOptions, (createJWTError, jwtInstance) => {
-            assert.notNull(createJWTError);
-            assert.equal(createJWTError, JWT_ERRORS.INVALID_ISSUER_FORMAT);
-            callback();
-        });
-    });
-}, 100000);
+        createVc("JWT", issuerDidDocument, subjectDidDocument, jwtOptions, (createJWTError, jwtInstance) => {
+            if (createJWTError) {
+                throw createJWTError;
+            }
 
-assert.callback("[DID] Invalid Subject format test", (callback) => {
-    launchApiHubAndCreateDIDs((err, result) => {
-        if (err) {
-            console.error(err);
-            throw err;
-        }
+            jwtInstance.getEncodedJWT((err, encodedJWT) => {
+                if (err) {
+                    throw err;
+                }
 
-        const {issuerDidDocument, subjectDidDocument} = result;
-        jwtOptions.issuer = issuerDidDocument.getIdentifier();
-        jwtOptions.subject = "invalidIssuer:" + subjectDidDocument;
-        createVc("JWT", jwtOptions, (createJWTError, jwtInstance) => {
-            assert.notNull(createJWTError);
-            assert.equal(createJWTError, JWT_ERRORS.INVALID_SUBJECT_FORMAT);
-            callback();
+                const invalidJWTSignature = encodedJWT + "_invalidSignature";
+                verifyVc("JWT", invalidJWTSignature, (invalidSignatureError) => {
+                    assert.notNull(invalidSignatureError);
+                    assert.equal(invalidSignatureError, JWT_ERRORS.INVALID_JWT_SIGNATURE);
+
+                    verifyVc("JWT", null, (emptyJWTError) => {
+                        assert.notNull(emptyJWTError);
+                        assert.equal(emptyJWTError, JWT_ERRORS.EMPTY_JWT_PROVIDED);
+
+                        verifyVc("JWT", {invalidJWTFormat: true}, (emptyJWTError) => {
+                            assert.notNull(emptyJWTError);
+                            assert.equal(emptyJWTError, JWT_ERRORS.INVALID_JWT_FORMAT);
+
+                            verifyVc("JWT", "invalidJWTFormat", (emptyJWTError) => {
+                                assert.notNull(emptyJWTError);
+                                assert.equal(emptyJWTError, JWT_ERRORS.INVALID_JWT_FORMAT);
+
+                                callback();
+                            });
+                        });
+                    });
+                });
+            });
         });
     });
 }, 100000);
