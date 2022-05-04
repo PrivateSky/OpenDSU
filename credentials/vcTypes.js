@@ -1,14 +1,14 @@
 function JWTVcType() {
     const {createJWT, verifyJWT} = require("./jwt");
 
-    this.create = (options, callback) => {
-        const jwtInstance = createJWT(options);
+    this.create = (issuer, subject, options, callback) => {
+        const jwtInstance = createJWT(issuer, subject, options);
 
-        jwtInstance.on("error", (err) => {
-            callback(err);
-        });
+        jwtInstance.onInstanceReady((err) => {
+            if (err) {
+                return callback(err);
+            }
 
-        jwtInstance.on("initialised", () => {
             callback(undefined, jwtInstance);
         });
     };
@@ -16,11 +16,11 @@ function JWTVcType() {
     this.verify = (encodedJWT, callback) => {
         const jwtInstance = verifyJWT(encodedJWT);
 
-        jwtInstance.on("error", (err) => {
-            callback(err);
-        });
+        jwtInstance.onInstanceReady((err) => {
+            if (err) {
+                return callback(err);
+            }
 
-        jwtInstance.on("initialised", () => {
             callback(undefined, jwtInstance);
         });
     };
@@ -29,7 +29,7 @@ function JWTVcType() {
 function PresentationType() {
     const {} = require("./presentations");
 
-    this.create = (options, callback) => {
+    this.create = (issuer, subject, options, callback) => {
         console.log("Not implemented!");
         const instance = {}; // Create presentation
 

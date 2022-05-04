@@ -108,12 +108,13 @@ function getSubjectFormat(subject) {
 
 /**
  * This method creates the first signed JWT during a JWT instance initialisation
+ * @param issuer
+ * @param subject
  * @param options
  * @param callback
  */
-function jwtBuilder(options, callback) {
+function jwtBuilder(issuer, subject, options, callback) {
     options = Object.assign({}, getDefaultJWTOptions(), options);
-    let issuer = options.issuer, subject = options.subject;
     issuer = getReadableIdentity(issuer);
     subject = getReadableIdentity(subject);
 
@@ -132,30 +133,21 @@ function jwtBuilder(options, callback) {
     const jwtHeader = getRequiredJWTHeader(options);
     const jwtPayload = getRequiredJWTPayloadModel(options);
 
-    const encodedJWTHeaderAndBody = [
-        encodeBase58(JSON.stringify(jwtHeader)),
-        encodeBase58(JSON.stringify(jwtPayload))
-    ].join(".");
-
-    signJWT(options.iss, encodedJWTHeaderAndBody, (err, signature) => {
-        if (err) {
-            return callback(err);
-        }
-
-        const encodedJWT = [encodedJWTHeaderAndBody, signature].join(".");
-        callback(undefined, encodedJWT);
-    });
+    callback(undefined, {jwtHeader, jwtPayload});
 }
 
 /**
  * This method is signing the encoded header and payload of a JWT and returns the full signed JWT (header.payload.signature)
  * The JWT will be signed according to the type of the issuer (KeySSI, DID)
- * @param issuer
- * @param dataToSign
+ * @param jwtHeader
+ * @param jwtPayload
  * @param callback {Function}
  */
-function signJWT(issuer, dataToSign, callback) {
+function signJWT(jwtHeader, jwtPayload, callback) {
+    const issuer = jwtPayload.iss;
     const issuerType = getIssuerFormat(issuer);
+    const dataToSign = [encodeBase58(JSON.stringify(jwtHeader)), encodeBase58(JSON.stringify(jwtPayload))].join(".");
+
     switch (issuerType) {
         case JWT_LABELS.ISSUER_SSI: {
             return signUsingSSI(issuer, dataToSign, callback);
@@ -234,6 +226,8 @@ function jwtEncoder(header, payload, signature) {
  * @param identity {string | KeySSI | DIDDocument}
  */
 function getReadableIdentity(identity) {
+    if (!identity) return null;
+
     if (typeof identity === "string" && (identity.indexOf("ssi") === 0 || identity.indexOf("did") === 0)) {
         // ssi/did is actually the readable ssi/did
         return identity;
@@ -316,7 +310,12 @@ function jwtParser(encodedJWT, callback) {
         if (isJWTNotActive(jwtPayload)) return callback(JWT_ERRORS.JWT_TOKEN_NOT_ACTIVE);
         if (!jwtPayload.vc) return callback(JWT_ERRORS.INVALID_JWT_PAYLOAD);
 
-        verifyJWT(jwtPayload.iss, jwtSignature, encodedJWTHeaderAndBody, callback);
+        verifyJWT(jwtPayload.iss, jwtSignature, encodedJWTHeaderAndBody, (err, verifyResult) => {
+            if (err) return callback(err);
+            if (!verifyResult) return callback(JWT_ERRORS.INVALID_JWT_SIGNATURE);
+
+            callback(undefined, {jwtHeader, jwtPayload});
+        });
     });
 }
 
@@ -381,8 +380,8 @@ function verifyUsingDID(issuer, signature, signedData, callback) {
 
         const hashResult = crypto.sha256(signedData);
         didDocument.verify(hashResult, signature, (verifyError, verifyResult) => {
-            if (verifyError || !verifyError) {
-                return callback(JWT_ERRORS.INVALID_JWT_SIGNATURE);
+            if (verifyError) {
+                return callback(verifyError);
             }
 
             callback(null, verifyResult);
@@ -396,7 +395,7 @@ function verifyUsingDID(issuer, signature, signedData, callback) {
  * @returns {boolean}
  */
 function isJWTExpired(payload) {
-    return new Date(payload.exp * 1000) < new Date();
+    return new Date(payload.exp) < new Date();
 }
 
 /**
@@ -405,7 +404,7 @@ function isJWTExpired(payload) {
  * @returns {boolean}
  */
 function isJWTNotActive(payload) {
-    return new Date(payload.nbf * 1000) >= new Date();
+    return new Date(payload.nbf) >= new Date();
 }
 
 module.exports = {
@@ -414,6 +413,5 @@ module.exports = {
     getIssuerFormat,
     getSubjectFormat,
     jwtEncoder,
-    getReadableIdentity,
-    parseJWTSegments
+    signJWT
 };
