@@ -84,7 +84,11 @@ function MappingEngine(storageService, options) {
       const mappingFnc = await getMappingFunction(message);
       if (mappingFnc) {
         const instance = buildMappingInstance();
-        await mappingFnc.call(instance, message);
+        try {
+          await mappingFnc.call(instance, message);
+        } catch (err) {
+          reject(err);
+        }
         return resolve({registeredDSUs: instance.registeredDSUs});
       } else {
         let messageString = JSON.stringify(message);
