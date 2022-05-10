@@ -141,27 +141,36 @@ function MappingEngine(storageService, options) {
         let commitPromisses = [];
         let mappingsInstances = [];
 
+        let failedMessages = [];
+
+        function handleErrorsDuringPromiseResolving(err) {
+          reject(err);
+        }
+
         for (let i = 0; i < messages.length; i++) {
           let message = messages[i];
           if (typeof message !== "object") {
             throw errMap.newCustomError(errMap.errorTypes.MESSAGE_IS_NOT_AN_OBJECT, [{detailsMessage: `Found type: ${typeof message} expected type object`}])
           }
 
-          function handleErrorsDuringPromiseResolving(err) {
-            reject(err);
-          }
 
           try {
             let mappingInstance = await executeMappingFor(message);
             mappingsInstances.push(mappingInstance);
           } catch (err) {
             errorHandler.reportUserRelevantError("Caught error during message digest", err);
-            reject(err);
+            failedMessages.push({
+              message: message,
+              reason: err.message,
+              error: err
+            })
           }
+
         }
 
+
         function digestConfirmation(results) {
-          let failedMessages = [];
+
           for (let index = 0; index < results.length; index++) {
             let result = results[index];
             switch (result.status) {
