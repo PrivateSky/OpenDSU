@@ -87,14 +87,14 @@ function MappingEngine(storageService, options) {
         try {
           await mappingFnc.call(instance, message);
         } catch (err) {
-          reject(err);
+          return reject(err);
         }
         return resolve({registeredDSUs: instance.registeredDSUs});
       } else {
         let messageString = JSON.stringify(message);
         const maxDisplayLength = 1024;
         console.log(`Unable to find a suitable mapping to handle the following message: ${messageString.length < maxDisplayLength ? messageString : messageString.slice(0, maxDisplayLength) + "..."}`);
-        reject(errMap.newCustomError(errMap.errorTypes.MISSING_MAPPING, [{
+        return reject(errMap.newCustomError(errMap.errorTypes.MISSING_MAPPING, [{
           field: "messageType",
           message: `Couldn't find any mapping for ${message.messageType}`
         }]));
@@ -156,6 +156,7 @@ function MappingEngine(storageService, options) {
             mappingsInstances.push(mappingInstance);
           } catch (err) {
             errorHandler.reportUserRelevantError("Caught error during message digest", err);
+            reject(err);
           }
         }
 
