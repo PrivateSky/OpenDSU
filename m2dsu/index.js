@@ -87,14 +87,14 @@ function MappingEngine(storageService, options) {
         try {
           await mappingFnc.call(instance, message);
         } catch (err) {
-          reject(err);
+          return reject(err);
         }
         return resolve({registeredDSUs: instance.registeredDSUs});
       } else {
         let messageString = JSON.stringify(message);
         const maxDisplayLength = 1024;
         console.log(`Unable to find a suitable mapping to handle the following message: ${messageString.length < maxDisplayLength ? messageString : messageString.slice(0, maxDisplayLength) + "..."}`);
-        reject(errMap.newCustomError(errMap.errorTypes.MISSING_MAPPING, [{
+        return reject(errMap.newCustomError(errMap.errorTypes.MISSING_MAPPING, [{
           field: "messageType",
           message: `Couldn't find any mapping for ${message.messageType}`
         }]));
@@ -141,26 +141,36 @@ function MappingEngine(storageService, options) {
         let commitPromisses = [];
         let mappingsInstances = [];
 
+        let failedMessages = [];
+
+        function handleErrorsDuringPromiseResolving(err) {
+          reject(err);
+        }
+
         for (let i = 0; i < messages.length; i++) {
           let message = messages[i];
           if (typeof message !== "object") {
             throw errMap.newCustomError(errMap.errorTypes.MESSAGE_IS_NOT_AN_OBJECT, [{detailsMessage: `Found type: ${typeof message} expected type object`}])
           }
 
-          function handleErrorsDuringPromiseResolving(err) {
-            reject(err);
-          }
 
           try {
             let mappingInstance = await executeMappingFor(message);
             mappingsInstances.push(mappingInstance);
           } catch (err) {
             errorHandler.reportUserRelevantError("Caught error during message digest", err);
+            failedMessages.push({
+              message: message,
+              reason: err.message,
+              error: err
+            })
           }
+
         }
 
+
         function digestConfirmation(results) {
-          let failedMessages = [];
+
           for (let index = 0; index < results.length; index++) {
             let result = results[index];
             switch (result.status) {
