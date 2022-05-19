@@ -73,7 +73,7 @@ function JwtVC(issuer, subject, options, isInitialisation = false) {
      * @param subject {string | Function} - It is mandatory if the credentialSubjects are more than one.
      * @param callback
      */
-    this.embedCredentialSubjectClaim = (context, type, subjectClaims, subject, callback) => {
+    this.embedSubjectClaim = (context, type, subjectClaims, subject, callback) => {
         if (typeof subject === "function") {
             callback = subject;
             subject = null;
@@ -147,7 +147,7 @@ function createJWT(issuer, subject, options) {
  * This method is parsing an encoded verifiable credential according to the requested type and returns the instance of the verifiable credential. <br />
  * @param encodedJWT {string}
  */
-function verifyJWT(encodedJWT) {
+function verifyJWT(encodedJWT, atDate, revocationStatus) {
     const jwtInstance = new JwtVC();
     jwtInstance.setEncodedJWT(encodedJWT);
 

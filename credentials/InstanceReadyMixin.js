@@ -5,7 +5,9 @@ function InstanceReadyMixin(target) {
 
     target.onInstanceReady = (callback) => {
         if (target.isInstanceReady) {
-            return callback(...target.args);
+            callback(...target.args);
+            target.args = null;
+            return;
         }
 
         target.instanceReadyCallback = callback;
@@ -15,6 +17,8 @@ function InstanceReadyMixin(target) {
         target.isInstanceReady = true;
         if (typeof target.instanceReadyCallback === "function") {
             target.instanceReadyCallback(...args);
+            target.isInstanceReady = false;
+            target.instanceReadyCallback = null;
         } else {
             target.args = [...args];
         }

@@ -61,7 +61,7 @@ assert.callback("[DID] Create JWT, embed public and subject claims and verify JW
                             throw embedClaimError;
                         }
 
-                        jwtInstance.embedCredentialSubjectClaim("https://some.uri.test", "TestSubjectClaim", {test: "test"}, (embedClaimError, embedCredentialSubjectClaimResult) => {
+                        jwtInstance.embedSubjectClaim("https://some.uri.test", "TestSubjectClaim", {test: "test"}, (embedClaimError, embedSubjectClaimResult) => {
                             if (embedClaimError) {
                                 throw embedClaimError;
                             }
@@ -80,7 +80,7 @@ assert.callback("[DID] Create JWT, embed public and subject claims and verify JW
                                     assert.true(extendExpirationDateResult);
                                     assert.true(embedExistingPublicClaimResult);
                                     assert.true(embedNewPublicClaimResult);
-                                    assert.true(embedCredentialSubjectClaimResult);
+                                    assert.true(embedSubjectClaimResult);
                                     callback();
                                 });
                             });

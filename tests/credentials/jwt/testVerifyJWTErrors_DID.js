@@ -82,4 +82,4 @@ assert.callback("[DID] Test verify JWT verifiable credential errors", (callback)
             });
         });
     });
-}, 100000);
+}, 1000);

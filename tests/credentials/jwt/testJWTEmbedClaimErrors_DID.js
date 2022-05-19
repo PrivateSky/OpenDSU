@@ -64,19 +64,19 @@ assert.callback("[DID] Test JWT Embed public and subject claims errors", (callba
                         assert.notNull(embedClaimError);
                         assert.equal(embedClaimError, JWT_ERRORS.INVALID_PUBLIC_CLAIM);
 
-                        jwtInstance.embedCredentialSubjectClaim("invalidContextURI", "TestSubjectClaim", {test: "test"}, (embedClaimError) => {
+                        jwtInstance.embedSubjectClaim("invalidContextURI", "TestSubjectClaim", {test: "test"}, (embedClaimError) => {
                             assert.notNull(embedClaimError);
                             assert.equal(embedClaimError, JWT_ERRORS.INVALID_CONTEXT_URI);
 
-                            jwtInstance.embedCredentialSubjectClaim("https://some.uri.test", {invalidContextType: true}, {test: "test"}, (embedClaimError) => {
+                            jwtInstance.embedSubjectClaim("https://some.uri.test", {invalidContextType: true}, {test: "test"}, (embedClaimError) => {
                                 assert.notNull(embedClaimError);
                                 assert.equal(embedClaimError, JWT_ERRORS.INVALID_CONTEXT_TYPE);
 
-                                jwtInstance.embedCredentialSubjectClaim("https://some.uri.test", "TestSubjectClaim", "INVALID_SUBJECT_CLAIM", (embedClaimError) => {
+                                jwtInstance.embedSubjectClaim("https://some.uri.test", "TestSubjectClaim", "INVALID_SUBJECT_CLAIM", (embedClaimError) => {
                                     assert.notNull(embedClaimError);
                                     assert.equal(embedClaimError, JWT_ERRORS.INVALID_SUBJECT_CLAIM);
 
-                                    jwtInstance.embedCredentialSubjectClaim("https://some.uri.test", "TestSubjectClaim", {id: issuerDidDocument}, (embedClaimError) => {
+                                    jwtInstance.embedSubjectClaim("https://some.uri.test", "TestSubjectClaim", {id: issuerDidDocument}, (embedClaimError) => {
                                         assert.notNull(embedClaimError);
                                         assert.equal(embedClaimError, JWT_ERRORS.IMMUTABLE_SUBJECT_CLAIM);
 
@@ -90,4 +90,4 @@ assert.callback("[DID] Test JWT Embed public and subject claims errors", (callba
             });
         });
     });
-}, 100000);
+}, 1000);
