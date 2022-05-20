@@ -1,22 +1,19 @@
-const keySSIResolver = require("key-ssi-resolver");
-const cryptoRegistry = keySSIResolver.CryptoAlgorithmsRegistry;
-const SSITypes = keySSIResolver.SSITypes;
-const keySSIFactory = keySSIResolver.KeySSIFactory;
-
-const templateSeedSSI = keySSIFactory.createType(SSITypes.SEED_SSI);
-templateSeedSSI.load(SSITypes.SEED_SSI, "default");
-
-function encodeBase58(data) {
-    return cryptoRegistry.getEncodingFunction(templateSeedSSI)(data).toString();
+function base64UrlEncode(source) {
+    const buffer = $$.Buffer.from(source, 'utf-8');
+    const base64EncodedString = buffer.toString('base64');
+    console.log(base64EncodedString);
+    return base64EncodedString;
 }
 
-function decodeBase58(data, keepBuffer) {
-    const decodedValue = cryptoRegistry.getDecodingFunction(templateSeedSSI)(data);
-    if (keepBuffer) {
-        return decodedValue;
+function base64UrlDecode(source, keepAsBuffer = false) {
+    const buffer = $$.Buffer.from(source, 'base64');
+    if (keepAsBuffer) {
+        return buffer;
     }
 
-    return decodedValue ? decodedValue.toString() : null;
+    const base64decodedString = buffer.toString('utf-8');
+    console.log(base64decodedString);
+    return base64decodedString;
 }
 
 function dateTimeFormatter(timestamp) {
@@ -38,8 +35,8 @@ function isValidURL(str) {
 }
 
 module.exports = {
-    encodeBase58,
-    decodeBase58,
+    base64UrlEncode,
+    base64UrlDecode,
 
     dateTimeFormatter,
     isValidURL

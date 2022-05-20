@@ -1,5 +1,5 @@
 const {JWT_ERRORS, IMMUTABLE_PUBLIC_CLAIMS} = require("./constants");
-const {dateTimeFormatter, isValidURL, encodeBase58} = require("../utils");
+const {dateTimeFormatter, isValidURL, base64UrlEncode} = require("../utils");
 const {jwtBuilder, jwtParser, signJWT} = require("./model");
 
 function JwtVC(issuer, subject, options, isInitialisation = false) {
@@ -14,8 +14,8 @@ function JwtVC(issuer, subject, options, isInitialisation = false) {
             }
 
             const encodedJWT = [
-                encodeBase58(JSON.stringify(this.jwtHeader)),
-                encodeBase58(JSON.stringify(this.jwtPayload)),
+                base64UrlEncode(JSON.stringify(this.jwtHeader)),
+                base64UrlEncode(JSON.stringify(this.jwtPayload)),
                 jwtSignature
             ].join(".");
             callback(undefined, encodedJWT);

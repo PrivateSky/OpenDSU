@@ -6,7 +6,7 @@ const keySSIResolver = require("key-ssi-resolver");
 const cryptoRegistry = keySSIResolver.CryptoAlgorithmsRegistry;
 
 const {JWT_DEFAULTS, JWT_LABELS, JWT_ERRORS, getDefaultJWTOptions} = require("./constants");
-const {dateTimeFormatter, encodeBase58, decodeBase58} = require("../utils");
+const {dateTimeFormatter, base64UrlEncode, base64UrlDecode} = require("../utils");
 
 /**
  * This method creates the header of a JWT according to the W3c Standard
@@ -146,7 +146,7 @@ function jwtBuilder(issuer, subject, options, callback) {
 function signJWT(jwtHeader, jwtPayload, callback) {
     const issuer = jwtPayload.iss;
     const issuerType = getIssuerFormat(issuer);
-    const dataToSign = [encodeBase58(JSON.stringify(jwtHeader)), encodeBase58(JSON.stringify(jwtPayload))].join(".");
+    const dataToSign = [base64UrlEncode(JSON.stringify(jwtHeader)), base64UrlEncode(JSON.stringify(jwtPayload))].join(".");
 
     switch (issuerType) {
         case JWT_LABELS.ISSUER_SSI: {
@@ -180,7 +180,7 @@ function signUsingSSI(issuer, dataToSign, callback) {
         const hashFn = cryptoRegistry.getCryptoFunction(issuerKeySSI, "hash");
         const hashResult = hashFn(dataToSign);
         const signResult = sign(hashResult, issuerKeySSI.getPrivateKey());
-        const encodedSignResult = encodeBase58(signResult);
+        const encodedSignResult = base64UrlEncode(signResult);
         callback(undefined, encodedSignResult);
     } catch (e) {
         return callback(e);
@@ -202,7 +202,7 @@ function signUsingDID(issuer, dataToSign, callback) {
         const hashResult = crypto.sha256(dataToSign);
         didDocument.sign(hashResult, (signError, signResult) => {
             if (signError || !signResult) return callback(signError);
-            const encodedSignResult = encodeBase58(signResult);
+            const encodedSignResult = base64UrlEncode(signResult);
             callback(undefined, encodedSignResult);
         });
     });
@@ -225,7 +225,7 @@ function getReadableIdentity(identity) {
         return identity;
     }
 
-    let readableSSI = decodeBase58(identity);
+    let readableSSI = base64UrlDecode(identity);
     if (!readableSSI) {
         // invalid base58 string
         return null;
@@ -246,7 +246,7 @@ function getReadableIdentity(identity) {
  */
 function safeParseEncodedJson(data, keepBuffer = false) {
     try {
-        return JSON.parse(decodeBase58(data, keepBuffer));
+        return JSON.parse(base64UrlDecode(data, keepBuffer));
     } catch (e) {
         return e;
     }
@@ -271,7 +271,7 @@ function parseJWTSegments(jwt, callback) {
     if (jwtPayload instanceof Error || !jwtPayload) return callback(JWT_ERRORS.INVALID_JWT_PAYLOAD);
 
     const encodedJWTHeaderAndBody = `${segments[0]}.${segments[1]}`;
-    const jwtSignature = decodeBase58(segments[2], true);
+    const jwtSignature = base64UrlDecode(segments[2], true);
     if (!jwtSignature) {
         return callback(JWT_ERRORS.INVALID_JWT_SIGNATURE);
     }
@@ -397,7 +397,5 @@ function isJWTNotActive(payload) {
 module.exports = {
     jwtBuilder,
     jwtParser,
-    getIssuerFormat,
-    getSubjectFormat,
     signJWT
 };
