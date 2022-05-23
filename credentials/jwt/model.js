@@ -6,7 +6,7 @@ const keySSIResolver = require("key-ssi-resolver");
 const cryptoRegistry = keySSIResolver.CryptoAlgorithmsRegistry;
 
 const {JWT_DEFAULTS, JWT_LABELS, JWT_ERRORS, getDefaultJWTOptions} = require("./constants");
-const {dateTimeFormatter, base64UrlEncode, base64UrlDecode} = require("../utils");
+const {dateTimeFormatter, base64UrlEncode, base64UrlDecode, base58Decode} = require("../utils");
 
 /**
  * This method creates the header of a JWT according to the W3c Standard
@@ -225,7 +225,7 @@ function getReadableIdentity(identity) {
         return identity;
     }
 
-    let readableSSI = base64UrlDecode(identity);
+    let readableSSI = base58Decode(identity);
     if (!readableSSI) {
         // invalid base58 string
         return null;
