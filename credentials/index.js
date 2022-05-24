@@ -1,33 +1,49 @@
-const jwt = require("./jwt");
-const vcTypes = require("./vcTypes");
-let vcTypeRegistry = {};
+const proofTypes = require("./proofTypes");
+let proofTypesRegistry = {};
 
-function createVc(type, issuer, subject, options, callback) {
-    if (!vcTypeRegistry[type]) {
-        return callback(vcTypes.UNKNOWN_VERIFIABLE_CREDENTIAL_TYPE);
+function createVerifiableCredential(proofType, issuer, subject, options, callback) {
+    if (!proofTypesRegistry[proofType]) {
+        return callback(proofTypes.UNKNOWN_VERIFIABLE_CREDENTIAL_TYPE);
     }
 
-    vcTypeRegistry[type].create(issuer, subject, options, callback);
+    proofTypesRegistry[proofType].createVerifiableCredential(issuer, subject, options, callback);
 }
 
-function verifyVc(type, encodedVc, callback) {
-    if (!vcTypeRegistry[type]) {
-        return callback(vcTypes.UNKNOWN_VERIFIABLE_CREDENTIAL_TYPE);
+function verifyCredential(proofType, encodedVc, callback) {
+    if (!proofTypesRegistry[proofType]) {
+        return callback(proofTypes.UNKNOWN_VERIFIABLE_CREDENTIAL_TYPE);
     }
 
-    vcTypeRegistry[type].verify(encodedVc, callback);
+    proofTypesRegistry[proofType].verifyCredential(encodedVc, callback);
 }
 
-function registerCredentialTypes(method, implementation) {
-    vcTypeRegistry[method] = implementation;
+function createVerifiablePresentation(proofType, issuer, encodedVc, options, callback) {
+    if (!proofTypesRegistry[proofType]) {
+        return callback(proofTypes.UNKNOWN_VERIFIABLE_CREDENTIAL_TYPE);
+    }
+
+    proofTypesRegistry[proofType].createVerifiablePresentation(issuer, encodedVc, options, callback);
 }
 
-registerCredentialTypes(vcTypes.JWT, vcTypes.createJWTVcType());
-registerCredentialTypes(vcTypes.PRESENTATION, vcTypes.createPresentationType());
+function verifyPresentation(proofType, encodedVp, callback) {
+    if (!proofTypesRegistry[proofType]) {
+        return callback(proofTypes.UNKNOWN_VERIFIABLE_CREDENTIAL_TYPE);
+    }
+
+    proofTypesRegistry[proofType].verifyPresentation(encodedVp, callback);
+}
+
+function registerCredentialEncodingTypes(method, implementation) {
+    proofTypesRegistry[method] = implementation;
+}
+
+registerCredentialEncodingTypes(proofTypes.JWT, proofTypes.createJWTProofType());
 
 module.exports = {
-    createVc,
-    verifyVc,
+    createVerifiableCredential,
+    verifyCredential,
+    createVerifiablePresentation,
+    verifyPresentation,
 
-    JWT_ERRORS: jwt.JWT_ERRORS
+    JWT_ERRORS: require("./jwt/constants").JWT_ERRORS
 };

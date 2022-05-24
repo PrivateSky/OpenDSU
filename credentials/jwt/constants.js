@@ -21,10 +21,11 @@ const JWT_ERRORS = {
 const JWT_DEFAULTS = {
     ALG: "ES256",
     TYP: "JWT",
-    VC_CONTEXT_CREDENTIALS: "https://www.w3.org/2018/credentials/v1",
+    VC_VP_CONTEXT_CREDENTIALS: "https://www.w3.org/2018/credentials/v1",
     VC_TYPE: "VerifiableCredential",
+    VP_TYPE: "VerifiablePresentation",
     EXP: (5 * 365 * 24 * 60 * 60), // 5 years default,
-    EMPTY_VC: {
+    EMPTY_VC_VP: {
         context: [], type: []
     }
 };
@@ -48,9 +49,5 @@ function getDefaultJWTOptions() {
 const IMMUTABLE_PUBLIC_CLAIMS = ["vc", "vp", "iss", "sub", "iat"];
 
 module.exports = {
-    JWT_DEFAULTS,
-    JWT_ERRORS,
-    JWT_LABELS,
-    IMMUTABLE_PUBLIC_CLAIMS,
-    getDefaultJWTOptions: getDefaultJWTOptions
+    JWT_DEFAULTS, JWT_ERRORS, JWT_LABELS, IMMUTABLE_PUBLIC_CLAIMS, getDefaultJWTOptions: getDefaultJWTOptions
 };

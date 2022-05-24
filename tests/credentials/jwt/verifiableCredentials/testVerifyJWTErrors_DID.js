@@ -1,17 +1,17 @@
-require("../../../../../psknode/bundles/testsRuntime");
+require("../../../../../../psknode/bundles/testsRuntime");
 
 const dc = require("double-check");
 const assert = dc.assert;
-const tir = require("../../../../../psknode/tests/util/tir");
+const tir = require("../../../../../../psknode/tests/util/tir");
 
-const openDSU = require("../../../index");
+const openDSU = require("../../../../index");
 $$.__registerModule("opendsu", openDSU);
 const w3cDID = openDSU.loadAPI("w3cdid");
 const scAPI = openDSU.loadAPI("sc");
 const crypto = openDSU.loadApi("crypto");
 
 const credentials = openDSU.loadApi("credentials");
-const {createVc, verifyVc, JWT_ERRORS} = credentials;
+const {createVerifiableCredential, verifyCredential, JWT_ERRORS} = credentials;
 
 const domain = "default";
 
@@ -47,7 +47,7 @@ assert.callback("[DID] Test verify JWT verifiable credential errors", (callback)
 
         const jwtOptions = {exp: 1678812494957};
         const {issuerDidDocument, subjectDidDocument} = result;
-        createVc("JWT", issuerDidDocument, subjectDidDocument, jwtOptions, (createJWTError, jwtInstance) => {
+        createVerifiableCredential("JWT", issuerDidDocument, subjectDidDocument, jwtOptions, (createJWTError, jwtInstance) => {
             if (createJWTError) {
                 throw createJWTError;
             }
@@ -58,19 +58,19 @@ assert.callback("[DID] Test verify JWT verifiable credential errors", (callback)
                 }
 
                 const invalidJWTSignature = encodedJWT + "_invalidSignature";
-                verifyVc("JWT", invalidJWTSignature, (invalidSignatureError) => {
+                verifyCredential("JWT", invalidJWTSignature, (invalidSignatureError) => {
                     assert.notNull(invalidSignatureError);
                     assert.equal(invalidSignatureError, JWT_ERRORS.INVALID_JWT_SIGNATURE);
 
-                    verifyVc("JWT", null, (emptyJWTError) => {
+                    verifyCredential("JWT", null, (emptyJWTError) => {
                         assert.notNull(emptyJWTError);
                         assert.equal(emptyJWTError, JWT_ERRORS.EMPTY_JWT_PROVIDED);
 
-                        verifyVc("JWT", {invalidJWTFormat: true}, (emptyJWTError) => {
+                        verifyCredential("JWT", {invalidJWTFormat: true}, (emptyJWTError) => {
                             assert.notNull(emptyJWTError);
                             assert.equal(emptyJWTError, JWT_ERRORS.INVALID_JWT_FORMAT);
 
-                            verifyVc("JWT", "invalidJWTFormat", (emptyJWTError) => {
+                            verifyCredential("JWT", "invalidJWTFormat", (emptyJWTError) => {
                                 assert.notNull(emptyJWTError);
                                 assert.equal(emptyJWTError, JWT_ERRORS.INVALID_JWT_FORMAT);
 

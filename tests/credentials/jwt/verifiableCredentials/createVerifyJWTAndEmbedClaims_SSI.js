@@ -1,15 +1,15 @@
-require("../../../../../psknode/bundles/testsRuntime");
+require("../../../../../../psknode/bundles/testsRuntime");
 
 const assert = require("double-check").assert;
 const keySSIResolver = require("key-ssi-resolver");
 const keySSIFactory = keySSIResolver.KeySSIFactory;
 const SSITypes = keySSIResolver.SSITypes;
 
-const openDSU = require("../../../index");
+const openDSU = require("../../../../index");
 const keySSISpace = openDSU.loadApi("keyssi");
 const credentials = openDSU.loadApi("credentials");
 const crypto = openDSU.loadApi("crypto");
-const {createVc, verifyVc} = credentials;
+const {createVerifiableCredential, verifyCredential} = credentials;
 
 const templateSeedSSI = keySSIFactory.createType(SSITypes.SEED_SSI);
 templateSeedSSI.load(SSITypes.SEED_SSI, "default");
@@ -41,7 +41,7 @@ assert.callback("[DID] Create JWT, embed public and subject claims and verify JW
 
         const {issuerSeedSSI, subjectSeedSSI} = result;
         const jwtOptions = {exp: 1678812494957};
-        createVc("JWT", issuerSeedSSI, subjectSeedSSI, jwtOptions, (createJWTError, jwtInstance) => {
+        createVerifiableCredential("JWT", issuerSeedSSI, subjectSeedSSI, jwtOptions, (createJWTError, jwtInstance) => {
             if (createJWTError) {
                 throw createJWTError;
             }
@@ -71,7 +71,7 @@ assert.callback("[DID] Create JWT, embed public and subject claims and verify JW
                                     throw err;
                                 }
 
-                                verifyVc("JWT", encodedJWT, (err, verifiedJWTInstance) => {
+                                verifyCredential("JWT", encodedJWT, (err, verifiedJWTInstance) => {
                                     if (err) {
                                         throw err;
                                     }

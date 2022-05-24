@@ -1,17 +1,17 @@
-require("../../../../../psknode/bundles/testsRuntime");
+require("../../../../../../psknode/bundles/testsRuntime");
 
 const dc = require("double-check");
 const assert = dc.assert;
-const tir = require("../../../../../psknode/tests/util/tir");
+const tir = require("../../../../../../psknode/tests/util/tir");
 
-const openDSU = require("../../../index");
+const openDSU = require("../../../../index");
 $$.__registerModule("opendsu", openDSU);
 const w3cDID = openDSU.loadAPI("w3cdid");
 const scAPI = openDSU.loadAPI("sc");
 const crypto = openDSU.loadApi("crypto");
 
 const credentials = openDSU.loadApi("credentials");
-const {createVc, verifyVc} = credentials;
+const {createVerifiableCredential, verifyCredential} = credentials;
 
 const domain = "default";
 
@@ -47,7 +47,7 @@ assert.callback("[DID] Create JWT, embed public and subject claims and verify JW
 
         const jwtOptions = {exp: 1678812494957};
         const {issuerDidDocument, subjectDidDocument} = result;
-        createVc("JWT", issuerDidDocument, subjectDidDocument, jwtOptions, (createJWTError, jwtInstance) => {
+        createVerifiableCredential("JWT", issuerDidDocument, subjectDidDocument, jwtOptions, (createJWTError, jwtInstance) => {
             if (createJWTError) {
                 throw createJWTError;
             }
@@ -77,7 +77,7 @@ assert.callback("[DID] Create JWT, embed public and subject claims and verify JW
                                     throw err;
                                 }
 
-                                verifyVc("JWT", encodedJWT, async (err, verifiedJWTInstance) => {
+                                verifyCredential("JWT", encodedJWT, async (err, verifiedJWTInstance) => {
                                     if (err) {
                                         throw err;
                                     }
