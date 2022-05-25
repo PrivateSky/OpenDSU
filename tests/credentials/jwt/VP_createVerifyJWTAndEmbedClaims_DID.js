@@ -11,7 +11,7 @@ const scAPI = openDSU.loadAPI("sc");
 const crypto = openDSU.loadApi("crypto");
 
 const credentials = openDSU.loadApi("credentials");
-const {createVerifiableCredential, createVerifiablePresentation, verifyPresentation} = credentials;
+const {createVerifiableCredentialAsync, createVerifiablePresentationAsync, verifyPresentationAsync} = credentials;
 
 function launchApiHubAndCreateDIDs(callback) {
     dc.createTestFolder("JWT", async (err, folder) => {
@@ -39,51 +39,38 @@ function launchApiHubAndCreateDIDs(callback) {
 }
 
 assert.callback("[DID] Create JWT, embed public claim and, another JWTVc and verify JWT success test", (callback) => {
-    launchApiHubAndCreateDIDs((err, result) => {
+    launchApiHubAndCreateDIDs(async (err, result) => {
         if (err) {
             throw err;
         }
 
-        const jwtOptions = {exp: 1678812494957};
-        const {issuerDidDocument, subjectDidDocument} = result;
-        createVerifiableCredential("JWT", issuerDidDocument, subjectDidDocument, jwtOptions, async (createJwtVcError, jwtVcInstance) => {
-            if (createJwtVcError) {
-                throw createJwtVcError;
-            }
+        try {
+            const {issuerDidDocument, subjectDidDocument} = result;
+            const jwtVcInstance = await createVerifiableCredentialAsync("JWT", issuerDidDocument, subjectDidDocument, {exp: 1678812494957});
 
-            try {
-                const encodedJwtVc1 = await jwtVcInstance.getEncodedJWTAsync();
-                createVerifiablePresentation("JWT", issuerDidDocument, encodedJwtVc1, async (createJwtVpError, jwtVpInstance) => {
-                    if (createJwtVpError) {
-                        throw createJwtVpError;
-                    }
+            const encodedJwtVc1 = await jwtVcInstance.getEncodedJWTAsync();
+            const jwtVpInstance = await createVerifiablePresentationAsync("JWT", issuerDidDocument, encodedJwtVc1, {exp: 1678812494957});
 
-                    await jwtVcInstance.embedClaimAsync("nbf", Date.now());
-                    await jwtVcInstance.embedClaimAsync("testClaim", "Claim");
-                    await jwtVcInstance.extendExpirationDateAsync(6000);
-                    await jwtVcInstance.embedSubjectClaimAsync("https://some.uri.test", "TestSubjectClaim", {test: "test"});
+            await jwtVcInstance.embedClaimAsync("nbf", Date.now());
+            await jwtVcInstance.embedClaimAsync("testClaim", "Claim");
+            await jwtVcInstance.extendExpirationDateAsync(6000);
+            await jwtVcInstance.embedSubjectClaimAsync("https://some.uri.test", "TestSubjectClaim", {test: "test"});
 
-                    const encodedJwtVc2 = await jwtVcInstance.getEncodedJWTAsync();
+            const encodedJwtVc2 = await jwtVcInstance.getEncodedJWTAsync();
 
-                    await jwtVpInstance.addVerifiableCredentialAsync(encodedJwtVc2);
-                    await jwtVpInstance.extendExpirationDateAsync(6000);
-                    await jwtVpInstance.embedClaimAsync("testClaim", "Claim");
-                    await jwtVpInstance.embedClaimAsync("nonce", "98ijs1651");
+            await jwtVpInstance.addVerifiableCredentialAsync(encodedJwtVc2);
+            await jwtVpInstance.extendExpirationDateAsync(6000);
+            await jwtVpInstance.embedClaimAsync("testClaim", "Claim");
+            await jwtVpInstance.embedClaimAsync("nonce", "98ijs1651");
 
-                    const encodedJwtVp = await jwtVpInstance.getEncodedJWTAsync();
+            const encodedJwtVp = await jwtVpInstance.getEncodedJWTAsync();
 
-                    verifyPresentation("JWT", encodedJwtVp, (verifyJwtVpError, verifyJwtVpInstance) => {
-                        if (verifyJwtVpError) {
-                            throw verifyJwtVpError;
-                        }
-
-                        assert.notNull(verifyJwtVpInstance, "Verify Result should be a JWTVp Instance");
-                        callback();
-                    });
-                });
-            } catch (e) {
-                throw e;
-            }
-        });
+            const verifyJwtVpInstance = await verifyPresentationAsync("JWT", encodedJwtVp);
+            console.log("JWT VP: ", encodedJwtVp);
+            assert.notNull(verifyJwtVpInstance, "Verify Result should be a JWTVp Instance");
+            callback();
+        } catch (e) {
+            throw e;
+        }
     });
 }, 1000);
