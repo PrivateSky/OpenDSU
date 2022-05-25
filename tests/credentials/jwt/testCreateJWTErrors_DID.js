@@ -1,10 +1,10 @@
-require("../../../../../../psknode/bundles/testsRuntime");
+require("../../../../../psknode/bundles/testsRuntime");
 
 const dc = require("double-check");
 const assert = dc.assert;
-const tir = require("../../../../../../psknode/tests/util/tir");
+const tir = require("../../../../../psknode/tests/util/tir");
 
-const openDSU = require("../../../../index");
+const openDSU = require("../../../index");
 $$.__registerModule("opendsu", openDSU);
 const w3cDID = openDSU.loadAPI("w3cdid");
 const scAPI = openDSU.loadAPI("sc");

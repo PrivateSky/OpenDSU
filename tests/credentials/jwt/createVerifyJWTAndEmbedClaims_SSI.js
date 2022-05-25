@@ -1,11 +1,11 @@
-require("../../../../../../psknode/bundles/testsRuntime");
+require("../../../../../psknode/bundles/testsRuntime");
 
 const assert = require("double-check").assert;
 const keySSIResolver = require("key-ssi-resolver");
 const keySSIFactory = keySSIResolver.KeySSIFactory;
 const SSITypes = keySSIResolver.SSITypes;
 
-const openDSU = require("../../../../index");
+const openDSU = require("../../../index");
 const keySSISpace = openDSU.loadApi("keyssi");
 const credentials = openDSU.loadApi("credentials");
 const crypto = openDSU.loadApi("crypto");
