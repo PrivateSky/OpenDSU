@@ -45,5 +45,5 @@ module.exports = {
     createVerifiablePresentation,
     verifyPresentation,
 
-    JWT_ERRORS: require("./jwt/constants").JWT_ERRORS
+    JWT_ERRORS: require("./constants").JWT_ERRORS
 };

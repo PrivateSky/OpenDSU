@@ -30,9 +30,7 @@ const JWT_DEFAULTS = {
     }
 };
 
-const JWT_LABELS = {
-    SEED_SSI_HEADER_TYPE: "SeedSSIJWT",
-    DID_HEADER_TYPE: "DID_JWT",
+const LABELS = {
     ISSUER_DID: "issuerDID",
     ISSUER_SSI: "issuerSSI",
     SUBJECT_DID: "subjectDID",
@@ -49,5 +47,5 @@ function getDefaultJWTOptions() {
 const IMMUTABLE_PUBLIC_CLAIMS = ["vc", "vp", "iss", "sub", "iat"];
 
 module.exports = {
-    JWT_DEFAULTS, JWT_ERRORS, JWT_LABELS, IMMUTABLE_PUBLIC_CLAIMS, getDefaultJWTOptions: getDefaultJWTOptions
+    JWT_DEFAULTS, JWT_ERRORS, LABELS, IMMUTABLE_PUBLIC_CLAIMS, getDefaultJWTOptions: getDefaultJWTOptions
 };

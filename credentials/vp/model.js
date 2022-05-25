@@ -1,4 +1,4 @@
-const {JWT_DEFAULTS, JWT_ERRORS} = require("../jwt/constants");
+const {JWT_DEFAULTS, JWT_ERRORS} = require("../constants");
 const {defaultJWTParser, defaultJWTBuilder} = require("../jwt/model");
 const {verifyJWT} = require("../jwt/verify");
 

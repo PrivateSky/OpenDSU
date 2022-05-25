@@ -1,4 +1,4 @@
-const {JWT_ERRORS, IMMUTABLE_PUBLIC_CLAIMS} = require("./constants");
+const {JWT_ERRORS, IMMUTABLE_PUBLIC_CLAIMS} = require("../constants");
 const {base64UrlEncode} = require("../utils");
 const {signJWT} = require("./sign");
 const instanceReadyMixin = require("../InstanceReadyMixin");

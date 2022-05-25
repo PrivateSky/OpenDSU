@@ -1,8 +1,7 @@
-const {JWT_DEFAULTS, JWT_ERRORS} = require("../jwt/constants");
-const {dateTimeFormatter} = require("../utils");
+const {JWT_DEFAULTS, JWT_ERRORS} = require("../constants");
+const {dateTimeFormatter, getReadableIdentity, getIssuerFormat} = require("../utils");
 const {defaultJWTParser, defaultJWTBuilder} = require("../jwt/model");
 const {verifyJWT} = require("../jwt/verify");
-const {getReadableIdentity, getIssuerFormat} = require("../jwt/jwtUtils");
 
 /**
  * This method creates "vc" object from the payload of a JWT according to the W3c Standard

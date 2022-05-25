@@ -1,5 +1,5 @@
 const JWT = require("../jwt");
-const JWT_ERRORS = require("../jwt/constants").JWT_ERRORS;
+const JWT_ERRORS = require("../constants").JWT_ERRORS;
 const {dateTimeFormatter, isValidURL} = require("../utils");
 const {jwtVcBuilder, jwtVcParser} = require("./model");
 

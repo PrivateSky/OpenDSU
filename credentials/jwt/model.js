@@ -1,8 +1,5 @@
-const {JWT_DEFAULTS, JWT_ERRORS, getDefaultJWTOptions} = require("./constants");
-const {base64UrlDecode} = require("../utils");
-const {
-    isJWTNotActive, isJWTExpired, getIssuerFormat, getReadableIdentity, safeParseEncodedJson
-} = require("./jwtUtils");
+const {JWT_DEFAULTS, JWT_ERRORS, getDefaultJWTOptions} = require("../constants");
+const utils = require("../utils");
 
 /**
  * This method creates the header of a JWT according to the W3c Standard
@@ -13,7 +10,8 @@ function getRequiredJWTHeader(options) {
     const {alg, typ} = options; // can be extended with other attributes
 
     return {
-        alg: alg || JWT_DEFAULTS.ALG, typ: typ || JWT_DEFAULTS.TYP
+        alg: alg || JWT_DEFAULTS.ALG, 
+        typ: typ || JWT_DEFAULTS.TYP
     }
 }
 
@@ -40,10 +38,10 @@ function getRequiredJWTPayloadModel(options) {
 function defaultJWTBuilder(issuer, options, callback) {
     options = Object.assign({}, getDefaultJWTOptions(), options);
 
-    issuer = getReadableIdentity(issuer);
+    issuer = utils.getReadableIdentity(issuer);
     if (!issuer) return callback(JWT_ERRORS.INVALID_ISSUER_FORMAT);
 
-    const issuerFormat = getIssuerFormat(issuer);
+    const issuerFormat = utils.getIssuerFormat(issuer);
     if (!issuerFormat) return callback(JWT_ERRORS.INVALID_ISSUER_FORMAT);
 
     options.iss = issuer;
@@ -65,14 +63,14 @@ function parseJWTSegments(jwt, callback) {
     const segments = jwt.split(".");
     if (segments.length !== 3) return callback(JWT_ERRORS.INVALID_JWT_FORMAT);
 
-    const jwtHeader = safeParseEncodedJson(segments[0]);
+    const jwtHeader = utils.safeParseEncodedJson(segments[0]);
     if (jwtHeader instanceof Error || !jwtHeader) return callback(JWT_ERRORS.INVALID_JWT_HEADER);
 
-    const jwtPayload = safeParseEncodedJson(segments[1]);
+    const jwtPayload = utils.safeParseEncodedJson(segments[1]);
     if (jwtPayload instanceof Error || !jwtPayload) return callback(JWT_ERRORS.INVALID_JWT_PAYLOAD);
 
     const encodedJWTHeaderAndBody = `${segments[0]}.${segments[1]}`;
-    const jwtSignature = base64UrlDecode(segments[2], true);
+    const jwtSignature = utils.base64UrlDecode(segments[2], true);
     if (!jwtSignature) {
         return callback(JWT_ERRORS.INVALID_JWT_SIGNATURE);
     }
@@ -94,8 +92,8 @@ function defaultJWTParser(encodedJWT, callback) {
         const {jwtHeader, jwtPayload} = result;
         if (!jwtHeader.typ || !jwtHeader.alg) return callback(JWT_ERRORS.INVALID_JWT_HEADER);
         if (!jwtPayload.iss) return callback(JWT_ERRORS.INVALID_JWT_ISSUER);
-        if (isJWTExpired(jwtPayload)) return callback(JWT_ERRORS.JWT_TOKEN_EXPIRED);
-        if (isJWTNotActive(jwtPayload)) return callback(JWT_ERRORS.JWT_TOKEN_NOT_ACTIVE);
+        if (utils.isJWTExpired(jwtPayload)) return callback(JWT_ERRORS.JWT_TOKEN_EXPIRED);
+        if (utils.isJWTNotActive(jwtPayload)) return callback(JWT_ERRORS.JWT_TOKEN_NOT_ACTIVE);
 
         callback(undefined, result);
     });

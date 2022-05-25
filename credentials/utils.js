@@ -5,6 +5,8 @@ const keySSIFactory = keySSIResolver.KeySSIFactory;
 const templateSeedSSI = keySSIFactory.createType(SSITypes.SEED_SSI);
 templateSeedSSI.load(SSITypes.SEED_SSI, "default");
 
+const {LABELS} = require("./constants");
+
 function base58Decode(data, keepBuffer) {
     const decodedValue = cryptoRegistry.getDecodingFunction(templateSeedSSI)(data);
     if (keepBuffer) {
@@ -50,11 +52,112 @@ function isValidURL(str) {
     return !!pattern.test(str);
 }
 
-module.exports = {
-    base64UrlEncode,
-    base64UrlDecode,
-    base58Decode,
+/**
+ * This method returns the readable format of an SSI or a DID
+ * @param identity {string | KeySSI | DIDDocument}
+ */
+function getReadableIdentity(identity) {
+    if (!identity) return null;
 
-    dateTimeFormatter,
-    isValidURL
+    if (typeof identity === "string" && (identity.indexOf("ssi") === 0 || identity.indexOf("did") === 0)) {
+        // ssi/did is actually the readable ssi/did
+        return identity;
+    }
+
+    identity = identity.getIdentifier ? identity.getIdentifier() : identity;
+    if (identity.indexOf("did") === 0) {
+        return identity;
+    }
+
+    let readableSSI = base58Decode(identity);
+    if (!readableSSI) {
+        // invalid base58 string
+        return null;
+    }
+    if (readableSSI.indexOf("ssi") !== 0) {
+        // invalid ssi format
+        return null;
+    }
+
+    return readableSSI;
+}
+
+/**
+ * This method is decoding a JSON string and returns the JSON object
+ * @param data {string}
+ * @param keepBuffer {boolean}
+ * @returns {Object|Error}
+ */
+function safeParseEncodedJson(data, keepBuffer = false) {
+    try {
+        return JSON.parse(base64UrlDecode(data, keepBuffer));
+    } catch (e) {
+        return e;
+    }
+}
+
+/**
+ * This method provides the format of the issuer in order to be processed accordingly.
+ * Allowed formats:
+ * DID Identifier format
+ * SSI format
+ * @param issuer {string}
+ * @returns {null | string}
+ */
+function getIssuerFormat(issuer) {
+    if (issuer.indexOf("did") === 0) {
+        return LABELS.ISSUER_DID;
+    }
+
+    if (issuer.indexOf("ssi") === 0) {
+        return LABELS.ISSUER_SSI;
+    }
+
+    return null;
+}
+
+/**
+ * This method provides the format of the subject in order to be processed accordingly.
+ * Allowed formats:
+ * DID Identifier format
+ * sReadSSI format
+ * @param subject {string}
+ * @returns {null | string}
+ */
+function getSubjectFormat(subject) {
+    if (subject.indexOf("did") === 0) {
+        return LABELS.SUBJECT_DID;
+    }
+
+    if (subject.indexOf("ssi") === 0) {
+        return LABELS.SUBJECT_SSI;
+    }
+
+    return null;
+}
+
+/**
+ * This method checks if a JWT is expired
+ * @param payload {Object}
+ * @returns {boolean}
+ */
+function isJWTExpired(payload) {
+    return new Date(payload.exp) < new Date();
+}
+
+/**
+ * This method checks if a JWT is active
+ * @param payload {Object}
+ * @returns {boolean}
+ */
+function isJWTNotActive(payload) {
+    return new Date(payload.nbf) >= new Date();
+}
+
+module.exports = {
+    base64UrlEncode, base64UrlDecode, base58Decode,
+
+    dateTimeFormatter, isValidURL,
+
+    getIssuerFormat, getSubjectFormat, isJWTExpired, isJWTNotActive, getReadableIdentity, safeParseEncodedJson
 };

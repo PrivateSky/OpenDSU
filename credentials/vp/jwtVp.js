@@ -1,5 +1,5 @@
 const JWT = require("../jwt");
-const JWT_ERRORS = require("../jwt/constants").JWT_ERRORS;
+const JWT_ERRORS = require("../constants").JWT_ERRORS;
 const {jwtVpBuilder, jwtVpParser} = require("./model");
 
 class JwtVP extends JWT {
@@ -29,7 +29,7 @@ class JwtVP extends JWT {
     };
 
     async addVerifiableCredentialAsync(encodedJWTVc) {
-        await $$.promisify(this.addVerifiableCredentialAsync)(encodedJWTVc);
+        await $$.promisify(this.addVerifiableCredential)(encodedJWTVc);
     }
 
     setEncodedJWTVp(encodedJWTVp) {
@@ -52,21 +52,21 @@ class JwtVP extends JWT {
  * @param encodedJWTVc
  * @param options {Object}
  */
-function createJWTVc(issuer, encodedJWTVc, options) {
+function createJWTVp(issuer, encodedJWTVc, options) {
     return new JwtVP(issuer, encodedJWTVc, options, true);
 }
 
 /**
  * This method is parsing an encoded verifiable credential according to the requested type and returns the instance of the verifiable credential. <br />
- * @param encodedJWTVc {string}
+ * @param encodedJWTVp {string}
  */
-function verifyJWTVc(encodedJWTVc, atDate, revocationStatus) {
+function verifyJWTVp(encodedJWTVp, atDate, revocationStatus) {
     const jwtInstance = new JwtVP();
-    jwtInstance.setEncodedJWTVp(encodedJWTVc);
+    jwtInstance.setEncodedJWTVp(encodedJWTVp);
 
     return jwtInstance;
 }
 
 module.exports = {
-    createJWTVc, verifyJWTVc
+    createJWTVp, verifyJWTVp
 };

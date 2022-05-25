@@ -5,9 +5,8 @@ const keySSISpace = openDSU.loadApi("keyssi");
 const keySSIResolver = require("key-ssi-resolver");
 const cryptoRegistry = keySSIResolver.CryptoAlgorithmsRegistry;
 
-const {JWT_LABELS, JWT_ERRORS} = require("./constants");
-const {base64UrlEncode} = require("../utils");
-const {getIssuerFormat} = require("./jwtUtils");
+const {LABELS, JWT_ERRORS} = require("../constants");
+const {base64UrlEncode, getIssuerFormat} = require("../utils");
 
 /**
  * This method is signing the encoded header and payload of a JWT and returns the full signed JWT (header.payload.signature)
@@ -22,11 +21,11 @@ function signJWT(jwtHeader, jwtPayload, callback) {
     const dataToSign = [base64UrlEncode(JSON.stringify(jwtHeader)), base64UrlEncode(JSON.stringify(jwtPayload))].join(".");
 
     switch (issuerType) {
-        case JWT_LABELS.ISSUER_SSI: {
+        case LABELS.ISSUER_SSI: {
             return signUsingSSI(issuer, dataToSign, callback);
         }
 
-        case JWT_LABELS.ISSUER_DID: {
+        case LABELS.ISSUER_DID: {
             return signUsingDID(issuer, dataToSign, callback);
         }
 

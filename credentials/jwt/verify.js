@@ -5,8 +5,8 @@ const keySSISpace = openDSU.loadApi("keyssi");
 const keySSIResolver = require("key-ssi-resolver");
 const cryptoRegistry = keySSIResolver.CryptoAlgorithmsRegistry;
 
-const {JWT_LABELS, JWT_ERRORS} = require("./constants");
-const {getIssuerFormat} = require("./jwtUtils");
+const {LABELS, JWT_ERRORS} = require("../constants");
+const {getIssuerFormat} = require("../utils");
 
 /**
  * This method is verifying the encoded JWT from the current instance according to the issuerType
@@ -18,11 +18,11 @@ const {getIssuerFormat} = require("./jwtUtils");
 function verifyJWT(issuer, signature, signedData, callback) {
     const issuerType = getIssuerFormat(issuer);
     switch (issuerType) {
-        case JWT_LABELS.ISSUER_SSI: {
+        case LABELS.ISSUER_SSI: {
             return verifyUsingSSI(issuer, signature, signedData, callback);
         }
 
-        case JWT_LABELS.ISSUER_DID: {
+        case LABELS.ISSUER_DID: {
             return verifyUsingDID(issuer, signature, signedData, callback);
         }
 
