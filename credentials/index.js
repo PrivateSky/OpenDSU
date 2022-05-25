@@ -40,10 +40,7 @@ function registerCredentialEncodingTypes(method, implementation) {
 registerCredentialEncodingTypes(proofTypes.JWT, proofTypes.createJWTProofType());
 
 module.exports = {
-    createVerifiableCredential,
-    verifyCredential,
-    createVerifiablePresentation,
-    verifyPresentation,
+    createVerifiableCredential, verifyCredential, createVerifiablePresentation, verifyPresentation,
 
     JWT_ERRORS: require("./constants").JWT_ERRORS
 };

@@ -5,9 +5,11 @@ const {verifyJWT} = require("../jwt/verify");
 /**
  * This method creates "vp" object from the payload of a JWT according to the W3c Standard
  * @param encodedJWTVc
+ * @param jwtPayload
  * @param options {Object}
  */
-function getRequiredJWTVPModel(encodedJWTVc, options) {
+function getRequiredJWTVPModel(encodedJWTVc, jwtPayload, options) {
+    options = Object.assign({}, options, jwtPayload);
     let {vp, iss, id} = options; // can be extended with other attributes
     if (!vp) {
         vp = Object.assign({}, JWT_DEFAULTS.EMPTY_VC_VP);
@@ -29,7 +31,7 @@ function jwtVpBuilder(issuer, encodedJWTVc, options, callback) {
         }
 
         const {jwtHeader, jwtPayload} = result;
-        jwtPayload.vp = getRequiredJWTVPModel(encodedJWTVc, options);
+        jwtPayload.vp = getRequiredJWTVPModel(encodedJWTVc, jwtPayload, options);
 
         callback(undefined, {jwtHeader, jwtPayload});
     });

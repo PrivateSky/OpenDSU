@@ -8,7 +8,7 @@ templateSeedSSI.load(SSITypes.SEED_SSI, "default");
 const {LABELS} = require("./constants");
 
 function base58Decode(data, keepBuffer) {
-    const decodedValue = cryptoRegistry.getDecodingFunction(templateSeedSSI)(data);
+    const decodedValue = cryptoRegistry.getDecodingFunction(templateSeedSSI).call(this, data);
     if (keepBuffer) {
         return decodedValue;
     }
@@ -54,7 +54,7 @@ function isValidURL(str) {
 
 /**
  * This method returns the readable format of an SSI or a DID
- * @param identity {string | KeySSI | DIDDocument}
+ * @param identity {string | Object} - The KeySSI instance | readable SSI string | DIDInstance | readable DID string
  */
 function getReadableIdentity(identity) {
     if (!identity) return null;

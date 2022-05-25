@@ -5,10 +5,12 @@ const {verifyJWT} = require("../jwt/verify");
 
 /**
  * This method creates "vc" object from the payload of a JWT according to the W3c Standard
+ * @param jwtPayload
  * @param options {Object}
  * @returns {{credentialSubject: {id}, issuanceDate: string, type: *[], "@context": *[], issuer, expirationDate: string}}
  */
-function getRequiredJWTVCModel(options) {
+function getRequiredJWTVCModel(jwtPayload, options) {
+    options = Object.assign({}, options, jwtPayload);
     let {vc, sub, iss, nbf, exp} = options; // can be extended with other attributes
     if (!vc) {
         vc = Object.assign({}, JWT_DEFAULTS.EMPTY_VC_VP);
@@ -43,7 +45,7 @@ function jwtVcBuilder(issuer, subject, options, callback) {
 
         jwtPayload.sub = subject;
         options.sub = subject;
-        jwtPayload.vc = getRequiredJWTVCModel(options);
+        jwtPayload.vc = getRequiredJWTVCModel(jwtPayload, options);
 
         callback(undefined, {jwtHeader, jwtPayload});
     });

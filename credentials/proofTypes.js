@@ -3,8 +3,12 @@ const {createJWTVp, verifyJWTVp} = require("./vp/jwtVp");
 
 function JWTProofType() {
     this.createVerifiableCredential = (issuer, subject, options, callback) => {
-        const jwtInstance = createJWTVc(issuer, subject, options);
+        if (typeof options === "function") {
+            callback = options;
+            options = {};
+        }
 
+        const jwtInstance = createJWTVc(issuer, subject, options);
         jwtInstance.onInstanceReady((err) => {
             if (err) {
                 return callback(err);
@@ -16,7 +20,6 @@ function JWTProofType() {
 
     this.verifyCredential = (encodedJWTVc, callback) => {
         const jwtInstance = verifyJWTVc(encodedJWTVc);
-
         jwtInstance.onInstanceReady((err) => {
             if (err) {
                 return callback(err);
@@ -27,8 +30,12 @@ function JWTProofType() {
     };
 
     this.createVerifiablePresentation = (issuer, encodedJWTVc, options, callback) => {
-        const jwtInstance = createJWTVp(issuer, encodedJWTVc, options);
+        if (typeof options === "function") {
+            callback = options;
+            options = {};
+        }
 
+        const jwtInstance = createJWTVp(issuer, encodedJWTVc, options);
         jwtInstance.onInstanceReady((err) => {
             if (err) {
                 return callback(err);
@@ -40,7 +47,6 @@ function JWTProofType() {
 
     this.verifyPresentation = (encodedJWTVp, callback) => {
         const jwtInstance = verifyJWTVp(encodedJWTVp);
-
         jwtInstance.onInstanceReady((err) => {
             if (err) {
                 return callback(err);
@@ -56,8 +62,7 @@ function createJWTProofType() {
 }
 
 module.exports = {
-    UNKNOWN_VERIFIABLE_CREDENTIAL_TYPE: "UNKNOWN_VERIFIABLE_CREDENTIAL_TYPE",
-    JWT: "JWT",
+    UNKNOWN_VERIFIABLE_CREDENTIAL_TYPE: "UNKNOWN_VERIFIABLE_CREDENTIAL_TYPE", JWT: "JWT",
 
     createJWTProofType
 };

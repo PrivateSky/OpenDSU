@@ -11,23 +11,19 @@ class JWT {
         instanceReadyMixin(this);
     }
 
-    getEncodedJWT(callback) {
+    getEncodedJWT = (callback) => {
         signJWT(this.jwtHeader, this.jwtPayload, (err, jwtSignature) => {
             if (err) {
                 return callback(err);
             }
 
-            const encodedJWT = [
-                base64UrlEncode(JSON.stringify(this.jwtHeader)),
-                base64UrlEncode(JSON.stringify(this.jwtPayload)),
-                jwtSignature
-            ].join(".");
+            const encodedJWT = [base64UrlEncode(JSON.stringify(this.jwtHeader)), base64UrlEncode(JSON.stringify(this.jwtPayload)), jwtSignature].join(".");
             callback(undefined, encodedJWT);
         });
     };
 
     async getEncodedJWTAsync() {
-        await $$.promisify(this.getEncodedJWT)();
+        return await $$.promisify(this.getEncodedJWT).call(this);
     }
 
     /**
@@ -45,11 +41,12 @@ class JWT {
             return callback(JWT_ERRORS.IMMUTABLE_PUBLIC_CLAIM);
         }
 
+        this.jwtPayload[claimName] = claimValue;
         callback(undefined, true);
     };
 
     async embedClaimAsync(claimName, claimValue) {
-        await $$.promisify(this.embedClaim)(claimName, claimValue);
+        return await $$.promisify(this.embedClaim).call(this, claimName, claimValue);
     }
 
     /**
@@ -67,7 +64,7 @@ class JWT {
     };
 
     async extendExpirationDateAsync(timeInSeconds) {
-        await $$.promisify(this.extendExpirationDate)(timeInSeconds);
+        return await $$.promisify(this.extendExpirationDate).call(this, timeInSeconds);
     }
 }
 

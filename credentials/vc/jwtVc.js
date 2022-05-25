@@ -26,7 +26,7 @@ class JwtVC extends JWT {
      * @param claimValue - The value of the public claim
      * @param callback
      */
-    embedClaim(claimName, claimValue, callback) {
+    embedClaim = (claimName, claimValue, callback) => {
         super.embedClaim(claimName, claimValue, (err) => {
             if (err) {
                 return callback(err);
@@ -44,7 +44,7 @@ class JwtVC extends JWT {
     }
 
     async embedClaimAsync(claimName, claimValue) {
-        await $$.promisify(this.embedClaim)(claimName, claimValue);
+        return await $$.promisify(this.embedClaim).call(this, claimName, claimValue);
     }
 
     /**
@@ -52,7 +52,7 @@ class JwtVC extends JWT {
      * @param timeInSeconds {Number}
      * @param callback
      */
-    extendExpirationDate(timeInSeconds, callback) {
+    extendExpirationDate = (timeInSeconds, callback) => {
         super.extendExpirationDate(timeInSeconds, (err) => {
             if (err) {
                 return callback(err);
@@ -66,7 +66,7 @@ class JwtVC extends JWT {
     }
 
     async extendExpirationDateAsync(timeInSeconds) {
-        await $$.promisify(this.extendExpirationDate)(timeInSeconds);
+        return await $$.promisify(this.extendExpirationDate).call(this, timeInSeconds);
     }
 
     /**
@@ -78,7 +78,7 @@ class JwtVC extends JWT {
      * @param subject {string | Function} - It is mandatory if the credentialSubjects are more than one.
      * @param callback
      */
-    embedSubjectClaim(context, type, subjectClaims, subject, callback) {
+    embedSubjectClaim = (context, type, subjectClaims, subject, callback) => {
         if (typeof subject === "function") {
             callback = subject;
             subject = null;
@@ -113,7 +113,7 @@ class JwtVC extends JWT {
     };
 
     async embedSubjectClaimAsync(context, type, subjectClaims, subject) {
-        await $$.promisify(this.addVerifiableCredentialAsync)(context, type, subjectClaims, subject);
+        return await $$.promisify(this.embedSubjectClaim).call(this, context, type, subjectClaims, subject);
     }
 
     setEncodedJWT(encodedJWT) {
@@ -136,15 +136,18 @@ class JwtVC extends JWT {
  * @param subject
  * @param options {Object}
  */
-function createJWTVc(issuer, subject, options) {
+function createJWTVc(issuer, subject, options = {}) {
     return new JwtVC(issuer, subject, options, true);
 }
 
 /**
  * This method is parsing an encoded verifiable credential according to the requested type and returns the instance of the verifiable credential. <br />
  * @param encodedJWTVc {string}
+ * @param atDate
+ * @param revocationStatus
  */
 function verifyJWTVc(encodedJWTVc, atDate, revocationStatus) {
+    console.log(atDate, revocationStatus);
     const jwtInstance = new JwtVC();
     jwtInstance.setEncodedJWT(encodedJWTVc);
 

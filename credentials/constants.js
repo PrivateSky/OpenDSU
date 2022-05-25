@@ -44,7 +44,7 @@ function getDefaultJWTOptions() {
     };
 }
 
-const IMMUTABLE_PUBLIC_CLAIMS = ["vc", "vp", "iss", "sub", "iat"];
+const IMMUTABLE_PUBLIC_CLAIMS = ["vc", "vp", "iss", "sub", "iat", "verifiableCredential", "holder"];
 
 module.exports = {
     JWT_DEFAULTS, JWT_ERRORS, LABELS, IMMUTABLE_PUBLIC_CLAIMS, getDefaultJWTOptions: getDefaultJWTOptions

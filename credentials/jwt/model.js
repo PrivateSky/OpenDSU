@@ -48,7 +48,7 @@ function defaultJWTBuilder(issuer, options, callback) {
     const jwtHeader = getRequiredJWTHeader(options);
     const jwtPayload = getRequiredJWTPayloadModel(options);
 
-    callback(undefined, {jwtHeader, jwtPayload});
+    callback(undefined, {jwtHeader, jwtPayload, options});
 }
 
 /**
