@@ -48,7 +48,7 @@ assert.callback("[DID] Create JWT, embed public claim and, another JWTVc and ver
             const jwtVcInstance = await credentials.createVerifiableCredentialAsync("JWT", issuerDidDocument, subjectDidDocument, {exp: 1678812494957});
 
             const encodedJwtVc1 = await jwtVcInstance.getEncodedJWTAsync();
-            const verifiedJwtVcInstance1 = await credentials.verifyCredentialAsync("JWT", encodedJwtVc1, Date.now(), null);
+            const verifiedJwtVcInstance1 = await credentials.verifyCredentialAsync("JWT", encodedJwtVc1, Date.now());
             console.log("JWT Vc1: ", encodedJwtVc1);
             assert.notNull(verifiedJwtVcInstance1, "Verify Result should be a JWTVc Instance");
 
@@ -60,7 +60,7 @@ assert.callback("[DID] Create JWT, embed public claim and, another JWTVc and ver
             await jwtVcInstance.embedSubjectClaimAsync("https://some.uri.test", "TestSubjectClaim", {test: "test"});
 
             const encodedJwtVc2 = await jwtVcInstance.getEncodedJWTAsync();
-            const verifiedJwtVcInstance2 = await credentials.verifyCredentialAsync("JWT", encodedJwtVc2, Date.now(), null);
+            const verifiedJwtVcInstance2 = await credentials.verifyCredentialAsync("JWT", encodedJwtVc2, Date.now());
             console.log("JWT Vc2: ", encodedJwtVc2);
             assert.notNull(verifiedJwtVcInstance2, "Verify Result should be a JWTVc Instance");
 
@@ -71,7 +71,7 @@ assert.callback("[DID] Create JWT, embed public claim and, another JWTVc and ver
 
             const encodedJwtVp = await jwtVpInstance.getEncodedJWTAsync();
 
-            const verifiedJwtVpInstance = await credentials.verifyPresentationAsync("JWT", encodedJwtVp, Date.now(), null);
+            const verifiedJwtVpInstance = await credentials.verifyPresentationAsync("JWT", encodedJwtVp, Date.now());
             console.log("JWT VP: ", encodedJwtVp);
             assert.notNull(verifiedJwtVpInstance, "Verify Result should be a JWTVp Instance");
             callback();

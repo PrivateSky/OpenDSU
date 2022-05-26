@@ -139,19 +139,21 @@ function getSubjectFormat(subject) {
 /**
  * This method checks if a JWT is expired
  * @param payload {Object}
+ * @param atDate
  * @returns {boolean}
  */
-function isJWTExpired(payload) {
-    return new Date(payload.exp) < new Date();
+function isJWTExpired(payload, atDate) {
+    return new Date(payload.exp).getTime() < new Date(atDate).getTime()
 }
 
 /**
  * This method checks if a JWT is active
  * @param payload {Object}
+ * @param atDate
  * @returns {boolean}
  */
-function isJWTNotActive(payload) {
-    return new Date(payload.nbf) >= new Date();
+function isJWTNotActive(payload, atDate) {
+    return new Date(payload.nbf).getTime() >= new Date(atDate).getTime();
 }
 
 module.exports = {

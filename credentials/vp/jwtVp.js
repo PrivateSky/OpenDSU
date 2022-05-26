@@ -32,8 +32,8 @@ class JwtVP extends JWT {
         return this.asyncMyFunction(this.addVerifiableCredential, [...arguments]);
     }
 
-    setEncodedJWTVp(encodedJWTVp) {
-        jwtVpParser(encodedJWTVp, (err, result) => {
+    verifyEncodedJWTVp(encodedJWTVp, atDate) {
+        jwtVpParser(encodedJWTVp, atDate, (err, result) => {
             if (err) {
                 return this.notifyInstanceReady(err);
             }
@@ -65,7 +65,7 @@ function createJWTVp(issuer, encodedJWTVc, options = {}) {
 function verifyJWTVp(encodedJWTVp, atDate, revocationStatus) {
     console.log(atDate, revocationStatus);
     const jwtInstance = new JwtVP();
-    jwtInstance.setEncodedJWTVp(encodedJWTVp);
+    jwtInstance.verifyEncodedJWTVp(encodedJWTVp, atDate);
 
     return jwtInstance;
 }

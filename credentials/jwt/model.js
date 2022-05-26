@@ -81,9 +81,10 @@ function parseJWTSegments(jwt, callback) {
 /**
  *
  * @param encodedJWT {string}
+ * @param atDate
  * @param callback {Function}
  */
-function defaultJWTParser(encodedJWT, callback) {
+function defaultJWTParser(encodedJWT, atDate, callback) {
     parseJWTSegments(encodedJWT, (err, result) => {
         if (err) {
             return callback(err);
@@ -92,8 +93,8 @@ function defaultJWTParser(encodedJWT, callback) {
         const {jwtHeader, jwtPayload} = result;
         if (!jwtHeader.typ || !jwtHeader.alg) return callback(JWT_ERRORS.INVALID_JWT_HEADER);
         if (!jwtPayload.iss) return callback(JWT_ERRORS.INVALID_JWT_ISSUER);
-        if (utils.isJWTExpired(jwtPayload)) return callback(JWT_ERRORS.JWT_TOKEN_EXPIRED);
-        if (utils.isJWTNotActive(jwtPayload)) return callback(JWT_ERRORS.JWT_TOKEN_NOT_ACTIVE);
+        if (utils.isJWTExpired(jwtPayload, atDate)) return callback(JWT_ERRORS.JWT_TOKEN_EXPIRED);
+        if (utils.isJWTNotActive(jwtPayload, atDate)) return callback(JWT_ERRORS.JWT_TOKEN_NOT_ACTIVE);
 
         callback(undefined, result);
     });

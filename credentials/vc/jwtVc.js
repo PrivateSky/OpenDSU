@@ -108,8 +108,8 @@ class JwtVC extends JWT {
         return this.asyncMyFunction(this.embedSubjectClaim, [...arguments]);
     }
 
-    setEncodedJWT(encodedJWT) {
-        jwtVcParser(encodedJWT, (err, result) => {
+    verifyEncodedJWTVc(encodedJWT, atDate) {
+        jwtVcParser(encodedJWT, atDate, (err, result) => {
             if (err) {
                 return this.notifyInstanceReady(err);
             }
@@ -141,7 +141,7 @@ function createJWTVc(issuer, subject, options = {}) {
 function verifyJWTVc(encodedJWTVc, atDate, revocationStatus) {
     console.log(atDate, revocationStatus);
     const jwtInstance = new JwtVC();
-    jwtInstance.setEncodedJWT(encodedJWTVc);
+    jwtInstance.verifyEncodedJWTVc(encodedJWTVc, atDate);
 
     return jwtInstance;
 }

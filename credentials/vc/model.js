@@ -51,8 +51,8 @@ function jwtVcBuilder(issuer, subject, options, callback) {
     });
 }
 
-function jwtVcParser(encodedJWTVc, callback) {
-    defaultJWTParser(encodedJWTVc, (err, result) => {
+function jwtVcParser(encodedJWTVc, atDate, callback) {
+    defaultJWTParser(encodedJWTVc, atDate, (err, result) => {
         if (err) {
             return callback(err);
         }
