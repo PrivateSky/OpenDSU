@@ -139,7 +139,6 @@ function createJWTVc(issuer, subject, options = {}) {
  * @param revocationStatus
  */
 function verifyJWTVc(encodedJWTVc, atDate, revocationStatus) {
-    console.log(atDate, revocationStatus);
     const jwtInstance = new JwtVC();
     jwtInstance.verifyEncodedJWTVc(encodedJWTVc, atDate);
 

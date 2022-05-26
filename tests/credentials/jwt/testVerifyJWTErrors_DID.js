@@ -45,9 +45,8 @@ assert.callback("[DID] Test verify JWT verifiable credential errors", (callback)
             throw err;
         }
 
-        const jwtOptions = {exp: 1678812494957};
         const {issuerDidDocument, subjectDidDocument} = result;
-        createVerifiableCredential("JWT", issuerDidDocument, subjectDidDocument, jwtOptions, (createJWTError, jwtInstance) => {
+        createVerifiableCredential("JWT", issuerDidDocument, subjectDidDocument, (createJWTError, jwtInstance) => {
             if (createJWTError) {
                 throw createJWTError;
             }
@@ -74,11 +73,11 @@ assert.callback("[DID] Test verify JWT verifiable credential errors", (callback)
                                 assert.notNull(emptyJWTError);
                                 assert.equal(emptyJWTError, JWT_ERRORS.INVALID_JWT_FORMAT);
 
-                                verifyCredential("JWT", encodedJWT, new Date("12-12-2000"), (emptyJWTError) => {
+                                verifyCredential("JWT", encodedJWT, new Date("12-12-2021"), (emptyJWTError) => {
                                     assert.notNull(emptyJWTError);
                                     assert.equal(emptyJWTError, JWT_ERRORS.JWT_TOKEN_NOT_ACTIVE);
 
-                                    verifyCredential("JWT", encodedJWT, new Date("12-12-4000"), (emptyJWTError) => {
+                                    verifyCredential("JWT", encodedJWT, new Date("12-12-2023"), (emptyJWTError) => {
                                         assert.notNull(emptyJWTError);
                                         assert.equal(emptyJWTError, JWT_ERRORS.JWT_TOKEN_EXPIRED);
 
