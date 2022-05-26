@@ -19,33 +19,6 @@ class JwtVP extends JWT {
         }
     }
 
-    /**
-     * This method embeds one or more public claims about the JWT. These claims are not reflected within VC body
-     * @param claimName {string} - The name of the public claim. Reserved public claims: "vc", "vp", "iss", "sub", "iat"
-     * @param claimValue - The value of the public claim
-     * @param callback
-     */
-    embedClaim = (claimName, claimValue, callback) => {
-        super.embedClaim(claimName, claimValue, callback);
-    }
-
-    async embedClaimAsync(claimName, claimValue) {
-        return await $$.promisify(this.embedClaim).call(this, claimName, claimValue);
-    }
-
-    /**
-     * This method is used to extend the expiration date of a JWT
-     * @param timeInSeconds {Number}
-     * @param callback
-     */
-    extendExpirationDate = (timeInSeconds, callback) => {
-        super.extendExpirationDate(timeInSeconds, callback);
-    }
-
-    async extendExpirationDateAsync(timeInSeconds) {
-        return await $$.promisify(this.extendExpirationDate).call(this, timeInSeconds);
-    }
-
     addVerifiableCredential = (encodedJWTVc, callback) => {
         if (!encodedJWTVc) {
             return callback(JWT_ERRORS.INVALID_JWT_FORMAT);
@@ -56,7 +29,7 @@ class JwtVP extends JWT {
     };
 
     async addVerifiableCredentialAsync(encodedJWTVc) {
-        return await $$.promisify(this.addVerifiableCredential).call(this, encodedJWTVc);
+        return this.asyncMyFunction(this.addVerifiableCredential, [...arguments]);
     }
 
     setEncodedJWTVp(encodedJWTVp) {

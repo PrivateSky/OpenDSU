@@ -24,7 +24,7 @@ const JWT_DEFAULTS = {
     VC_VP_CONTEXT_CREDENTIALS: "https://www.w3.org/2018/credentials/v1",
     VC_TYPE: "VerifiableCredential",
     VP_TYPE: "VerifiablePresentation",
-    EXP: (5 * 365 * 24 * 60 * 60), // 5 years default,
+    EXP: (365 * 24 * 60 * 60), // 1 year default,
     EMPTY_VC_VP: {
         context: [], type: []
     }

@@ -18,8 +18,8 @@ function JWTProofType() {
         });
     };
 
-    this.verifyCredential = (encodedJWTVc, callback) => {
-        const jwtInstance = verifyJWTVc(encodedJWTVc);
+    this.verifyCredential = (encodedJWTVc, atDate, revocationStatus, callback) => {
+        const jwtInstance = verifyJWTVc(encodedJWTVc, atDate, revocationStatus);
         jwtInstance.onInstanceReady((err) => {
             if (err) {
                 return callback(err);
@@ -45,8 +45,8 @@ function JWTProofType() {
         });
     };
 
-    this.verifyPresentation = (encodedJWTVp, callback) => {
-        const jwtInstance = verifyJWTVp(encodedJWTVp);
+    this.verifyPresentation = (encodedJWTVp, atDate, revocationStatus, callback) => {
+        const jwtInstance = verifyJWTVp(encodedJWTVp, atDate, revocationStatus);
         jwtInstance.onInstanceReady((err) => {
             if (err) {
                 return callback(err);
@@ -62,7 +62,8 @@ function createJWTProofType() {
 }
 
 module.exports = {
-    UNKNOWN_VERIFIABLE_CREDENTIAL_TYPE: "UNKNOWN_VERIFIABLE_CREDENTIAL_TYPE", JWT: "JWT",
+    UNKNOWN_VERIFIABLE_CREDENTIAL_TYPE: "UNKNOWN_VERIFIABLE_CREDENTIAL_TYPE",
+    JWT: "JWT",
 
     createJWTProofType
 };

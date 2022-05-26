@@ -11,7 +11,7 @@ class JWT {
         instanceReadyMixin(this);
     }
 
-    getEncodedJWT = (callback) => {
+    getEncodedJWT(callback) {
         signJWT(this.jwtHeader, this.jwtPayload, (err, jwtSignature) => {
             if (err) {
                 return callback(err);
@@ -23,7 +23,7 @@ class JWT {
     };
 
     async getEncodedJWTAsync() {
-        return await $$.promisify(this.getEncodedJWT).call(this);
+        return this.asyncMyFunction(this.getEncodedJWT, [...arguments]);
     }
 
     /**
@@ -46,7 +46,7 @@ class JWT {
     };
 
     async embedClaimAsync(claimName, claimValue) {
-        return await $$.promisify(this.embedClaim).call(this, claimName, claimValue);
+        return this.asyncMyFunction(this.embedClaim, [...arguments]);
     }
 
     /**
@@ -64,8 +64,20 @@ class JWT {
     };
 
     async extendExpirationDateAsync(timeInSeconds) {
-        return await $$.promisify(this.extendExpirationDate).call(this, timeInSeconds);
+        return this.asyncMyFunction(this.extendExpirationDate, [...arguments]);
     }
+
+    asyncMyFunction = (func, params) => {
+        func = func.bind(this);
+        return new Promise((resolve, reject) => {
+            func(...params, (err, data) => {
+                if (err) {
+                    return reject(err);
+                }
+                resolve(data);
+            });
+        });
+    };
 }
 
 module.exports = JWT;
