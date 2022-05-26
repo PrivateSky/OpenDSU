@@ -74,7 +74,17 @@ assert.callback("[DID] Test verify JWT verifiable credential errors", (callback)
                                 assert.notNull(emptyJWTError);
                                 assert.equal(emptyJWTError, JWT_ERRORS.INVALID_JWT_FORMAT);
 
-                                callback();
+                                verifyCredential("JWT", encodedJWT, new Date("12-12-2000"), (emptyJWTError) => {
+                                    assert.notNull(emptyJWTError);
+                                    assert.equal(emptyJWTError, JWT_ERRORS.JWT_TOKEN_NOT_ACTIVE);
+
+                                    verifyCredential("JWT", encodedJWT, new Date("12-12-4000"), (emptyJWTError) => {
+                                        assert.notNull(emptyJWTError);
+                                        assert.equal(emptyJWTError, JWT_ERRORS.JWT_TOKEN_EXPIRED);
+
+                                        callback();
+                                    });
+                                });
                             });
                         });
                     });
