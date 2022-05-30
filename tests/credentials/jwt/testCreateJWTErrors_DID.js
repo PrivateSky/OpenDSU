@@ -11,12 +11,10 @@ const scAPI = openDSU.loadAPI("sc");
 const crypto = openDSU.loadApi("crypto");
 
 const credentials = openDSU.loadApi("credentials");
-const {createVerifiableCredential, JWT_ERRORS} = credentials;
-
 const domain = "default";
 
 function launchApiHubAndCreateDIDs(callback) {
-    dc.createTestFolder("JWT", async (err, folder) => {
+    dc.createTestFolder("JWTTest", async (err, folder) => {
         if (err) {
             return callback(err);
         }
@@ -49,21 +47,21 @@ assert.callback("[DID] Test create JWT verifiable credential errors", (callback)
         const {issuerDidDocument, subjectDidDocument} = result;
         const issuer = issuerDidDocument.getIdentifier();
         const subject = subjectDidDocument.getIdentifier();
-        createVerifiableCredential("JWT", null, subject, jwtOptions, (invalidIssuerFormatError) => {
+        credentials.createJWTVerifiableCredential(null, subject, jwtOptions, (invalidIssuerFormatError) => {
             assert.notNull(invalidIssuerFormatError);
-            assert.equal(invalidIssuerFormatError, JWT_ERRORS.INVALID_ISSUER_FORMAT);
+            assert.equal(invalidIssuerFormatError, credentials.JWT_ERRORS.INVALID_ISSUER_FORMAT);
 
-            createVerifiableCredential("JWT", "invalidIssuer" + issuer, subject, jwtOptions, (invalidIssuerFormatError) => {
+            credentials.createJWTVerifiableCredential("invalidIssuer" + issuer, subject, jwtOptions, (invalidIssuerFormatError) => {
                 assert.notNull(invalidIssuerFormatError);
-                assert.equal(invalidIssuerFormatError, JWT_ERRORS.INVALID_ISSUER_FORMAT);
+                assert.equal(invalidIssuerFormatError, credentials.JWT_ERRORS.INVALID_ISSUER_FORMAT);
 
-                createVerifiableCredential("JWT", issuer, null, jwtOptions, (invalidSubjectFormatError) => {
+                credentials.createJWTVerifiableCredential(issuer, null, jwtOptions, (invalidSubjectFormatError) => {
                     assert.notNull(invalidSubjectFormatError);
-                    assert.equal(invalidSubjectFormatError, JWT_ERRORS.INVALID_SUBJECT_FORMAT);
+                    assert.equal(invalidSubjectFormatError, credentials.JWT_ERRORS.INVALID_SUBJECT_FORMAT);
 
-                    createVerifiableCredential("JWT", issuer, "invalidSubject" + subject, jwtOptions, (invalidSubjectFormatError) => {
+                    credentials.createJWTVerifiableCredential(issuer, "invalidSubject" + subject, jwtOptions, (invalidSubjectFormatError) => {
                         assert.notNull(invalidSubjectFormatError);
-                        assert.equal(invalidSubjectFormatError, JWT_ERRORS.INVALID_SUBJECT_FORMAT);
+                        assert.equal(invalidSubjectFormatError, credentials.JWT_ERRORS.INVALID_SUBJECT_FORMAT);
 
                         callback();
                     });

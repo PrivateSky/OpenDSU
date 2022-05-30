@@ -11,12 +11,10 @@ const scAPI = openDSU.loadAPI("sc");
 const crypto = openDSU.loadApi("crypto");
 
 const credentials = openDSU.loadApi("credentials");
-const {createVerifiableCredential, verifyCredential, JWT_ERRORS} = credentials;
-
 const domain = "default";
 
 function launchApiHubAndCreateDIDs(callback) {
-    dc.createTestFolder("JWT", async (err, folder) => {
+    dc.createTestFolder("JWTTest", async (err, folder) => {
         if (err) {
             return callback(err);
         }
@@ -46,7 +44,7 @@ assert.callback("[DID] Test verify JWT verifiable credential errors", (callback)
         }
 
         const {issuerDidDocument, subjectDidDocument} = result;
-        createVerifiableCredential("JWT", issuerDidDocument, subjectDidDocument, (createJWTError, jwtInstance) => {
+        credentials.createJWTVerifiableCredential(issuerDidDocument, subjectDidDocument, (createJWTError, jwtInstance) => {
             if (createJWTError) {
                 throw createJWTError;
             }
@@ -56,32 +54,44 @@ assert.callback("[DID] Test verify JWT verifiable credential errors", (callback)
                     throw err;
                 }
 
-                const invalidJWTSignature = encodedJWT + "_invalidSignature";
-                verifyCredential("JWT", invalidJWTSignature, (invalidSignatureError) => {
-                    assert.notNull(invalidSignatureError);
-                    assert.equal(invalidSignatureError, JWT_ERRORS.INVALID_JWT_SIGNATURE);
+                credentials.loadJWTVerifiableCredential(null, (emptyJWTError) => {
+                    assert.notNull(emptyJWTError);
+                    assert.equal(emptyJWTError, credentials.JWT_ERRORS.EMPTY_JWT_PROVIDED);
 
-                    verifyCredential("JWT", null, (emptyJWTError) => {
+                    credentials.loadJWTVerifiableCredential({invalidJWTFormat: true}, (emptyJWTError) => {
                         assert.notNull(emptyJWTError);
-                        assert.equal(emptyJWTError, JWT_ERRORS.EMPTY_JWT_PROVIDED);
+                        assert.equal(emptyJWTError, credentials.JWT_ERRORS.INVALID_JWT_FORMAT);
 
-                        verifyCredential("JWT", {invalidJWTFormat: true}, (emptyJWTError) => {
+                        credentials.loadJWTVerifiableCredential("invalidJWTFormat", (emptyJWTError) => {
                             assert.notNull(emptyJWTError);
-                            assert.equal(emptyJWTError, JWT_ERRORS.INVALID_JWT_FORMAT);
+                            assert.equal(emptyJWTError, credentials.JWT_ERRORS.INVALID_JWT_FORMAT);
 
-                            verifyCredential("JWT", "invalidJWTFormat", (emptyJWTError) => {
-                                assert.notNull(emptyJWTError);
-                                assert.equal(emptyJWTError, JWT_ERRORS.INVALID_JWT_FORMAT);
+                            credentials.loadJWTVerifiableCredential(encodedJWT, (err, loadedJWTInstance) => {
+                                if (err) {
+                                    throw err;
+                                }
 
-                                verifyCredential("JWT", encodedJWT, new Date("12-12-2021"), (emptyJWTError) => {
-                                    assert.notNull(emptyJWTError);
-                                    assert.equal(emptyJWTError, JWT_ERRORS.JWT_TOKEN_NOT_ACTIVE);
+                                loadedJWTInstance.verifyJWT(new Date("12-12-2021"), (err, verificationStatus1) => {
+                                    assert.notNull(verificationStatus1);
+                                    assert.equal(verificationStatus1.errorMessage, credentials.JWT_ERRORS.JWT_TOKEN_NOT_ACTIVE);
 
-                                    verifyCredential("JWT", encodedJWT, new Date("12-12-2023"), (emptyJWTError) => {
-                                        assert.notNull(emptyJWTError);
-                                        assert.equal(emptyJWTError, JWT_ERRORS.JWT_TOKEN_EXPIRED);
+                                    loadedJWTInstance.verifyJWT(new Date("12-12-2023"), (err, verificationStatus2) => {
+                                        assert.notNull(verificationStatus2);
+                                        assert.equal(verificationStatus2.errorMessage, credentials.JWT_ERRORS.JWT_TOKEN_EXPIRED);
 
-                                        callback();
+                                        const invalidJWTSignature = encodedJWT + "_invalidSignature";
+                                        credentials.loadJWTVerifiableCredential(invalidJWTSignature, (err, loadedJWTInstance2) => {
+                                            if (err) {
+                                                throw err;
+                                            }
+
+                                            loadedJWTInstance2.verifyJWT(Date.now(), (err, verificationStatus3) => {
+                                                assert.notNull(verificationStatus3);
+                                                assert.equal(verificationStatus3.errorMessage, credentials.JWT_ERRORS.INVALID_JWT_SIGNATURE);
+
+                                                callback();
+                                            });
+                                        });
                                     });
                                 });
                             });

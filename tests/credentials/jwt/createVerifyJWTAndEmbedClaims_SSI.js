@@ -9,7 +9,6 @@ const openDSU = require("../../../index");
 const keySSISpace = openDSU.loadApi("keyssi");
 const credentials = openDSU.loadApi("credentials");
 const crypto = openDSU.loadApi("crypto");
-const {createVerifiableCredential, verifyCredential} = credentials;
 
 const templateSeedSSI = keySSIFactory.createType(SSITypes.SEED_SSI);
 templateSeedSSI.load(SSITypes.SEED_SSI, "default");
@@ -41,7 +40,7 @@ assert.callback("[DID] Create JWT, embed public and subject claims and verify JW
 
         const {issuerSeedSSI, subjectSeedSSI} = result;
         const jwtOptions = {exp: 1678812494957};
-        createVerifiableCredential("JWT", issuerSeedSSI, subjectSeedSSI, jwtOptions, (createJWTError, jwtInstance) => {
+        credentials.createJWTVerifiableCredential(issuerSeedSSI, subjectSeedSSI, jwtOptions, (createJWTError, jwtInstance) => {
             if (createJWTError) {
                 throw createJWTError;
             }
@@ -71,17 +70,24 @@ assert.callback("[DID] Create JWT, embed public and subject claims and verify JW
                                     throw err;
                                 }
 
-                                verifyCredential("JWT", encodedJWT, (err, verifiedJWTInstance) => {
+                                credentials.loadJWTVerifiableCredential(encodedJWT, (err, loadedJWTInstance) =>{
                                     if (err) {
                                         throw err;
                                     }
 
-                                    assert.notNull(verifiedJWTInstance);
-                                    assert.true(extendExpirationDateResult);
-                                    assert.true(embedExistingPublicClaimResult);
-                                    assert.true(embedNewPublicClaimResult);
-                                    assert.true(embedSubjectClaimResult);
-                                    callback();
+                                    loadedJWTInstance.verifyJWT(encodedJWT, (err, verificationStatus) => {
+                                        if (err) {
+                                            throw err;
+                                        }
+
+                                        assert.notNull(verificationStatus);
+                                        assert.true(verificationStatus.verifyResult, verificationStatus.errorMessage);
+                                        assert.true(extendExpirationDateResult);
+                                        assert.true(embedExistingPublicClaimResult);
+                                        assert.true(embedNewPublicClaimResult);
+                                        assert.true(embedSubjectClaimResult);
+                                        callback();
+                                    });
                                 });
                             });
                         });

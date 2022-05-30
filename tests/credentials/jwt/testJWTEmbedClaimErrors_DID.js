@@ -11,12 +11,10 @@ const scAPI = openDSU.loadAPI("sc");
 const crypto = openDSU.loadApi("crypto");
 
 const credentials = openDSU.loadApi("credentials");
-const {createVerifiableCredential, JWT_ERRORS} = credentials;
-
 const domain = "default";
 
 function launchApiHubAndCreateDIDs(callback) {
-    dc.createTestFolder("JWT", async (err, folder) => {
+    dc.createTestFolder("JWTTest", async (err, folder) => {
         if (err) {
             return callback(err);
         }
@@ -47,38 +45,38 @@ assert.callback("[DID] Test JWT Embed public and subject claims errors", (callba
 
         const jwtOptions = {exp: 1678812494957};
         const {issuerDidDocument, subjectDidDocument} = result;
-        createVerifiableCredential("JWT", issuerDidDocument, subjectDidDocument, jwtOptions, (createJWTError, jwtInstance) => {
+        credentials.createJWTVerifiableCredential(issuerDidDocument, subjectDidDocument, jwtOptions, (createJWTError, jwtInstance) => {
             if (createJWTError) {
                 throw createJWTError;
             }
 
             jwtInstance.extendExpirationDate("invalidExpirationDate", (embedClaimError) => {
                 assert.notNull(embedClaimError);
-                assert.equal(embedClaimError, JWT_ERRORS.INVALID_EXPIRATION_DATE);
+                assert.equal(embedClaimError, credentials.JWT_ERRORS.INVALID_EXPIRATION_DATE);
 
                 jwtInstance.embedClaim("iss", subjectDidDocument, (embedClaimError) => {
                     assert.notNull(embedClaimError);
-                    assert.equal(embedClaimError, JWT_ERRORS.IMMUTABLE_PUBLIC_CLAIM);
+                    assert.equal(embedClaimError, credentials.JWT_ERRORS.IMMUTABLE_PUBLIC_CLAIM);
 
                     jwtInstance.embedClaim({invalidPublicClaim: true}, "test", (embedClaimError) => {
                         assert.notNull(embedClaimError);
-                        assert.equal(embedClaimError, JWT_ERRORS.INVALID_PUBLIC_CLAIM);
+                        assert.equal(embedClaimError, credentials.JWT_ERRORS.INVALID_PUBLIC_CLAIM);
 
                         jwtInstance.embedSubjectClaim("invalidContextURI", "TestSubjectClaim", {test: "test"}, (embedClaimError) => {
                             assert.notNull(embedClaimError);
-                            assert.equal(embedClaimError, JWT_ERRORS.INVALID_CONTEXT_URI);
+                            assert.equal(embedClaimError, credentials.JWT_ERRORS.INVALID_CONTEXT_URI);
 
                             jwtInstance.embedSubjectClaim("https://some.uri.test", {invalidContextType: true}, {test: "test"}, (embedClaimError) => {
                                 assert.notNull(embedClaimError);
-                                assert.equal(embedClaimError, JWT_ERRORS.INVALID_CONTEXT_TYPE);
+                                assert.equal(embedClaimError, credentials.JWT_ERRORS.INVALID_CONTEXT_TYPE);
 
                                 jwtInstance.embedSubjectClaim("https://some.uri.test", "TestSubjectClaim", "INVALID_SUBJECT_CLAIM", (embedClaimError) => {
                                     assert.notNull(embedClaimError);
-                                    assert.equal(embedClaimError, JWT_ERRORS.INVALID_SUBJECT_CLAIM);
+                                    assert.equal(embedClaimError, credentials.JWT_ERRORS.INVALID_SUBJECT_CLAIM);
 
                                     jwtInstance.embedSubjectClaim("https://some.uri.test", "TestSubjectClaim", {id: issuerDidDocument}, (embedClaimError) => {
                                         assert.notNull(embedClaimError);
-                                        assert.equal(embedClaimError, JWT_ERRORS.IMMUTABLE_SUBJECT_CLAIM);
+                                        assert.equal(embedClaimError, credentials.JWT_ERRORS.IMMUTABLE_SUBJECT_CLAIM);
 
                                         callback();
                                     });
