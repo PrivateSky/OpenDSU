@@ -1,6 +1,7 @@
 const {JWT_DEFAULTS, JWT_ERRORS} = require("../constants");
 const {defaultJWTParser, defaultJWTBuilder} = require("../jwt/model");
 const {verifyJWT} = require("../jwt/verify");
+const utils = require("../utils");
 
 /**
  * This method creates "vp" object from the payload of a JWT according to the W3c Standard
@@ -38,22 +39,28 @@ function jwtVpBuilder(issuer, encodedJWTVc, options, callback) {
 }
 
 function jwtVpParser(encodedJWTVp, atDate, callback) {
-    defaultJWTParser(encodedJWTVp, atDate, (err, result) => {
+    defaultJWTParser(encodedJWTVp, atDate, (err, decodedJWT) => {
         if (err) {
             return callback(err);
         }
 
-        const {jwtHeader, jwtPayload, jwtSignature, encodedJWTHeaderAndBody} = result;
-        if (!jwtPayload.vp) return callback(JWT_ERRORS.INVALID_JWT_PAYLOAD);
-        verifyJWT(jwtPayload.iss, jwtSignature, encodedJWTHeaderAndBody, (err, verifyResult) => {
-            if (err) return callback(err);
-            if (!verifyResult) return callback(JWT_ERRORS.INVALID_JWT_SIGNATURE);
+        if (!decodedJWT.jwtPayload.vp) return callback(JWT_ERRORS.INVALID_JWT_PAYLOAD);
+        callback(undefined, decodedJWT);
+    });
+}
 
-            callback(undefined, {jwtHeader, jwtPayload});
-        });
+function jwtVpVerifier(decodedJWT, atDate, rootsOfTrust, callback) {
+    const {jwtPayload, jwtSignature, encodedJWTHeaderAndBody} = decodedJWT;
+    if (utils.isJWTExpired(jwtPayload, atDate)) return callback(JWT_ERRORS.JWT_TOKEN_EXPIRED);
+    if (utils.isJWTNotActive(jwtPayload, atDate)) return callback(JWT_ERRORS.JWT_TOKEN_NOT_ACTIVE);
+    verifyJWT(jwtPayload.iss, jwtSignature, encodedJWTHeaderAndBody, (err, verifyResult) => {
+        if (err) return callback(err);
+        if (!verifyResult) return callback(JWT_ERRORS.INVALID_JWT_SIGNATURE);
+
+        callback(undefined, true);
     });
 }
 
 module.exports = {
-    jwtVpBuilder, jwtVpParser
+    jwtVpBuilder, jwtVpParser, jwtVpVerifier
 };

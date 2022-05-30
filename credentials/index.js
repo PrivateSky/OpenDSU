@@ -1,89 +1,85 @@
-const proofTypes = require("./proofTypes");
-let proofTypesRegistry = {};
+const {createJWTVc, loadJWTVc} = require("./vc/jwtVc");
+const {createJWTVp, loadJWTVp} = require("./vp/jwtVp");
 
-function createVerifiableCredential(proofType, issuer, subject, options, callback) {
-    if (!proofTypesRegistry[proofType]) {
-        return callback(proofTypes.UNKNOWN_VERIFIABLE_CREDENTIAL_TYPE);
+function createJWTVerifiableCredential(issuer, subject, options, callback) {
+    if (typeof options === "function") {
+        callback = options;
+        options = {};
     }
 
-    proofTypesRegistry[proofType].createVerifiableCredential(issuer, subject, options, callback);
+    const jwtInstance = createJWTVc(issuer, subject, options);
+    jwtInstance.onInstanceReady((err) => {
+        if (err) {
+            return callback(err);
+        }
+
+        callback(undefined, jwtInstance);
+    });
 }
 
-async function createVerifiableCredentialAsync(proofType, issuer, subject, options) {
-    return await $$.promisify(createVerifiableCredential)(proofType, issuer, subject, options);
+async function createJWTVerifiableCredentialAsync(issuer, subject, options) {
+    return $$.promisify(createJWTVerifiableCredential)(issuer, subject, options);
 }
 
-function verifyCredential(proofType, encodedVc, atDate, revocationStatus, callback) {
-    if (!proofTypesRegistry[proofType]) {
-        return callback(proofTypes.UNKNOWN_VERIFIABLE_CREDENTIAL_TYPE);
+function loadJWTVerifiableCredential(encodedJWTVc, callback) {
+    const jwtInstance = loadJWTVc(encodedJWTVc);
+    jwtInstance.onInstanceReady((err) => {
+        if (err) {
+            return callback(err);
+        }
+
+        callback(undefined, jwtInstance);
+    });
+}
+
+async function loadJWTVerifiableCredentialAsync(encodedJWTVc) {
+    return $$.promisify(loadJWTVerifiableCredential)(encodedJWTVc);
+}
+
+function createJWTVerifiablePresentation(issuer, encodedJWTVc, options, callback) {
+    if (typeof options === "function") {
+        callback = options;
+        options = {};
     }
 
-    if (typeof atDate === "function") {
-        callback = atDate;
-        atDate = Date.now();
-    }
+    const jwtInstance = createJWTVp(issuer, encodedJWTVc, options);
+    jwtInstance.onInstanceReady((err) => {
+        if (err) {
+            return callback(err);
+        }
 
-    if (!callback && typeof revocationStatus === "function") {
-        callback = revocationStatus;
-        revocationStatus = null;
-    }
-
-    proofTypesRegistry[proofType].verifyCredential(encodedVc, atDate, revocationStatus, callback);
+        callback(undefined, jwtInstance);
+    });
 }
 
-async function verifyCredentialAsync(proofType, encodedVc, atDate, revocationStatus) {
-    return await $$.promisify(verifyCredential)(proofType, encodedVc, atDate, revocationStatus);
+async function createJWTVerifiablePresentationAsync(issuer, subject, options) {
+    return $$.promisify(createJWTVerifiablePresentation)(issuer, subject, options);
 }
 
-function createVerifiablePresentation(proofType, issuer, encodedVc, options, callback) {
-    if (!proofTypesRegistry[proofType]) {
-        return callback(proofTypes.UNKNOWN_VERIFIABLE_CREDENTIAL_TYPE);
-    }
+function loadJWTVerifiablePresentation(encodedJWTVp, callback) {
+    const jwtInstance = loadJWTVp(encodedJWTVp);
+    jwtInstance.onInstanceReady((err) => {
+        if (err) {
+            return callback(err);
+        }
 
-    proofTypesRegistry[proofType].createVerifiablePresentation(issuer, encodedVc, options, callback);
+        callback(undefined, jwtInstance);
+    });
 }
 
-async function createVerifiablePresentationAsync(proofType, issuer, encodedVc, options) {
-    return await $$.promisify(createVerifiablePresentation)(proofType, issuer, encodedVc, options);
+async function loadJWTVerifiablePresentationAsync(encodedJWTVp) {
+    return $$.promisify(loadJWTVerifiablePresentation)(encodedJWTVp);
 }
-
-function verifyPresentation(proofType, encodedVp, atDate, revocationStatus, callback) {
-    if (!proofTypesRegistry[proofType]) {
-        return callback(proofTypes.UNKNOWN_VERIFIABLE_CREDENTIAL_TYPE);
-    }
-
-    if (typeof atDate === "function") {
-        callback = atDate;
-        atDate = Date.now();
-    }
-
-    if (!callback && typeof revocationStatus === "function") {
-        callback = revocationStatus;
-        revocationStatus = null;
-    }
-
-    proofTypesRegistry[proofType].verifyPresentation(encodedVp, atDate, revocationStatus, callback);
-}
-
-async function verifyPresentationAsync(proofType, encodedVp, atDate, revocationStatus) {
-    return await $$.promisify(verifyPresentation)(proofType, encodedVp, atDate, revocationStatus);
-}
-
-function registerCredentialEncodingTypes(method, implementation) {
-    proofTypesRegistry[method] = implementation;
-}
-
-registerCredentialEncodingTypes(proofTypes.JWT, proofTypes.createJWTProofType());
 
 module.exports = {
-    createVerifiableCredential,
-    createVerifiableCredentialAsync,
-    verifyCredential,
-    verifyCredentialAsync,
-    createVerifiablePresentation,
-    createVerifiablePresentationAsync,
-    verifyPresentation,
-    verifyPresentationAsync,
+    createJWTVerifiableCredential,
+    createJWTVerifiableCredentialAsync,
+    createJWTVerifiablePresentation,
+    createJWTVerifiablePresentationAsync,
+    loadJWTVerifiableCredential,
+    loadJWTVerifiableCredentialAsync,
+    loadJWTVerifiablePresentation,
+    loadJWTVerifiablePresentationAsync,
 
     JWT_ERRORS: require("./constants").JWT_ERRORS
 };

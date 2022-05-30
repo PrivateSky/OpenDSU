@@ -10,7 +10,7 @@ function getRequiredJWTHeader(options) {
     const {alg, typ} = options; // can be extended with other attributes
 
     return {
-        alg: alg || JWT_DEFAULTS.ALG, 
+        alg: alg || JWT_DEFAULTS.ALG,
         typ: typ || JWT_DEFAULTS.TYP
     }
 }
@@ -81,10 +81,9 @@ function parseJWTSegments(jwt, callback) {
 /**
  *
  * @param encodedJWT {string}
- * @param atDate
  * @param callback {Function}
  */
-function defaultJWTParser(encodedJWT, atDate, callback) {
+function defaultJWTParser(encodedJWT, callback) {
     parseJWTSegments(encodedJWT, (err, result) => {
         if (err) {
             return callback(err);
@@ -93,8 +92,6 @@ function defaultJWTParser(encodedJWT, atDate, callback) {
         const {jwtHeader, jwtPayload} = result;
         if (!jwtHeader.typ || !jwtHeader.alg) return callback(JWT_ERRORS.INVALID_JWT_HEADER);
         if (!jwtPayload.iss) return callback(JWT_ERRORS.INVALID_JWT_ISSUER);
-        if (utils.isJWTExpired(jwtPayload, atDate)) return callback(JWT_ERRORS.JWT_TOKEN_EXPIRED);
-        if (utils.isJWTNotActive(jwtPayload, atDate)) return callback(JWT_ERRORS.JWT_TOKEN_NOT_ACTIVE);
 
         callback(undefined, result);
     });

@@ -1,6 +1,6 @@
 const JWT = require("../jwt");
 const JWT_ERRORS = require("../constants").JWT_ERRORS;
-const {jwtVpBuilder, jwtVpParser} = require("./model");
+const {jwtVpBuilder, jwtVpParser, jwtVpVerifier} = require("./model");
 
 class JwtVP extends JWT {
     constructor(issuer, encodedJWTVc, options, isInitialisation = false) {
@@ -32,17 +32,44 @@ class JwtVP extends JWT {
         return this.asyncMyFunction(this.addVerifiableCredential, [...arguments]);
     }
 
-    verifyEncodedJWTVp(encodedJWTVp, atDate) {
-        jwtVpParser(encodedJWTVp, atDate, (err, result) => {
+    loadEncodedJWTVp(encodedJWTVp) {
+        jwtVpParser(encodedJWTVp, (err, result) => {
             if (err) {
                 return this.notifyInstanceReady(err);
             }
 
             this.jwtHeader = result.jwtHeader;
             this.jwtPayload = result.jwtPayload;
+            this.jwtSignature = result.jwtSignature;
+            this.encodedJWTHeaderAndBody = result.encodedJWTHeaderAndBody;
             this.notifyInstanceReady();
         });
-    };
+    }
+
+    verifyJWT(atDate, rootsOfTrust, callback) {
+        if (typeof rootsOfTrust === "function") {
+            callback = rootsOfTrust;
+            rootsOfTrust = [];
+        }
+
+        const decodedJWT = {
+            jwtHeader: this.jwtHeader,
+            jwtPayload: this.jwtPayload,
+            jwtSignature: this.jwtSignature,
+            encodedJWTHeaderAndBody: this.encodedJWTHeaderAndBody
+        };
+        jwtVpVerifier(decodedJWT, atDate, rootsOfTrust, (err, result) => {
+            if (err) {
+                return callback(undefined, {verifyResult: false, errorMessage: err});
+            }
+
+            callback(undefined, {verifyResult: result, ...JSON.parse(JSON.stringify(this.jwtPayload))});
+        });
+    }
+
+    verifyJWTAsync(adDate, rootsOfTrust) {
+        return this.asyncMyFunction(this.verifyJWT, [...arguments]);
+    }
 }
 
 /**
@@ -59,16 +86,14 @@ function createJWTVp(issuer, encodedJWTVc, options = {}) {
 /**
  * This method is parsing an encoded verifiable credential according to the requested type and returns the instance of the verifiable credential. <br />
  * @param encodedJWTVp {string}
- * @param atDate
- * @param revocationStatus
  */
-function verifyJWTVp(encodedJWTVp, atDate, revocationStatus) {
+function loadJWTVp(encodedJWTVp) {
     const jwtInstance = new JwtVP();
-    jwtInstance.verifyEncodedJWTVp(encodedJWTVp, atDate);
+    jwtInstance.loadEncodedJWTVp(encodedJWTVp);
 
     return jwtInstance;
 }
 
 module.exports = {
-    createJWTVp, verifyJWTVp
+    createJWTVp, loadJWTVp
 };

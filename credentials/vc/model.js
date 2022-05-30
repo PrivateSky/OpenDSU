@@ -1,7 +1,7 @@
 const {JWT_DEFAULTS, JWT_ERRORS} = require("../constants");
-const {dateTimeFormatter, getReadableIdentity, getIssuerFormat} = require("../utils");
 const {defaultJWTParser, defaultJWTBuilder} = require("../jwt/model");
 const {verifyJWT} = require("../jwt/verify");
+const utils = require("../utils");
 
 /**
  * This method creates "vc" object from the payload of a JWT according to the W3c Standard
@@ -25,8 +25,8 @@ function getRequiredJWTVCModel(jwtPayload, options) {
             id: sub
         }, // Either single object, or an array of objects - id is mandatory and is reflected from "sub" attribute,
         issuer: iss, // reflected from "iss" attribute
-        issuanceDate: dateTimeFormatter(nbf), // reflected from "nbf" attribute displayed using date-time format https://www.w3.org/TR/xmlschema11-2/#dateTime
-        expirationDate: dateTimeFormatter(exp) // reflected from "exp" attribute displayed using date-time format https://www.w3.org/TR/xmlschema11-2/#dateTime
+        issuanceDate: utils.dateTimeFormatter(nbf), // reflected from "nbf" attribute displayed using date-time format https://www.w3.org/TR/xmlschema11-2/#dateTime
+        expirationDate: utils.dateTimeFormatter(exp) // reflected from "exp" attribute displayed using date-time format https://www.w3.org/TR/xmlschema11-2/#dateTime
     }
 }
 
@@ -37,10 +37,10 @@ function jwtVcBuilder(issuer, subject, options, callback) {
         }
 
         const {jwtHeader, jwtPayload} = result;
-        subject = getReadableIdentity(subject);
+        subject = utils.getReadableIdentity(subject);
         if (!subject) return callback(JWT_ERRORS.INVALID_SUBJECT_FORMAT);
 
-        const subjectFormat = getIssuerFormat(subject);
+        const subjectFormat = utils.getIssuerFormat(subject);
         if (!subjectFormat) return callback(JWT_ERRORS.INVALID_SUBJECT_FORMAT);
 
         jwtPayload.sub = subject;
@@ -51,23 +51,29 @@ function jwtVcBuilder(issuer, subject, options, callback) {
     });
 }
 
-function jwtVcParser(encodedJWTVc, atDate, callback) {
-    defaultJWTParser(encodedJWTVc, atDate, (err, result) => {
+function jwtVcParser(encodedJWTVc, callback) {
+    defaultJWTParser(encodedJWTVc, (err, decodedJWT) => {
         if (err) {
             return callback(err);
         }
 
-        const {jwtHeader, jwtPayload, jwtSignature, encodedJWTHeaderAndBody} = result;
-        if (!jwtPayload.vc) return callback(JWT_ERRORS.INVALID_JWT_PAYLOAD);
-        verifyJWT(jwtPayload.iss, jwtSignature, encodedJWTHeaderAndBody, (err, verifyResult) => {
-            if (err) return callback(err);
-            if (!verifyResult) return callback(JWT_ERRORS.INVALID_JWT_SIGNATURE);
+        if (!decodedJWT.jwtPayload.vc) return callback(JWT_ERRORS.INVALID_JWT_PAYLOAD);
+        callback(undefined, decodedJWT);
+    });
+}
 
-            callback(undefined, {jwtHeader, jwtPayload});
-        });
+function jwtVcVerifier(decodedJWT, atDate, rootsOfTrust, callback) {
+    const {jwtPayload, jwtSignature, encodedJWTHeaderAndBody} = decodedJWT;
+    if (utils.isJWTExpired(jwtPayload, atDate)) return callback(JWT_ERRORS.JWT_TOKEN_EXPIRED);
+    if (utils.isJWTNotActive(jwtPayload, atDate)) return callback(JWT_ERRORS.JWT_TOKEN_NOT_ACTIVE);
+    verifyJWT(jwtPayload.iss, jwtSignature, encodedJWTHeaderAndBody, (err, verifyResult) => {
+        if (err) return callback(err);
+        if (!verifyResult) return callback(JWT_ERRORS.INVALID_JWT_SIGNATURE);
+
+        callback(undefined, true);
     });
 }
 
 module.exports = {
-    jwtVcBuilder, jwtVcParser
+    jwtVcBuilder, jwtVcParser, jwtVcVerifier
 };
