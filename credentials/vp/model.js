@@ -5,11 +5,10 @@ const utils = require("../utils");
 
 /**
  * This method creates "vp" object from the payload of a JWT according to the W3c Standard
- * @param encodedJWTVc
  * @param jwtPayload
  * @param options {Object}
  */
-function getRequiredJWTVPModel(encodedJWTVc, jwtPayload, options) {
+function getRequiredJWTVPModel(jwtPayload, options) {
     options = Object.assign({}, options, jwtPayload);
     let {vp, iss, id} = options; // can be extended with other attributes
     if (!vp) {
@@ -20,19 +19,19 @@ function getRequiredJWTVPModel(encodedJWTVc, jwtPayload, options) {
         "@context": [JWT_DEFAULTS.VC_VP_CONTEXT_CREDENTIALS, ...vp.context],
         type: [JWT_DEFAULTS.VP_TYPE, ...vp.type],
         id: id, // uuid of the presentation (optional)
-        verifiableCredential: [encodedJWTVc],
+        verifiableCredential: options.credentialsToPresent || [],
         holder: iss // reflected from "iss" attribute
     }
 }
 
-function jwtVpBuilder(issuer, encodedJWTVc, options, callback) {
+function jwtVpBuilder(issuer, options, callback) {
     defaultJWTBuilder(issuer, options, (err, result) => {
         if (err) {
             return callback(err);
         }
 
         const {jwtHeader, jwtPayload} = result;
-        jwtPayload.vp = getRequiredJWTVPModel(encodedJWTVc, jwtPayload, options);
+        jwtPayload.vp = getRequiredJWTVPModel(jwtPayload, options);
 
         callback(undefined, {jwtHeader, jwtPayload});
     });

@@ -36,13 +36,13 @@ async function loadJWTVerifiableCredentialAsync(encodedJWTVc) {
     return $$.promisify(loadJWTVerifiableCredential)(encodedJWTVc);
 }
 
-function createJWTVerifiablePresentation(issuer, encodedJWTVc, options, callback) {
+function createJWTVerifiablePresentation(issuer, options, callback) {
     if (typeof options === "function") {
         callback = options;
         options = {};
     }
 
-    const jwtInstance = createJWTVp(issuer, encodedJWTVc, options);
+    const jwtInstance = createJWTVp(issuer, options);
     jwtInstance.onInstanceReady((err) => {
         if (err) {
             return callback(err);
@@ -52,8 +52,8 @@ function createJWTVerifiablePresentation(issuer, encodedJWTVc, options, callback
     });
 }
 
-async function createJWTVerifiablePresentationAsync(issuer, subject, options) {
-    return $$.promisify(createJWTVerifiablePresentation)(issuer, subject, options);
+async function createJWTVerifiablePresentationAsync(issuer, options) {
+    return $$.promisify(createJWTVerifiablePresentation)(issuer, options);
 }
 
 function loadJWTVerifiablePresentation(encodedJWTVp, callback) {

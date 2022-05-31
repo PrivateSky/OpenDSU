@@ -51,7 +51,7 @@ assert.callback("[DID] Create JWT, embed public claim and, another JWTVc and ver
             const encodedJwtVc1 = await jwtVcInstance.getEncodedJWTAsync();
             const loadedJwtVcInstance1 = await credentials.loadJWTVerifiableCredentialAsync(encodedJwtVc1);
             const verificationStatus1 = await loadedJwtVcInstance1.verifyJWTAsync(Date.now(), rootsOfTrust1);
-            console.log("JWT Vc1: ", encodedJwtVc1);
+            // console.log("JWT Vc1: ", encodedJwtVc1);
             assert.notNull(loadedJwtVcInstance1, "Load Result should be a JWTVc Instance");
             assert.notNull(verificationStatus1, "Verify Result should be an object");
             assert.true(verificationStatus1.verifyResult, verificationStatus1.errorMessage);
@@ -65,12 +65,13 @@ assert.callback("[DID] Create JWT, embed public claim and, another JWTVc and ver
             const encodedJwtVc2 = await jwtVcInstance.getEncodedJWTAsync();
             const loadedJwtVcInstance2 = await credentials.loadJWTVerifiableCredentialAsync(encodedJwtVc2);
             const verificationStatus2 = await loadedJwtVcInstance1.verifyJWTAsync(Date.now(), rootsOfTrust2);
-            console.log("JWT Vc2: ", encodedJwtVc2);
+            // console.log("JWT Vc2: ", encodedJwtVc2);
             assert.notNull(loadedJwtVcInstance2, "Load Result should be a JWTVc Instance");
             assert.notNull(verificationStatus2, "Verify Result should be an object");
             assert.true(verificationStatus2.verifyResult, verificationStatus2.errorMessage);
 
-            const jwtVpInstance = await credentials.createJWTVerifiablePresentationAsync(issuerDidDocument, encodedJwtVc1, {exp: 1678812494957});
+            const jwtVpInstance = await credentials.createJWTVerifiablePresentationAsync(issuerDidDocument, {exp: 1678812494957, credentialsToPresent: [encodedJwtVc2]});
+            await jwtVpInstance.addVerifiableCredentialAsync(encodedJwtVc1);
             await jwtVpInstance.addVerifiableCredentialAsync(encodedJwtVc2);
             await jwtVpInstance.extendExpirationDateAsync(6000);
             await jwtVpInstance.embedClaimAsync("testClaim", "Claim");
@@ -80,7 +81,7 @@ assert.callback("[DID] Create JWT, embed public claim and, another JWTVc and ver
             const encodedJwtVp = await jwtVpInstance.getEncodedJWTAsync();
             const loadedJWTVpInstance = await credentials.loadJWTVerifiablePresentationAsync(encodedJwtVp);
             const verificationStatus = await loadedJWTVpInstance.verifyJWTAsync(Date.now(), rootsOfTrust);
-            console.log("JWT VP: ", encodedJwtVp, verificationStatus);
+            // console.log("JWT VP: ", encodedJwtVp);
             assert.notNull(loadedJWTVpInstance, "Load Result should be a JWTVp Instance");
             assert.notNull(verificationStatus, "Verify Result should be an object");
             assert.true(verificationStatus.verifyResult, verificationStatus.errorMessage);

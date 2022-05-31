@@ -3,11 +3,11 @@ const JWT_ERRORS = require("../constants").JWT_ERRORS;
 const {jwtVpBuilder, jwtVpParser, jwtVpVerifier} = require("./model");
 
 class JwtVP extends JWT {
-    constructor(issuer, encodedJWTVc, options, isInitialisation = false) {
+    constructor(issuer, options, isInitialisation = false) {
         super();
 
         if (isInitialisation === true) {
-            jwtVpBuilder(issuer, encodedJWTVc, options, (err, result) => {
+            jwtVpBuilder(issuer, options, (err, result) => {
                 if (err) {
                     return this.notifyInstanceReady(err);
                 }
@@ -76,11 +76,10 @@ class JwtVP extends JWT {
  * This method prepares the initial JWT options object based on the inputs. <br />
  * Points to the specific create JWT method according to the subject type
  * @param issuer
- * @param encodedJWTVc
  * @param options {Object}
  */
-function createJWTVp(issuer, encodedJWTVc, options = {}) {
-    return new JwtVP(issuer, encodedJWTVc, options, true);
+function createJWTVp(issuer, options = {}) {
+    return new JwtVP(issuer, options, true);
 }
 
 /**
