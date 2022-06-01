@@ -56,16 +56,18 @@ assert.callback(
                     return console.log(e);
                 }
 
+                receiverDIDDocument.readMessage((err, decryptedMessage) => {
+                    console.log("received message", decryptedMessage)
+                    if (err) {
+                        return console.log(err);
+                    }
+
+                    assert.equal(decryptedMessage, dataToSend, "The received message is not the same as the message sent");
+                    testFinished();
+                });
+
                 senderDIDDocument.sendMessage(dataToSend, receiverDIDDocument, (err) => {
                     console.log("Sent message", dataToSend);
-                    receiverDIDDocument.readMessage((err, decryptedMessage) => {
-                        if (err) {
-                            return console.log(err);
-                        }
-
-                        assert.equal(decryptedMessage, dataToSend, "The received message is not the same as the message sent");
-                        testFinished();
-                    });
                 });
             });
         });
