@@ -198,4 +198,33 @@ const putBrick = (domain, brick, authToken, callback) => {
     });
 };
 
-module.exports = {getBrick, putBrick, getMultipleBricks};
+const constructBricksFromData = (keySSI, data, options, callback) => {
+    const MAX_BRICK_SIZE = 1024 * 1024; // 1MB
+    const defaultOpts = { encrypt: true, maxBrickSize: MAX_BRICK_SIZE };
+
+    if(typeof options === "function") {
+        callback = options;
+        options = {
+            maxBrickSize: MAX_BRICK_SIZE
+        };
+    }
+
+    options = Object.assign({}, defaultOpts, options);
+
+    const bar = require("bar");
+    const archiveConfigurator = bar.createArchiveConfigurator();
+    archiveConfigurator.setBufferSize(MAX_BRICK_SIZE);
+    archiveConfigurator.setKeySSI(keySSI);
+
+    const brickStorageService = bar.createBrickStorageService(archiveConfigurator, keySSI);
+
+    brickStorageService.ingestData(data, options, (err, result) => {
+        if (err) {
+            return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper("Failed to ingest data into brick storage service", err));
+        }
+
+        callback(undefined, result);
+    });
+}
+
+module.exports = {getBrick, putBrick, getMultipleBricks, constructBricksFromData};
