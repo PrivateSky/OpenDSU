@@ -1,4 +1,3 @@
-const {createOpenDSUErrorWrapper} = require("../../error");
 module.exports = {
     ensure_WalletDB_DSU_Initialisation: function (keySSI, dbName, callback) {
         let resolver = require("../../resolver");
@@ -84,11 +83,15 @@ module.exports = {
         }
 
     },
-    initialiseWalletDB: function (dbName, callback) {
+    initialiseWalletDB: function (dbName, keySSI, callback) {
+        if (typeof keySSI === "function") {
+            callback = keySSI;
+            keySSI = undefined;
+        }
         const openDSU = require("opendsu");
         let resolver = openDSU.loadAPI("resolver");
         let scAPI = openDSU.loadAPI("sc");
-        let keySSI;
+        let keySSISpace = openDSU.loadAPI("keyssi");
         let storageDSU;
         const DB_KEY_SSI_PATH = `/db/${dbName}`;
         scAPI.getMainDSU(async (err, mainDSU) => {
@@ -96,35 +99,38 @@ module.exports = {
                 return callback(err);
             }
 
-            try {
-                keySSI = await $$.promisify(mainDSU.readFile)(DB_KEY_SSI_PATH);
-                keySSI = keySSI.toString();
-            } catch (e) {
-                let vaultDomain;
+            if(!keySSI){
                 try {
-                    vaultDomain = await $$.promisify(scAPI.getVaultDomain)();
-                } catch (e) {
-                    return callback(createOpenDSUErrorWrapper(`Failed to get vault domain`, e));
-                }
-                try {
-                    storageDSU = await $$.promisify(resolver.createSeedDSU)(vaultDomain);
-                } catch (e) {
-                    return callback(createOpenDSUErrorWrapper(`Failed to create Seed DSU`, e));
-                }
+                    keySSI = await $$.promisify(mainDSU.readFile)(DB_KEY_SSI_PATH);
+                    keySSI = keySSI.toString();
 
-                try {
-                    keySSI = await $$.promisify(storageDSU.getKeySSIAsObject)();
                 } catch (e) {
-                    return callback(createOpenDSUErrorWrapper(`Failed to get storageDSU's keySSI`, e));
-                }
+                    let vaultDomain;
+                    try {
+                        vaultDomain = await $$.promisify(scAPI.getVaultDomain)();
+                    } catch (e) {
+                        return callback(createOpenDSUErrorWrapper(`Failed to get vault domain`, e));
+                    }
+                    try {
+                        storageDSU = await $$.promisify(resolver.createSeedDSU)(vaultDomain);
+                    } catch (e) {
+                        return callback(createOpenDSUErrorWrapper(`Failed to create Seed DSU`, e));
+                    }
 
-                try {
-                    await $$.promisify(mainDSU.writeFile)(DB_KEY_SSI_PATH, keySSI.getIdentifier());
-                } catch (e) {
-                    return callback(createOpenDSUErrorWrapper(`Failed to store key SSI in mainDSU for db <${dbName}>`, e));
-                }
+                    try {
+                        keySSI = await $$.promisify(storageDSU.getKeySSIAsObject)();
+                    } catch (e) {
+                        return callback(createOpenDSUErrorWrapper(`Failed to get storageDSU's keySSI`, e));
+                    }
 
-                return callback(undefined, storageDSU, keySSI);
+                    try {
+                        await $$.promisify(mainDSU.writeFile)(DB_KEY_SSI_PATH, keySSI.getIdentifier());
+                    } catch (e) {
+                        return callback(createOpenDSUErrorWrapper(`Failed to store key SSI in mainDSU for db <${dbName}>`, e));
+                    }
+
+                    return callback(undefined, storageDSU, keySSI);
+                }
             }
 
             try {
@@ -132,6 +138,21 @@ module.exports = {
             } catch (e) {
                 return callback(createOpenDSUErrorWrapper(`Failed to load storage DSU for db <${dbName}>`, e));
             }
+
+            if(typeof keySSI === "string") {
+                try{
+                    keySSI = keySSISpace.parse(keySSI);
+                }catch (e) {
+                    return callback(createOpenDSUErrorWrapper(`Failed to parse keySSI <${keySSI}>`, e));
+                }
+            }
+            try {
+                await $$.promisify(mainDSU.writeFile)(DB_KEY_SSI_PATH, keySSI.getIdentifier());
+            } catch (e) {
+                return callback(createOpenDSUErrorWrapper(`Failed to store key SSI in mainDSU for db <${dbName}>`, e));
+            }
+
+            return callback(undefined, storageDSU, keySSI);
         })
     },
     ensure_MultiUserDB_DSU_Initialisation: function (keySSI, dbName, userId, callback) {

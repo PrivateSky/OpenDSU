@@ -43,7 +43,7 @@ function WalletDBEnclave(keySSI, did) {
             }
         }
 
-        this.storageDB = db.getWalletDB(keySSI, DB_NAME);
+        this.storageDB = db.getSimpleWalletDB(DB_NAME, {keySSI});
         this.storageDB.on("initialised", () => {
             initialised = true;
             this.finishInitialisation();
