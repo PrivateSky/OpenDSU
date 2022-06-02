@@ -67,9 +67,8 @@ class JwtVP extends JWT {
                 decodedClaims.vp.verifiableCredential = result.verifiableCredentials;
                 if (result.verifyResult === false) {
                     verifyResultObj.verifyResult = false;
-                    verifyResultObj.errorMessage = result.verifiableCredentials
-                        .filter(vc => typeof vc.errorMessage === "string")
-                        .map(vc => vc.errorMessage);
+                    verifyResultObj.errorMessage = result.verifiableCredentials.find(vc => typeof vc.errorMessage === "string").errorMessage;
+
                 }
             }
 

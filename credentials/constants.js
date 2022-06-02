@@ -42,7 +42,7 @@ const LABELS = {
 }
 
 function getDefaultJWTOptions() {
-    const now = new Date().getTime();
+    const now = Date.now();
     return {
         iat: now, nbf: now, exp: now + JWT_DEFAULTS.EXP
     };

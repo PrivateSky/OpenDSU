@@ -108,7 +108,7 @@ function verifyRootsOfTrust(jwtVcList, rootsOfTrust, callback) {
                 verifyResult.verifyResult = false;
                 verifyResult.verifiableCredentials.push({
                     jwtVc: verifiableCredential,
-                    errorMessage: JWT_ERRORS.ROOT_OF_TRUST_NOT_VALID + ": " + jwtPayload.iss
+                    errorMessage: JWT_ERRORS.ROOT_OF_TRUST_NOT_VALID
                 });
                 return chain(++index);
             }
