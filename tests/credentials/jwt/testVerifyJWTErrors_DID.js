@@ -89,7 +89,12 @@ assert.callback("[DID] Test verify JWT verifiable credential errors", (callback)
                                                 assert.notNull(verificationStatus3);
                                                 assert.equal(verificationStatus3.errorMessage, credentials.JWT_ERRORS.INVALID_JWT_SIGNATURE);
 
-                                                callback();
+                                                loadedJWTInstance2.verifyJWT(Date.now(), ["invalid root of trust"], (err, verificationStatus4) => {
+                                                    assert.notNull(verificationStatus4);
+                                                    assert.notNull(verificationStatus4.errorMessage);
+
+                                                    callback();
+                                                });
                                             });
                                         });
                                     });
