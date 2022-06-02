@@ -83,7 +83,7 @@ function W3CDID_Mixin(target, enclave) {
         const __sendMessage = () => {
             const mqHandler = require("opendsu")
                 .loadAPI("mq")
-                .getMQHandlerForDID(toOtherDID, toOtherDID.getDomain());
+                .getMQHandlerForDID(toOtherDID);
             target.encryptMessage(toOtherDID, message, (err, encryptedMessage) => {
                 if (err) {
                     return callback(

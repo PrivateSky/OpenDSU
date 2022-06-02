@@ -85,60 +85,67 @@ const configEnvironment = (config, refreshSC, callback) => {
             return callback(createOpenDSUErrorWrapper("Failed to get main DSU", err));
         }
 
-        mainDSU.readFile(constants.ENVIRONMENT_PATH, (err, env) => {
+        mainDSU.writeFile(constants.ENVIRONMENT_PATH, JSON.stringify(config), (err) => {
             if (err) {
-                return callback(createOpenDSUErrorWrapper("Failed to read env", err));
+                return callback(createOpenDSUErrorWrapper("Failed to write env", err));
             }
 
-            try {
-                env = JSON.parse(env.toString());
-            } catch (e) {
-                return callback(createOpenDSUErrorWrapper("Failed to parse env", e));
+            if (refreshSC) {
+                const sc = refreshSecurityContext();
+                sc.on("initialised", () => callback(undefined, sc));
+            } else {
+                const sc = getSecurityContext();
+                if (securityContextIsInitialised()) {
+                    return callback(undefined, sc);
+                }
+
+                sc.on("initialised", () => {
+                    callback(undefined, sc)
+                });
             }
-
-            Object.assign(env, config);
-            config = env;
-            mainDSU.writeFile(constants.ENVIRONMENT_PATH, JSON.stringify(config), (err) => {
-                if (err) {
-                    return callback(createOpenDSUErrorWrapper("Failed to write env", err));
-                }
-
-                if (refreshSC) {
-                    const sc = refreshSecurityContext();
-                    sc.on("initialised", () => callback(undefined, sc));
-                } else {
-                    const sc = getSecurityContext();
-                    if (securityContextIsInitialised()) {
-                        return callback(undefined, sc);
-                    }
-
-                    sc.on("initialised", () => {
-                        callback(undefined, sc)
-                    });
-                }
-            });
-        })
+        });
     });
 }
 
 const setEnclave = (enclave, type, callback) => {
-    const config = {};
-    enclave.getDID((err, did) => {
+    config.readEnvFile((err, config) => {
         if (err) {
             return callback(err);
         }
-
-        config[openDSU.constants[type].DID] = did;
-        enclave.getKeySSI((err, keySSI) => {
+        enclave.getDID((err, did) => {
             if (err) {
                 return callback(err);
             }
 
-            config[openDSU.constants[type].KEY_SSI] = keySSI;
-            config[openDSU.constants[type].TYPE] = enclave.getEnclaveType();
-            configEnvironment(config, callback);
+            config[openDSU.constants[type].DID] = did;
+            enclave.getKeySSI((err, keySSI) => {
+                if (err) {
+                    return callback(err);
+                }
+
+                config[openDSU.constants[type].KEY_SSI] = keySSI;
+                config[openDSU.constants[type].TYPE] = enclave.getEnclaveType();
+                configEnvironment(config, callback);
+            })
         })
     })
+}
+
+const deleteEnclave = (type, callback) => {
+    config.readEnvFile((err, env) => {
+        if (err) {
+            return callback(err);
+        }
+
+        delete env[openDSU.constants[type].DID];
+        delete env[openDSU.constants[type].KEY_SSI];
+        delete env[openDSU.constants[type].TYPE];
+        configEnvironment(env, callback);
+    })
+}
+
+const deleteSharedEnclave = (callback) => {
+    deleteEnclave("SHARED_ENCLAVE", callback);
 }
 
 const setMainEnclave = (enclave, callback) => {
@@ -162,6 +169,7 @@ module.exports = {
     getSharedEnclave,
     setSharedEnclave,
     setEnclave,
+    deleteSharedEnclave,
     configEnvironment,
     sharedEnclaveExists
 };
