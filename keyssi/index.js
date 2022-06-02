@@ -251,6 +251,12 @@ const createAliasSSI = (domain, alias, callback) => {
     return aliasSSI;
 }
 
+const createSizeSSI = (domain, totalSize, bufferSize) => {
+    const sizeSSI = keySSIFactory.createType(SSITypes.SIZE_SSI);
+    sizeSSI.initialize(domain, totalSize, bufferSize);
+    return sizeSSI;
+}
+
 module.exports = {
     parse,
     createSeedSSI,
@@ -274,5 +280,6 @@ module.exports = {
     we_createSeedSSI,
     we_createConstSSI,
     we_createArraySSI,
-    createAliasSSI
+    createAliasSSI,
+    createSizeSSI
 };

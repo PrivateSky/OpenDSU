@@ -31,12 +31,13 @@ let getSharedDB = function (keySSI, dbName, options) {
 };
 
 let getSimpleWalletDB = (dbName, options) => {
+    options = options || {};
     let SingleDSUStorageStrategy = require("./storageStrategies/SingleDSUStorageStrategy").SingleDSUStorageStrategy;
     let storageStrategy = new SingleDSUStorageStrategy();
     let ConflictStrategy = require("./conflictSolvingStrategies/timestampMergingStrategy").TimestampMergingStrategy;
     let db = getBasicDB(storageStrategy, new ConflictStrategy(), options);
 
-    util.initialiseWalletDB(dbName, (err, _storageDSU, keySSI) => {
+    util.initialiseWalletDB(dbName, options.keySSI, (err, _storageDSU, keySSI) => {
         if (err) {
             return OpenDSUSafeCallback()(createOpenDSUErrorWrapper("Failed to initialise WalletDB_DSU " + dbName, err));
         }
