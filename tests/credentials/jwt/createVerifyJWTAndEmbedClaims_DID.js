@@ -88,6 +88,7 @@ assert.callback("[DID] Create JWT, embed public claim and, another JWTVc and ver
             assert.true(verificationStatusWithRootsOfTrust.verifyResult, verificationStatusWithRootsOfTrust.errorMessage);
             callback();
         } catch (e) {
+            console.error(e);
             throw e;
         }
     });

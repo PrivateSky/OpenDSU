@@ -39,7 +39,7 @@ function jwtVpBuilder(issuer, options, callback) {
 }
 
 function jwtVpParser(encodedJWTVp, atDate, callback) {
-    defaultJWTParser(encodedJWTVp, atDate, (err, decodedJWT) => {
+    defaultJWTParser(encodedJWTVp, (err, decodedJWT) => {
         if (err) {
             return callback(err);
         }
