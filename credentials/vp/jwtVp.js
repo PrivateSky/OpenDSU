@@ -41,7 +41,6 @@ class JwtVP extends JWT {
             this.jwtHeader = result.jwtHeader;
             this.jwtPayload = result.jwtPayload;
             this.jwtSignature = result.jwtSignature;
-            this.encodedJWTHeaderAndBody = result.encodedJWTHeaderAndBody;
             this.notifyInstanceReady();
         });
     }
@@ -55,15 +54,27 @@ class JwtVP extends JWT {
         const decodedJWT = {
             jwtHeader: this.jwtHeader,
             jwtPayload: this.jwtPayload,
-            jwtSignature: this.jwtSignature,
-            encodedJWTHeaderAndBody: this.encodedJWTHeaderAndBody
+            jwtSignature: this.jwtSignature
         };
         jwtVpVerifier(decodedJWT, atDate, rootsOfTrust, (err, result) => {
             if (err) {
                 return callback(undefined, {verifyResult: false, errorMessage: err});
             }
 
-            callback(undefined, {verifyResult: result, ...JSON.parse(JSON.stringify(this.jwtPayload))});
+            const verifyResultObj = {verifyResult: true};
+            const decodedClaims = JSON.parse(JSON.stringify(this.jwtPayload));
+            if (result.verifiableCredentials) {
+                decodedClaims.vp.verifiableCredential = result.verifiableCredentials;
+                if (result.verifyResult === false) {
+                    verifyResultObj.verifyResult = false;
+                    verifyResultObj.errorMessage = result.verifiableCredentials
+                        .filter(vc => typeof vc.errorMessage === "string")
+                        .map(vc => vc.errorMessage);
+                }
+            }
+
+            const verifyResult = {...verifyResultObj, ...decodedClaims};
+            callback(undefined, verifyResult);
         });
     }
 

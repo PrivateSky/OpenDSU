@@ -117,7 +117,6 @@ class JwtVC extends JWT {
             this.jwtHeader = result.jwtHeader;
             this.jwtPayload = result.jwtPayload;
             this.jwtSignature = result.jwtSignature;
-            this.encodedJWTHeaderAndBody = result.encodedJWTHeaderAndBody;
             this.notifyInstanceReady();
         });
     };
@@ -131,8 +130,7 @@ class JwtVC extends JWT {
         const decodedJWT = {
             jwtHeader: this.jwtHeader,
             jwtPayload: this.jwtPayload,
-            jwtSignature: this.jwtSignature,
-            encodedJWTHeaderAndBody: this.encodedJWTHeaderAndBody
+            jwtSignature: this.jwtSignature
         };
         jwtVcVerifier(decodedJWT, atDate, rootsOfTrust, (err, result) => {
             if (err) {

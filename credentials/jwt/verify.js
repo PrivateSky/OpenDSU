@@ -6,7 +6,7 @@ const keySSIResolver = require("key-ssi-resolver");
 const cryptoRegistry = keySSIResolver.CryptoAlgorithmsRegistry;
 
 const {LABELS, JWT_ERRORS} = require("../constants");
-const {getIssuerFormat} = require("../utils");
+const {getIssuerFormat, parseJWTSegments} = require("../utils");
 
 /**
  * This method is verifying the encoded JWT from the current instance according to the issuerType
@@ -78,6 +78,49 @@ function verifyUsingDID(issuer, signature, signedData, callback) {
     });
 }
 
+/**
+ * This method verifies if the roots of trust are the actual issuers of the verifiable credentials
+ * @param jwtVcList
+ * @param rootsOfTrust
+ * @param callback
+ */
+function verifyRootsOfTrust(jwtVcList, rootsOfTrust, callback) {
+    let verifyResult = {verifyResult: true, verifiableCredentials: []};
+    const chain = (index) => {
+        if (index === jwtVcList.length) {
+            return callback(undefined, verifyResult);
+        }
+
+        const verifiableCredential = jwtVcList[index];
+        parseJWTSegments(verifiableCredential, (err, result) => {
+            if (err) {
+                verifyResult.verifyResult = false;
+                verifyResult.verifiableCredentials.push({
+                    jwtVc: verifiableCredential,
+                    errorMessage: err
+                });
+                return chain(++index);
+            }
+
+            let jwtPayload = result.jwtPayload;
+            const rootOfTrust = rootsOfTrust.find(r => r === jwtPayload.iss);
+            if (!rootOfTrust) {
+                verifyResult.verifyResult = false;
+                verifyResult.verifiableCredentials.push({
+                    jwtVc: verifiableCredential,
+                    errorMessage: JWT_ERRORS.ROOT_OF_TRUST_NOT_VALID + ": " + jwtPayload.iss
+                });
+                return chain(++index);
+            }
+
+            verifyResult.verifiableCredentials.push(result.jwtPayload);
+            chain(++index);
+        });
+    };
+
+    chain(0);
+}
+
 module.exports = {
-    verifyJWT
+    verifyJWT, verifyRootsOfTrust
 };

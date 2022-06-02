@@ -5,7 +5,7 @@ const keySSIFactory = keySSIResolver.KeySSIFactory;
 const templateSeedSSI = keySSIFactory.createType(SSITypes.SEED_SSI);
 templateSeedSSI.load(SSITypes.SEED_SSI, "default");
 
-const {LABELS} = require("./constants");
+const {LABELS, JWT_ERRORS} = require("./constants");
 
 function base58Decode(data, keepBuffer) {
     const decodedValue = cryptoRegistry.getDecodingFunction(templateSeedSSI).call(this, data);
@@ -29,9 +29,7 @@ function base64UrlDecode(source, keepAsBuffer = false) {
         return buffer;
     }
 
-    return buffer.toString('utf-8')
-        .replace(/-/g, "+")
-        .replace(/_/g, "/");
+    return buffer.toString('utf-8');
 }
 
 function dateTimeFormatter(timestamp) {
@@ -97,6 +95,33 @@ function safeParseEncodedJson(data, keepBuffer = false) {
 }
 
 /**
+ * This method decodes the JWT and returns the segments
+ * @param jwt {string}
+ * @param callback
+ */
+function parseJWTSegments(jwt, callback) {
+    if (!jwt) return callback(JWT_ERRORS.EMPTY_JWT_PROVIDED);
+    if (typeof jwt !== "string") return callback(JWT_ERRORS.INVALID_JWT_FORMAT);
+
+    const segments = jwt.split(".");
+    if (segments.length !== 3) return callback(JWT_ERRORS.INVALID_JWT_FORMAT);
+
+    const jwtHeader = safeParseEncodedJson(segments[0]);
+    if (jwtHeader instanceof Error || !jwtHeader) return callback(JWT_ERRORS.INVALID_JWT_HEADER);
+
+    const jwtPayload = safeParseEncodedJson(segments[1]);
+    if (jwtPayload instanceof Error || !jwtPayload) return callback(JWT_ERRORS.INVALID_JWT_PAYLOAD);
+
+    const encodedJWTHeaderAndBody = `${segments[0]}.${segments[1]}`;
+    const jwtSignature = base64UrlDecode(segments[2], true);
+    if (!jwtSignature) {
+        return callback(JWT_ERRORS.INVALID_JWT_SIGNATURE);
+    }
+
+    callback(undefined, {jwtHeader, jwtPayload, jwtSignature, encodedJWTHeaderAndBody});
+}
+
+/**
  * This method provides the format of the issuer in order to be processed accordingly.
  * Allowed formats:
  * DID Identifier format
@@ -157,9 +182,18 @@ function isJWTNotActive(payload, atDate) {
 }
 
 module.exports = {
-    base64UrlEncode, base64UrlDecode, base58Decode,
+    base64UrlEncode,
+    base64UrlDecode,
+    base58Decode,
 
-    dateTimeFormatter, isValidURL,
+    dateTimeFormatter,
+    isValidURL,
 
-    getIssuerFormat, getSubjectFormat, isJWTExpired, isJWTNotActive, getReadableIdentity, safeParseEncodedJson
+    getIssuerFormat,
+    getSubjectFormat,
+    isJWTExpired,
+    isJWTNotActive,
+    getReadableIdentity,
+    safeParseEncodedJson,
+    parseJWTSegments
 };

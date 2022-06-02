@@ -52,39 +52,12 @@ function defaultJWTBuilder(issuer, options, callback) {
 }
 
 /**
- * This method decodes the JWT and returns the segments
- * @param jwt {string}
- * @param callback
- */
-function parseJWTSegments(jwt, callback) {
-    if (!jwt) return callback(JWT_ERRORS.EMPTY_JWT_PROVIDED);
-    if (typeof jwt !== "string") return callback(JWT_ERRORS.INVALID_JWT_FORMAT);
-
-    const segments = jwt.split(".");
-    if (segments.length !== 3) return callback(JWT_ERRORS.INVALID_JWT_FORMAT);
-
-    const jwtHeader = utils.safeParseEncodedJson(segments[0]);
-    if (jwtHeader instanceof Error || !jwtHeader) return callback(JWT_ERRORS.INVALID_JWT_HEADER);
-
-    const jwtPayload = utils.safeParseEncodedJson(segments[1]);
-    if (jwtPayload instanceof Error || !jwtPayload) return callback(JWT_ERRORS.INVALID_JWT_PAYLOAD);
-
-    const encodedJWTHeaderAndBody = `${segments[0]}.${segments[1]}`;
-    const jwtSignature = utils.base64UrlDecode(segments[2], true);
-    if (!jwtSignature) {
-        return callback(JWT_ERRORS.INVALID_JWT_SIGNATURE);
-    }
-
-    callback(undefined, {jwtHeader, jwtPayload, jwtSignature, encodedJWTHeaderAndBody});
-}
-
-/**
  *
  * @param encodedJWT {string}
  * @param callback {Function}
  */
 function defaultJWTParser(encodedJWT, callback) {
-    parseJWTSegments(encodedJWT, (err, result) => {
+    utils.parseJWTSegments(encodedJWT, (err, result) => {
         if (err) {
             return callback(err);
         }
