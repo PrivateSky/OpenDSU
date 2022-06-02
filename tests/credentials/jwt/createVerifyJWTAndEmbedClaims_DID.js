@@ -66,7 +66,7 @@ assert.callback("[DID] Create JWT, embed public claim and, another JWTVc and ver
             assert.notNull(verificationStatus2, "Verify Result should be an object");
             assert.true(verificationStatus2.verifyResult, verificationStatus2.errorMessage);
 
-            const jwtVpInstance = await credentials.createJWTVerifiablePresentationAsync(issuerDidDocument, {
+            const jwtVpInstance = await credentials.createJWTVerifiablePresentationAsync(subjectDidDocument, {
                 exp: 1678812494957,
                 credentialsToPresent: [encodedJwtVc2]
             });
@@ -80,7 +80,7 @@ assert.callback("[DID] Create JWT, embed public claim and, another JWTVc and ver
             const loadedJWTVpInstance = await credentials.loadJWTVerifiablePresentationAsync(encodedJwtVp);
             const verificationStatus = await loadedJWTVpInstance.verifyJWTAsync(Date.now());
             const verificationStatusWithRootsOfTrust = await loadedJWTVpInstance.verifyJWTAsync(Date.now(), rootsOfTrust);
-            console.log("JWT VP: ", encodedJwtVp, verificationStatus, verificationStatusWithRootsOfTrust);
+
             assert.notNull(loadedJWTVpInstance, "Load Result should be a JWTVp Instance");
             assert.notNull(verificationStatus, "Verify Result should be an object");
             assert.notNull(verificationStatusWithRootsOfTrust, "Verify Result should be an object");
