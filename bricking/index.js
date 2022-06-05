@@ -215,6 +215,16 @@ const constructBricksFromData = (keySSI, data, options, callback) => {
     const archiveConfigurator = bar.createArchiveConfigurator();
     archiveConfigurator.setBufferSize(MAX_BRICK_SIZE);
     archiveConfigurator.setKeySSI(keySSI);
+    
+    const envTypes = require("overwrite-require").constants;
+    if($$.environmentType !== envTypes.BROWSER_ENVIRONMENT_TYPE &&
+        $$.environmentType !== envTypes.SERVICE_WORKER_ENVIRONMENT_TYPE &&
+        $$.environmentType !== envTypes.WEB_WORKER_ENVIRONMENT_TYPE){
+            const fsAdapter = require('bar-fs-adapter');
+            const ArchiveConfigurator = require("bar").ArchiveConfigurator;
+            ArchiveConfigurator.prototype.registerFsAdapter("FsAdapter", fsAdapter.createFsAdapter);
+            archiveConfigurator.setFsAdapter("FsAdapter");
+    }
 
     const brickStorageService = bar.createBrickStorageService(archiveConfigurator, keySSI);
 
