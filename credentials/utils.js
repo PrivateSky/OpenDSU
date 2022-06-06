@@ -211,17 +211,18 @@ function createZeroKnowledgeProofCredential(holder, audience, encodedJwtVc, call
 	}
 }
 
-function loadZeroKnowledgeProofCredential(audience, encryptedJwtVc, callback) {
+function loadZeroKnowledgeProofCredential(audience, zkpCredential, callback) {
 	const audienceFormat = getSubjectFormat(audience);
 	if (audienceFormat !== LABELS.SUBJECT_DID) {
 		return callback(JWT_ERRORS.HOLDER_AND_AUDIENCE_MUST_BE_DID);
 	}
 
+	const encryptedZKPCredential = JSON.parse(base64UrlDecode(zkpCredential));
 	const securityContext = scAPI.getSecurityContext();
 	const resolveDid = async () => {
 		try {
 			const audienceDidDocument = await $$.promisify(w3cDID.resolveDID)(audience);
-			audienceDidDocument.decryptMessage(encryptedJwtVc, (err, decryptedJwtVc) => {
+			audienceDidDocument.decryptMessage(encryptedZKPCredential, (err, decryptedJwtVc) => {
 				if (err) {
 					return callback(err);
 				}

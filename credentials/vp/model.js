@@ -54,6 +54,10 @@ function jwtVpVerifier(decodedJWT, atDate, rootsOfTrust, callback) {
 	if (utils.isJWTExpired(jwtPayload, atDate)) return callback(JWT_ERRORS.JWT_TOKEN_EXPIRED);
 	if (utils.isJWTNotActive(jwtPayload, atDate)) return callback(JWT_ERRORS.JWT_TOKEN_NOT_ACTIVE);
 
+	if (jwtPayload.aud) {
+		return verifyJWTUsingStrategy(VALIDATION_STRATEGIES.ZERO_KNOWLEDGE_PROOF_CREDENTIAL, jwtPayload, callback);
+	}
+
 	if (rootsOfTrust.length > 0) {
 		return verifyJWTUsingStrategy(VALIDATION_STRATEGIES.ROOTS_OF_TRUST, jwtPayload, rootsOfTrust, callback);
 	}
