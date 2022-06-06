@@ -1,85 +1,100 @@
-const JWT = require("../jwt");
-const JWT_ERRORS = require("../constants").JWT_ERRORS;
-const {jwtVpBuilder, jwtVpParser, jwtVpVerifier} = require("./model");
+const JWT = require('../jwt');
+const JWT_ERRORS = require('../constants').JWT_ERRORS;
+const { jwtVpBuilder, jwtVpParser, jwtVpVerifier } = require('./model');
+const { createZeroKnowledgeProofCredential } = require('../utils');
 
 class JwtVP extends JWT {
-    constructor(issuer, options, isInitialisation = false) {
-        super();
+	constructor(issuer, options, isInitialisation = false) {
+		super();
 
-        if (isInitialisation === true) {
-            jwtVpBuilder(issuer, options, (err, result) => {
-                if (err) {
-                    return this.notifyInstanceReady(err);
-                }
+		if (isInitialisation === true) {
+			jwtVpBuilder(issuer, options, (err, result) => {
+				if (err) {
+					return this.notifyInstanceReady(err);
+				}
 
-                this.jwtHeader = result.jwtHeader;
-                this.jwtPayload = result.jwtPayload;
-                this.notifyInstanceReady();
-            });
-        }
-    }
+				this.jwtHeader = result.jwtHeader;
+				this.jwtPayload = result.jwtPayload;
+				this.notifyInstanceReady();
+			});
+		}
+	}
 
-    addVerifiableCredential = (encodedJWTVc, callback) => {
-        if (!encodedJWTVc) {
-            return callback(JWT_ERRORS.INVALID_JWT_FORMAT);
-        }
+	addVerifiableCredential = (encodedJWTVc, callback) => {
+		if (!encodedJWTVc) {
+			return callback(JWT_ERRORS.INVALID_JWT_FORMAT);
+		}
 
-        this.jwtPayload.vp.verifiableCredential.push(encodedJWTVc);
-        callback(undefined, true);
-    };
+		this.jwtPayload.vp.verifiableCredential.push(encodedJWTVc);
+		callback(undefined, true);
+	};
 
-    async addVerifiableCredentialAsync(encodedJWTVc) {
-        return this.asyncMyFunction(this.addVerifiableCredential, [...arguments]);
-    }
+	async addVerifiableCredentialAsync(encodedJWTVc) {
+		return this.asyncMyFunction(this.addVerifiableCredential, [...arguments]);
+	}
 
-    loadEncodedJWTVp(encodedJWTVp) {
-        jwtVpParser(encodedJWTVp, (err, result) => {
-            if (err) {
-                return this.notifyInstanceReady(err);
-            }
+	addZeroKnowledgeProofCredential = (encodedJwtVc, callback) => {
+		if (!encodedJwtVc) return callback(JWT_ERRORS.INVALID_JWT_FORMAT);
+		if (!this.jwtPayload.aud) return callback(JWT_ERRORS.AUDIENCE_OF_PRESENTATION_NOT_DEFINED);
 
-            this.jwtHeader = result.jwtHeader;
-            this.jwtPayload = result.jwtPayload;
-            this.jwtSignature = result.jwtSignature;
-            this.notifyInstanceReady();
-        });
-    }
+		const { iss, aud } = this.jwtPayload;
+		createZeroKnowledgeProofCredential(iss, aud, encodedJwtVc, (err, zkpCredential) => {
+			if (err) {
+				return callback(err);
+			}
 
-    verifyJWT(atDate, rootsOfTrust, callback) {
-        if (typeof rootsOfTrust === "function") {
-            callback = rootsOfTrust;
-            rootsOfTrust = [];
-        }
+			this.jwtPayload.vp.verifiableCredential.push(zkpCredential);
+			callback(undefined, true);
+		});
+	};
 
-        const decodedJWT = {
-            jwtHeader: this.jwtHeader,
-            jwtPayload: this.jwtPayload,
-            jwtSignature: this.jwtSignature
-        };
-        jwtVpVerifier(decodedJWT, atDate, rootsOfTrust, (err, result) => {
-            if (err) {
-                return callback(undefined, {verifyResult: false, errorMessage: err});
-            }
+	async addZeroKnowledgeProofCredentialAsync(encodedJwtVc) {
+		return this.asyncMyFunction(this.addZeroKnowledgeProofCredential, [...arguments]);
+	}
 
-            const verifyResultObj = {verifyResult: true};
-            const decodedClaims = JSON.parse(JSON.stringify(this.jwtPayload));
-            if (result.verifiableCredentials) {
-                decodedClaims.vp.verifiableCredential = result.verifiableCredentials;
-                if (result.verifyResult === false) {
-                    verifyResultObj.verifyResult = false;
-                    verifyResultObj.errorMessage = result.verifiableCredentials.find(vc => typeof vc.errorMessage === "string").errorMessage;
+	loadEncodedJWTVp(encodedJWTVp) {
+		jwtVpParser(encodedJWTVp, (err, result) => {
+			if (err) {
+				return this.notifyInstanceReady(err);
+			}
 
-                }
-            }
+			this.jwtHeader = result.jwtHeader;
+			this.jwtPayload = result.jwtPayload;
+			this.jwtSignature = result.jwtSignature;
+			this.notifyInstanceReady();
+		});
+	}
 
-            const verifyResult = {...verifyResultObj, ...decodedClaims};
-            callback(undefined, verifyResult);
-        });
-    }
+	verifyJWT(atDate, rootsOfTrust, callback) {
+		if (typeof rootsOfTrust === 'function') {
+			callback = rootsOfTrust;
+			rootsOfTrust = [];
+		}
 
-    verifyJWTAsync(adDate, rootsOfTrust) {
-        return this.asyncMyFunction(this.verifyJWT, [...arguments]);
-    }
+		const decodedJWT = { jwtHeader: this.jwtHeader, jwtPayload: this.jwtPayload, jwtSignature: this.jwtSignature };
+		jwtVpVerifier(decodedJWT, atDate, rootsOfTrust, (err, result) => {
+			if (err) {
+				return callback(undefined, { verifyResult: false, errorMessage: err });
+			}
+
+			const verifyResultObj = { verifyResult: true };
+			const decodedClaims = JSON.parse(JSON.stringify(this.jwtPayload));
+			if (result.verifiableCredentials) {
+				decodedClaims.vp.verifiableCredential = result.verifiableCredentials;
+				if (result.verifyResult === false) {
+					verifyResultObj.verifyResult = false;
+					verifyResultObj.errorMessage = result.verifiableCredentials.find(vc => typeof vc.errorMessage === 'string').errorMessage;
+				}
+			}
+
+			const verifyResult = { ...verifyResultObj, ...decodedClaims };
+			callback(undefined, verifyResult);
+		});
+	}
+
+	async verifyJWTAsync(adDate, rootsOfTrust) {
+		return this.asyncMyFunction(this.verifyJWT, [...arguments]);
+	}
 }
 
 /**
@@ -89,7 +104,7 @@ class JwtVP extends JWT {
  * @param options {Object}
  */
 function createJWTVp(issuer, options = {}) {
-    return new JwtVP(issuer, options, true);
+	return new JwtVP(issuer, options, true);
 }
 
 /**
@@ -97,12 +112,12 @@ function createJWTVp(issuer, options = {}) {
  * @param encodedJWTVp {string}
  */
 function loadJWTVp(encodedJWTVp) {
-    const jwtInstance = new JwtVP();
-    jwtInstance.loadEncodedJWTVp(encodedJWTVp);
+	const jwtInstance = new JwtVP();
+	jwtInstance.loadEncodedJWTVp(encodedJWTVp);
 
-    return jwtInstance;
+	return jwtInstance;
 }
 
 module.exports = {
-    createJWTVp, loadJWTVp
+	createJWTVp, loadJWTVp
 };
