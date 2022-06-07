@@ -79,11 +79,11 @@ class JwtVP extends JWT {
 
 			const verifyResultObj = { verifyResult: true };
 			const decodedClaims = JSON.parse(JSON.stringify(this.jwtPayload));
-			if (result.verifiableCredentials) {
-				decodedClaims.vp.verifiableCredential = result.verifiableCredentials;
+			if (result.verifiableCredential) {
+				decodedClaims.vp.verifiableCredential = result.verifiableCredential;
 				if (result.verifyResult === false) {
 					verifyResultObj.verifyResult = false;
-					verifyResultObj.errorMessage = result.verifiableCredentials.find(vc => typeof vc.errorMessage === 'string').errorMessage;
+					verifyResultObj.errorMessage = result.verifiableCredential.find(vc => typeof vc.errorMessage === 'string').errorMessage;
 				}
 			}
 

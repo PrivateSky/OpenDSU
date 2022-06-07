@@ -9,7 +9,7 @@ const { parseJWTSegments } = require('../utils');
  */
 function verifyRootsOfTrust(jwtPayload, rootsOfTrust, callback) {
 	const jwtVcList = jwtPayload.vp.verifiableCredential;
-	let verifyResult = { verifyResult: true, verifiableCredentials: [] };
+	let verifyResult = { verifyResult: true, verifiableCredential: [] };
 
 	const chain = (index) => {
 		if (index === jwtVcList.length) {
@@ -20,7 +20,7 @@ function verifyRootsOfTrust(jwtPayload, rootsOfTrust, callback) {
 		parseJWTSegments(jwtVc, (err, result) => {
 			if (err) {
 				verifyResult.verifyResult = false;
-				verifyResult.verifiableCredentials.push({
+				verifyResult.verifiableCredential.push({
 					jwtVc: jwtVc,
 					errorMessage: err
 				});
@@ -31,14 +31,14 @@ function verifyRootsOfTrust(jwtPayload, rootsOfTrust, callback) {
 			const rootOfTrust = rootsOfTrust.find(r => r === jwtPayload.iss);
 			if (!rootOfTrust) {
 				verifyResult.verifyResult = false;
-				verifyResult.verifiableCredentials.push({
+				verifyResult.verifiableCredential.push({
 					jwtVc: jwtVc,
 					errorMessage: JWT_ERRORS.ROOT_OF_TRUST_NOT_VALID
 				});
 				return chain(++index);
 			}
 
-			verifyResult.verifiableCredentials.push(result.jwtPayload);
+			verifyResult.verifiableCredential.push(result.jwtPayload);
 			chain(++index);
 		});
 	};

@@ -59,6 +59,7 @@ assert.callback('[DID] Create JWT VC and VP with Zero Knowledge proof credential
 			const loadedJWTVpInstance = await credentials.loadJWTVerifiablePresentationAsync(encodedJwtVp);
 			const verificationStatus = await loadedJWTVpInstance.verifyJWTAsync(Date.now());
 
+			console.log(verificationStatus.vp.verifiableCredential);
 			assert.notNull(loadedJWTVpInstance, 'Load Result should be a JWTVp Instance');
 			assert.notNull(verificationStatus, 'Verify Result should be an object');
 			assert.true(verificationStatus.verifyResult, verificationStatus.errorMessage);
