@@ -69,12 +69,12 @@ function registerMandatoryCallback(callback, timeout){
     } catch(err){
         callStackErr = err;
     }
-    const timeoutId = setTimeout(function(){
-            reportUserRelevantError("Expected callback not called after " + timeout + " seconds. The calling stack is here: ", callStackErr);
+    const timeoutId = setTimeout(function () {
+        reportUserRelevantError("Expected callback not called after " + timeout + " seconds. The calling stack is here: ", callStackErr);
     }, timeout);
 
     return function(...args){
-        clearTimeout(timeoutId)
+        clearTimeout(timeoutId);
         callback(...args);
     };
 }
