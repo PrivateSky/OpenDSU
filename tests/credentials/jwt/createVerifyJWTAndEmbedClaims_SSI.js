@@ -8,7 +8,6 @@ const SSITypes = keySSIResolver.SSITypes;
 const openDSU = require("../../../index");
 const keySSISpace = openDSU.loadApi("keyssi");
 const credentials = openDSU.loadApi("credentials");
-const crypto = openDSU.loadApi("crypto");
 
 const templateSeedSSI = keySSIFactory.createType(SSITypes.SEED_SSI);
 templateSeedSSI.load(SSITypes.SEED_SSI, "default");
@@ -17,12 +16,12 @@ function initializeSeedSSIs(callback) {
     const subjectSeedSSI = keySSISpace.createTemplateSeedSSI("default");
     const issuerSeedSSI = keySSISpace.createTemplateSeedSSI("default");
 
-    subjectSeedSSI.initialize("default", undefined, undefined, undefined, crypto.generateRandom(20).toString("hex"), (err) => {
+    subjectSeedSSI.initialize("default", undefined, undefined, undefined, "subjectSeedSSIHint", (err) => {
         if (err) {
             return callback(err);
         }
 
-        issuerSeedSSI.initialize("default", undefined, undefined, undefined, crypto.generateRandom(20).toString("hex"), (err) => {
+        issuerSeedSSI.initialize("default", undefined, undefined, undefined, "issuerSeedSSIHint", (err) => {
             if (err) {
                 return callback(err);
             }

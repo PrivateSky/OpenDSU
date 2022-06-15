@@ -2,24 +2,36 @@ const VALIDATION_STRATEGIES = require('../constants').VALIDATION_STRATEGIES;
 
 const signatureValidation = require('./signatureValidation');
 const rootsOfTrustValidation = require('./rootsOfTrustValidation');
-const zkpCredentialValidation = require('./zkpCredentialValidation');
+const encryptedCredentialValidation = require('./encryptedCredentialValidation');
 
 const validationStrategies = {};
 
-function registerValidationStrategy(type, implementation) {
-	validationStrategies[type] = implementation;
+function registerValidationStrategy(validationStrategyName, implementation) {
+	validationStrategies[validationStrategyName] = implementation;
+}
+
+function getValidationStrategy(validationStrategyName) {
+	if (!validationStrategies[validationStrategyName]) {
+		throw VALIDATION_STRATEGIES.INVALID_VALIDATION_STRATEGY;
+	}
+
+	return validationStrategies[validationStrategyName];
+}
+
+function validatePresentation(validationStrategyName, ...args) {
+	if (!validationStrategies[validationStrategyName]) {
+		throw VALIDATION_STRATEGIES.INVALID_VALIDATION_STRATEGY;
+	}
+
+	validationStrategies[validationStrategyName](...args);
 }
 
 registerValidationStrategy(VALIDATION_STRATEGIES.SIGNATURE, signatureValidation);
 registerValidationStrategy(VALIDATION_STRATEGIES.ROOTS_OF_TRUST, rootsOfTrustValidation);
-registerValidationStrategy(VALIDATION_STRATEGIES.ZERO_KNOWLEDGE_PROOF_CREDENTIAL, zkpCredentialValidation);
+registerValidationStrategy(VALIDATION_STRATEGIES.ENCRYPTED_CREDENTIAL, encryptedCredentialValidation);
 
-function verifyJWTUsingStrategy(strategy, ...args) {
-	if (typeof validationStrategies[strategy] !== 'function') {
-		throw VALIDATION_STRATEGIES.INVALID_VALIDATION_STRATEGY;
-	}
-
-	validationStrategies[strategy](...args);
-}
-
-module.exports = verifyJWTUsingStrategy;
+module.exports = {
+	registerValidationStrategy,
+	validatePresentation,
+	getValidationStrategy
+};

@@ -8,8 +8,6 @@ const openDSU = require('../../../index');
 $$.__registerModule('opendsu', openDSU);
 const w3cDID = openDSU.loadAPI('w3cdid');
 const scAPI = openDSU.loadAPI('sc');
-const crypto = openDSU.loadApi('crypto');
-
 const credentials = openDSU.loadApi('credentials');
 
 function launchApiHubAndCreateDIDs(callback) {
@@ -26,9 +24,9 @@ function launchApiHubAndCreateDIDs(callback) {
 			scAPI.getSecurityContext().on('initialised', async () => {
 				try {
 					const domain = 'default';
-					const issuerDidDocument = await $$.promisify(w3cDID.createIdentity)('ssi:name', domain, crypto.generateRandom(20).toString('hex'));
-					const subjectDidDocument = await $$.promisify(w3cDID.createIdentity)('ssi:name', domain, crypto.generateRandom(20).toString('hex'));
-					const audienceDidDocument = await $$.promisify(w3cDID.createIdentity)('ssi:name', domain, crypto.generateRandom(20).toString('hex'));
+					const issuerDidDocument = await $$.promisify(w3cDID.createIdentity)('ssi:name', domain, "issuerPublicName");
+					const subjectDidDocument = await $$.promisify(w3cDID.createIdentity)('ssi:name', domain, "subjectPublicName");
+					const audienceDidDocument = await $$.promisify(w3cDID.createIdentity)('ssi:name', domain, "audiencePublicName");
 					callback(undefined, { issuerDidDocument, subjectDidDocument, audienceDidDocument });
 				} catch (e) {
 					callback(e);
@@ -38,7 +36,7 @@ function launchApiHubAndCreateDIDs(callback) {
 	});
 }
 
-assert.callback('[DID] Create JWT VC and VP with Zero Knowledge proof credential embedded into presentation', (callback) => {
+assert.callback('[DID] Create JWT VC and VP with encrypted credential credential embedded into presentation', (callback) => {
 	launchApiHubAndCreateDIDs(async (err, result) => {
 		if (err) {
 			throw err;
@@ -53,7 +51,7 @@ assert.callback('[DID] Create JWT VC and VP with Zero Knowledge proof credential
 				exp: 1678812494957,
 				aud: audienceDidDocument.getIdentifier()
 			});
-			await jwtVpInstance.addZeroKnowledgeProofCredentialAsync(encodedJwtVc1);
+			await jwtVpInstance.addEncryptedCredentialAsync(encodedJwtVc1);
 
 			const encodedJwtVp = await jwtVpInstance.getEncodedJWTAsync();
 			const loadedJWTVpInstance = await credentials.loadJWTVerifiablePresentationAsync(encodedJwtVp);

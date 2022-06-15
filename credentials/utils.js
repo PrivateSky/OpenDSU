@@ -179,7 +179,7 @@ function isJWTNotActive(payload, atDate) {
 	return new Date(payload.nbf).getTime() >= new Date(atDate).getTime();
 }
 
-function createZeroKnowledgeProofCredential(holder, audience, encodedJwtVc, callback) {
+function createEncryptedCredential(holder, audience, encodedJwtVc, callback) {
 	const issuerFormat = getIssuerFormat(holder);
 	const audienceFormat = getSubjectFormat(audience);
 	if (issuerFormat !== LABELS.ISSUER_DID || audienceFormat !== LABELS.SUBJECT_DID) {
@@ -211,18 +211,18 @@ function createZeroKnowledgeProofCredential(holder, audience, encodedJwtVc, call
 	}
 }
 
-function loadZeroKnowledgeProofCredential(audience, zkpCredential, callback) {
+function loadEncryptedCredential(audience, encryptedCredential, callback) {
 	const audienceFormat = getSubjectFormat(audience);
 	if (audienceFormat !== LABELS.SUBJECT_DID) {
 		return callback(JWT_ERRORS.HOLDER_AND_AUDIENCE_MUST_BE_DID);
 	}
 
-	const encryptedZKPCredential = JSON.parse(base64UrlDecode(zkpCredential));
+	const encryptedJWTVc = JSON.parse(base64UrlDecode(encryptedCredential));
 	const securityContext = scAPI.getSecurityContext();
 	const resolveDid = async () => {
 		try {
 			const audienceDidDocument = await $$.promisify(w3cDID.resolveDID)(audience);
-			audienceDidDocument.decryptMessage(encryptedZKPCredential, (err, decryptedJwtVc) => {
+			audienceDidDocument.decryptMessage(encryptedJWTVc, (err, decryptedJwtVc) => {
 				if (err) {
 					return callback(err);
 				}
@@ -256,6 +256,6 @@ module.exports = {
 	safeParseEncodedJson,
 	parseJWTSegments,
 
-	createZeroKnowledgeProofCredential,
-	loadZeroKnowledgeProofCredential
+	createEncryptedCredential,
+	loadEncryptedCredential
 };

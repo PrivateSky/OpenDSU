@@ -4,12 +4,10 @@ const dc = require('double-check');
 const assert = dc.assert;
 const tir = require('../../../../../psknode/tests/util/tir');
 
-const openDSU = require('../../../index');
+const openDSU = require('opendsu');
 $$.__registerModule('opendsu', openDSU);
 const w3cDID = openDSU.loadAPI('w3cdid');
 const scAPI = openDSU.loadAPI('sc');
-const crypto = openDSU.loadApi('crypto');
-
 const credentials = openDSU.loadApi('credentials');
 
 function launchApiHubAndCreateDIDs(callback) {
@@ -26,9 +24,9 @@ function launchApiHubAndCreateDIDs(callback) {
 			scAPI.getSecurityContext().on('initialised', async () => {
 				try {
 					const domain = 'default';
-					const issuerDidDocument = await $$.promisify(w3cDID.createIdentity)('ssi:name', domain, crypto.generateRandom(20).toString('hex'));
-					const subjectDidDocument = await $$.promisify(w3cDID.createIdentity)('ssi:name', domain, crypto.generateRandom(20).toString('hex'));
-					const audienceDidDocument = await $$.promisify(w3cDID.createIdentity)('ssi:name', domain, crypto.generateRandom(20).toString('hex'));
+					const issuerDidDocument = await $$.promisify(w3cDID.createIdentity)('ssi:name', domain, "issuerPublicName");
+					const subjectDidDocument = await $$.promisify(w3cDID.createIdentity)('ssi:name', domain, "subjectPublicName");
+					const audienceDidDocument = await $$.promisify(w3cDID.createIdentity)('ssi:name', domain, "audiencePublicName");
 					callback(undefined, { issuerDidDocument, subjectDidDocument, audienceDidDocument });
 				} catch (e) {
 					callback(e);

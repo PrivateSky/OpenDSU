@@ -1,15 +1,15 @@
 const { JWT_ERRORS } = require('../constants');
-const { loadZeroKnowledgeProofCredential, parseJWTSegments } = require('../utils');
+const { loadEncryptedCredential, parseJWTSegments } = require('../utils');
 
 /**
  * This method verifies the encrypted credentials using the private key of the audience. <br />
- * Only the intended audience can decrypt the zkp credential to validate it.
+ * Only the intended audience can decrypt the encrypted credential to validate it.
  * @param jwtPayload
  * @param callback
  */
-function verifyZKPCredential(jwtPayload, callback) {
+function verifyEncryptedCredential(jwtPayload, callback) {
 	const verifyResult = { verifyResult: true, verifiableCredential: [] };
-	const zkpCredentials = jwtPayload.vp.verifiableCredential;
+	const encryptedCredentials = jwtPayload.vp.verifiableCredential;
 	const audience = jwtPayload.aud;
 	if (!audience) {
 		verifyResult.verifyResult = false;
@@ -21,16 +21,16 @@ function verifyZKPCredential(jwtPayload, callback) {
 	}
 
 	const chain = (index) => {
-		if (index === zkpCredentials.length) {
+		if (index === encryptedCredentials.length) {
 			return callback(undefined, verifyResult);
 		}
 
-		const zkpCredential = zkpCredentials[index];
-		loadZeroKnowledgeProofCredential(audience, zkpCredential, (err, decryptedJWTVc) => {
+		const encryptedCredential = encryptedCredentials[index];
+		loadEncryptedCredential(audience, encryptedCredential, (err, decryptedJWTVc) => {
 			if (err) {
 				verifyResult.verifyResult = false;
 				verifyResult.verifiableCredential.push({
-					jwtVc: zkpCredential,
+					jwtVc: encryptedCredential,
 					errorMessage: err
 				});
 
@@ -41,7 +41,7 @@ function verifyZKPCredential(jwtPayload, callback) {
 				if (err) {
 					verifyResult.verifyResult = false;
 					verifyResult.verifiableCredential.push({
-						jwtVc: zkpCredential,
+						jwtVc: encryptedCredential,
 						errorMessage: err
 					});
 
@@ -57,4 +57,4 @@ function verifyZKPCredential(jwtPayload, callback) {
 	chain(0);
 }
 
-module.exports = verifyZKPCredential;
+module.exports = verifyEncryptedCredential;

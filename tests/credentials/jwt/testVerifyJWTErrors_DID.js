@@ -8,8 +8,6 @@ const openDSU = require("../../../index");
 $$.__registerModule("opendsu", openDSU);
 const w3cDID = openDSU.loadAPI("w3cdid");
 const scAPI = openDSU.loadAPI("sc");
-const crypto = openDSU.loadApi("crypto");
-
 const credentials = openDSU.loadApi("credentials");
 const domain = "default";
 
@@ -26,9 +24,9 @@ function launchApiHubAndCreateDIDs(callback) {
 
             scAPI.getSecurityContext().on("initialised", async () => {
                 try {
-                    const issuerDidDocument = await $$.promisify(w3cDID.createIdentity)("ssi:name", domain, crypto.generateRandom(20).toString("hex"));
-                    const subjectDidDocument = await $$.promisify(w3cDID.createIdentity)("ssi:name", domain, crypto.generateRandom(20).toString("hex"));
-                    callback(undefined, {issuerDidDocument, subjectDidDocument});
+                    const issuerDidDocument = await $$.promisify(w3cDID.createIdentity)('ssi:name', domain, "issuerPublicName");
+                    const subjectDidDocument = await $$.promisify(w3cDID.createIdentity)('ssi:name', domain, "subjectPublicName");
+                    callback(undefined, { issuerDidDocument, subjectDidDocument });
                 } catch (e) {
                     callback(e);
                 }
