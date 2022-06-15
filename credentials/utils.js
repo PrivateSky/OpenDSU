@@ -179,6 +179,13 @@ function isJWTNotActive(payload, atDate) {
 	return new Date(payload.nbf).getTime() >= new Date(atDate).getTime();
 }
 
+/**
+ * This method is encrypting a JWT VC using asymmetric encryption, so only the intended audience can decrypt the credential.
+ * @param holder
+ * @param audience
+ * @param encodedJwtVc
+ * @param callback
+ */
 function createEncryptedCredential(holder, audience, encodedJwtVc, callback) {
 	const issuerFormat = getIssuerFormat(holder);
 	const audienceFormat = getSubjectFormat(audience);
@@ -211,6 +218,12 @@ function createEncryptedCredential(holder, audience, encodedJwtVc, callback) {
 	}
 }
 
+/**
+ * Thi9s method is decrypting a JWT VC which was previously encrypted using asymmetric encryption.
+ * @param audience
+ * @param encryptedCredential
+ * @param callback
+ */
 function loadEncryptedCredential(audience, encryptedCredential, callback) {
 	const audienceFormat = getSubjectFormat(audience);
 	if (audienceFormat !== LABELS.SUBJECT_DID) {

@@ -1,7 +1,7 @@
-const {JWT_DEFAULTS, JWT_ERRORS, VALIDATION_STRATEGIES} = require('../constants');
+const {JWT_DEFAULTS, JWT_ERRORS} = require('../constants');
 const {defaultJWTParser, defaultJWTBuilder} = require('../jwt/model');
-const {validatePresentation} = require('../validationStrategies');
 const utils = require('../utils');
+const {verifyEncryptedCredential, verifyRootsOfTrust, verifyJWT} = require("../jwt/verify");
 
 /**
  * This method creates "vp" object from the payload of a JWT according to the W3c Standard
@@ -55,14 +55,14 @@ function jwtVpVerifier(decodedJWT, atDate, rootsOfTrust, callback) {
     if (utils.isJWTNotActive(jwtPayload, atDate)) return callback(JWT_ERRORS.JWT_TOKEN_NOT_ACTIVE);
 
     if (jwtPayload.aud) {
-        return validatePresentation(VALIDATION_STRATEGIES.ENCRYPTED_CREDENTIAL, jwtPayload, callback);
+        return verifyEncryptedCredential(jwtPayload, callback);
     }
 
     if (rootsOfTrust.length > 0) {
-        return validatePresentation(VALIDATION_STRATEGIES.ROOTS_OF_TRUST, jwtPayload, rootsOfTrust, callback);
+        return verifyRootsOfTrust(jwtPayload, rootsOfTrust, callback);
     }
 
-    validatePresentation(VALIDATION_STRATEGIES.SIGNATURE, jwtPayload.iss, jwtSignature, dataToSign, (err, verifyResult) => {
+    verifyJWT(jwtPayload.iss, jwtSignature, dataToSign, (err, verifyResult) => {
         if (err) return callback(err);
         if (!verifyResult) return callback(JWT_ERRORS.INVALID_JWT_SIGNATURE);
 

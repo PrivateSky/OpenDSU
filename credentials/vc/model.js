@@ -1,7 +1,7 @@
-const {JWT_DEFAULTS, JWT_ERRORS, VALIDATION_STRATEGIES} = require('../constants');
+const {JWT_DEFAULTS, JWT_ERRORS} = require('../constants');
 const {defaultJWTParser, defaultJWTBuilder} = require('../jwt/model');
-const {validatePresentation} = require('../validationStrategies');
 const utils = require('../utils');
+const {verifyJWT} = require("../jwt/verify");
 
 /**
  * This method creates "vc" object from the payload of a JWT according to the W3c Standard
@@ -68,7 +68,7 @@ function jwtVcVerifier(decodedJWT, atDate, rootsOfTrust, callback) {
     if (utils.isJWTExpired(jwtPayload, atDate)) return callback(JWT_ERRORS.JWT_TOKEN_EXPIRED);
     if (utils.isJWTNotActive(jwtPayload, atDate)) return callback(JWT_ERRORS.JWT_TOKEN_NOT_ACTIVE);
 
-    validatePresentation(VALIDATION_STRATEGIES.SIGNATURE, jwtPayload.iss, jwtSignature, dataToSign, (err, verifyResult) => {
+    verifyJWT(jwtPayload.iss, jwtSignature, dataToSign, (err, verifyResult) => {
         if (err) return callback(err);
         if (!verifyResult) return callback(JWT_ERRORS.INVALID_JWT_SIGNATURE);
 

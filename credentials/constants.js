@@ -43,13 +43,6 @@ const LABELS = {
 	SUBJECT_SSI: 'subjectSSI'
 };
 
-const VALIDATION_STRATEGIES = {
-	SIGNATURE: 'SIGNATURE',
-	ROOTS_OF_TRUST: 'ROOTS_OF_TRUST',
-	ENCRYPTED_CREDENTIAL: 'ENCRYPTED_CREDENTIAL',
-	INVALID_VALIDATION_STRATEGY: 'INVALID_VALIDATION_STRATEGY'
-};
-
 function getDefaultJWTOptions() {
 	const now = Date.now();
 	return {
@@ -58,6 +51,10 @@ function getDefaultJWTOptions() {
 }
 
 const IMMUTABLE_PUBLIC_CLAIMS = ['vc', 'vp', 'iss', 'sub', 'iat', 'verifiableCredential', 'holder'];
+
+const VALIDATION_STRATEGIES = {
+	INVALID_VALIDATION_STRATEGY: "INVALID_VALIDATION_STRATEGY"
+};
 
 module.exports = {
 	JWT_DEFAULTS,
