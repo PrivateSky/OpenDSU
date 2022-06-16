@@ -53,6 +53,9 @@ function getDefaultJWTOptions() {
 const IMMUTABLE_PUBLIC_CLAIMS = ['vc', 'vp', 'iss', 'sub', 'iat', 'verifiableCredential', 'holder'];
 
 const VALIDATION_STRATEGIES = {
+	DEFAULT: "DEFAULT",
+	SIGNATURE: "SIGNATURE",
+	ROOTS_OF_TRUST: "ROOTS_OF_TRUST",
 	INVALID_VALIDATION_STRATEGY: "INVALID_VALIDATION_STRATEGY"
 };
 

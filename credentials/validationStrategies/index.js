@@ -1,108 +1,110 @@
 const VALIDATION_STRATEGIES = require('../constants').VALIDATION_STRATEGIES;
+const DefaultValidationStrategy = require("./defaultValidationStrategy");
+const RootOfTrustValidationStrategy = require("./rootOfTrustValidationStrategy");
+const SignatureValidationStrategy = require("./signatureValidationStrategy");
 
 const validationStrategies = {};
 
+/**
+ * @param validationStrategyName {string} The name of the validation strategy that will be registered
+ * @param implementation The implementation of the strategy. Check validationStrategy.interface.js for reference
+ */
 function registerValidationStrategy(validationStrategyName, implementation) {
-	validationStrategies[validationStrategyName] = implementation;
+    validationStrategies[validationStrategyName] = implementation;
 }
 
+/**
+ * @param validationStrategyName {string} The name of the validation strategy to be returned
+ * @returns {Object} The implementation of the validation strategy
+ */
 function getValidationStrategy(validationStrategyName) {
-	if (!validationStrategies[validationStrategyName]) {
-		throw VALIDATION_STRATEGIES.INVALID_VALIDATION_STRATEGY;
-	}
+    if (!validationStrategies[validationStrategyName]) {
+        return callback(VALIDATION_STRATEGIES.INVALID_VALIDATION_STRATEGY);
+    }
 
-	return validationStrategies[validationStrategyName];
+    return validationStrategies[validationStrategyName];
 }
 
-function validatePresentation(validationStrategyName, ...args) {
-	if (!validationStrategies[validationStrategyName]) {
-		throw VALIDATION_STRATEGIES.INVALID_VALIDATION_STRATEGY;
-	}
+/**
+ * @param validationStrategyName {string} The name of the validation strategy that will be used to validate the credential
+ * @param environmentData {string} JWT Verifiable Presentation
+ * @param callback {Function}
+ */
+function validateCredential(validationStrategyName, environmentData, callback) {
+    if (!validationStrategies[validationStrategyName]) {
+        return callback(VALIDATION_STRATEGIES.INVALID_VALIDATION_STRATEGY);
+    }
 
-	validationStrategies[validationStrategyName](...args);
+    validationStrategies[validationStrategyName].validateCredential(environmentData, callback);
 }
+
+/**
+ * Async version of validateCredential method
+ * @param validationStrategyName
+ * @param environmentData
+ * @returns {Promise<*>}
+ */
+async function validateCredentialAsync(validationStrategyName, environmentData) {
+    return await $$.promisify(validateCredential)(validationStrategyName, environmentData);
+}
+
+/**
+ * @param validationStrategyNamesArray {string|string[]} array of names of validationStrategies that are allowed to validate. If is a string then only that strategy can do it.
+ * @param useCase {string} a string identifying the name of the use case in which a validationStrategy is used. Could be empty.
+ * @param environmentData {Object} object with arbitrary data required for validation
+ * @param presentationSerialisation {string} JWT Verifiable Presentation
+ * @param callback {Function}
+ */
+function validatePresentation(validationStrategyNamesArray, useCase, environmentData, presentationSerialisation, callback) {
+    if (typeof validationStrategyNamesArray === "string") {
+        validationStrategyNamesArray = [validationStrategyNamesArray];
+    }
+
+    const validationStrategyChain = (validationStrategyNamesList) => {
+        if (validationStrategyNamesList.length === 0) {
+            return callback(undefined, true);
+        }
+
+        const validationStrategyName = validationStrategyNamesList.shift();
+        if (!validationStrategies[validationStrategyName]) {
+            return callback(VALIDATION_STRATEGIES.INVALID_VALIDATION_STRATEGY);
+        }
+
+        const jwtVp = JSON.parse(JSON.stringify(presentationSerialisation));
+        validationStrategies[validationStrategyName].validatePresentation(jwtVp, environmentData, (err, isValidPresentation) => {
+            if (err) return callback(err);
+            if (!isValidPresentation) return callback(undefined, false);
+
+            validationStrategyChain(validationStrategyNamesList);
+        });
+    };
+    validationStrategyChain(validationStrategyNamesArray);
+}
+
+/**
+ * Async version of validatePresentation method
+ * @param validationStrategyNamesArray
+ * @param useCase
+ * @param environmentData
+ * @param presentationSerialisation
+ * @returns {Promise<*>}
+ */
+async function validatePresentationAsync(validationStrategyNamesArray, useCase, environmentData, presentationSerialisation) {
+    return await $$.promisify(validatePresentation)(validationStrategyNamesArray, useCase, environmentData, presentationSerialisation);
+}
+
+registerValidationStrategy(VALIDATION_STRATEGIES.DEFAULT, new DefaultValidationStrategy());
+registerValidationStrategy(VALIDATION_STRATEGIES.ROOTS_OF_TRUST, new RootOfTrustValidationStrategy());
+registerValidationStrategy(VALIDATION_STRATEGIES.SIGNATURE, new SignatureValidationStrategy());
 
 module.exports = {
-	registerValidationStrategy,
-	validatePresentation,
-	getValidationStrategy
+    getValidationStrategy,
+    registerValidationStrategy,
+
+    validateCredential,
+    validateCredentialAsync,
+    validatePresentation,
+    validatePresentationAsync,
+
+    VALIDATION_STRATEGIES
 };
-
-
-let ValidationStrategy = {
-	acceptSerialisedPresentation: function (presentationSerialisation) {
-		return "ValidationStrategySpecificRepresentationForPresentation";
-	},
-	sign: function (stringOrHash) {
-		return "signature serialisation, could be a credential";
-	},
-	issueCredential: function (...args) {
-		return "CredentialSerialisation";
-	},
-	createPresentation: function (...args) {
-		callback(undefined, "Presentation Serialisation");
-	},
-	createPrivacyPreservingPresentation: function (credentialsArray, attributesArray, callback) {
-		callback(undefined, "Presentation Serialisation");
-	},
-	verifySignature: function (stringOrHash, serialisationOfASignature) {
-		return "true or false";
-	},
-	verifyCredential: function (useCase, credentialSerialisation) {
-		return "true or false";
-	},
-	revokeCredential: function (credentialSerialisation, callback) {
-		callback("not implemented", false)
-	}
-}
-
-let ValidationStrategySpecificRepresentationForPresentation = {
-	validate: function (useCase, environmentData, callback) {
-		if ("error") return callback("error", false);
-		if ("valid presentation") return callback(undefined, true);
-		callback(undefined, false)
-	}
-}
-
-let implementationsRegistry = {};
-
-function issueCredential(validationStrategyName,...args){
-	return implementationsRegistry[validationStrategyName].issueCredential(...args);
-}
-
-
-function createPresentation(validationStrategyName, ...args){
-	return implementationsRegistry[validationStrategyName].createPresentation(...args);
-}
-
-
-function sign(validationStrategyName, ...args){
-	return implementationsRegistry[validationStrategyName].sign(...args);
-}
-
-function verifySignature(validationStrategyName, ...args){
-	return implementationsRegistry[validationStrategyName].verifySignature(...args);
-}
-
-function verifyCredential(validationStrategyName, credentialSerialisation){
-	return implementationsRegistry[validationStrategyName].verifyCredential(credentialSerialisation);
-}
-
-/*
-    allowedImplementationNamesArray : array of names of validationStrategies that are allowed to validate. If is a string then only that strategy can do it.
-    useCase: a string identifying the name of the use case in which a validationStrategy is used. Could be empty.
-    environmentData: object with arbitrary data required for validation
-    presentationSerialisation:  a serialised presentation
- */
-function validatePresentation2(allowedImplementationNamesArray, useCase, environmentData, presentationSerialisation, callback){
-	if(typeof allowedImplementationNamesArray == "string"){
-		return implementationsRegistry[allowedImplementationNamesArray].acceptSerialisedPresentation(presentationSerialisation).validate(useCase, environmentData, callback);
-	}
-	allowedImplementationNamesArray.forEach( i => {
-		let vs = implementationsRegistry[i].acceptSerialisedPresentation(presentationSerialisation);
-		if(vs != undefined){
-			return vs.validate(useCase, environmentData, presentationSerialisation, callback);
-		}
-	})
-	return callback(undefined, false);
-}

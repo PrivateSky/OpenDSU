@@ -62,11 +62,9 @@ function jwtVcParser(encodedJWTVc, callback) {
     });
 }
 
-function jwtVcVerifier(decodedJWT, atDate, rootsOfTrust, callback) {
+function jwtVcVerifier(decodedJWT, rootsOfTrust, callback) {
     const {jwtHeader, jwtPayload, jwtSignature} = decodedJWT;
     const dataToSign = [utils.base64UrlEncode(JSON.stringify(jwtHeader)), utils.base64UrlEncode(JSON.stringify(jwtPayload))].join('.');
-    if (utils.isJWTExpired(jwtPayload, atDate)) return callback(JWT_ERRORS.JWT_TOKEN_EXPIRED);
-    if (utils.isJWTNotActive(jwtPayload, atDate)) return callback(JWT_ERRORS.JWT_TOKEN_NOT_ACTIVE);
 
     verifyJWT(jwtPayload.iss, jwtSignature, dataToSign, (err, verifyResult) => {
         if (err) return callback(err);

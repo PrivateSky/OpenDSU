@@ -65,14 +65,14 @@ class JwtVP extends JWT {
 		});
 	}
 
-	verifyJWT(atDate, rootsOfTrust, callback) {
+	verifyJWT(rootsOfTrust, callback) {
 		if (typeof rootsOfTrust === 'function') {
 			callback = rootsOfTrust;
 			rootsOfTrust = [];
 		}
 
 		const decodedJWT = { jwtHeader: this.jwtHeader, jwtPayload: this.jwtPayload, jwtSignature: this.jwtSignature };
-		jwtVpVerifier(decodedJWT, atDate, rootsOfTrust, (err, result) => {
+		jwtVpVerifier(decodedJWT, rootsOfTrust, (err, result) => {
 			if (err) {
 				return callback(undefined, { verifyResult: false, errorMessage: err });
 			}
@@ -92,7 +92,7 @@ class JwtVP extends JWT {
 		});
 	}
 
-	async verifyJWTAsync(adDate, rootsOfTrust) {
+	async verifyJWTAsync(rootsOfTrust) {
 		return this.asyncMyFunction(this.verifyJWT, [...arguments]);
 	}
 }

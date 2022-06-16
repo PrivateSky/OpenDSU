@@ -11,59 +11,74 @@ const scAPI = openDSU.loadAPI('sc');
 const credentials = openDSU.loadApi('credentials');
 
 function launchApiHubAndCreateDIDs(callback) {
-	dc.createTestFolder('JWTTest', async (err, folder) => {
-		if (err) {
-			return callback(err);
-		}
+    dc.createTestFolder('JWTTest', async (err, folder) => {
+        if (err) {
+            return callback(err);
+        }
 
-		tir.launchApiHubTestNode(100, folder, async (err) => {
-			if (err) {
-				return callback(err);
-			}
+        tir.launchApiHubTestNode(100, folder, async (err) => {
+            if (err) {
+                return callback(err);
+            }
 
-			scAPI.getSecurityContext().on('initialised', async () => {
-				try {
-					const domain = 'default';
-					const issuerDidDocument = await $$.promisify(w3cDID.createIdentity)('ssi:name', domain, "issuerPublicName");
-					const subjectDidDocument = await $$.promisify(w3cDID.createIdentity)('ssi:name', domain, "subjectPublicName");
-					const audienceDidDocument = await $$.promisify(w3cDID.createIdentity)('ssi:name', domain, "audiencePublicName");
-					callback(undefined, { issuerDidDocument, subjectDidDocument, audienceDidDocument });
-				} catch (e) {
-					callback(e);
-				}
-			});
-		});
-	});
+            scAPI.getSecurityContext().on('initialised', async () => {
+                try {
+                    const domain = 'default';
+                    const issuerDidDocument = await $$.promisify(w3cDID.createIdentity)('ssi:name', domain, "issuerPublicName");
+                    const subjectDidDocument = await $$.promisify(w3cDID.createIdentity)('ssi:name', domain, "subjectPublicName");
+                    const audienceDidDocument = await $$.promisify(w3cDID.createIdentity)('ssi:name', domain, "audiencePublicName");
+                    callback(undefined, {issuerDidDocument, subjectDidDocument, audienceDidDocument});
+                } catch (e) {
+                    callback(e);
+                }
+            });
+        });
+    });
 }
 
 assert.callback('[DID] Create JWT VC and VP with encrypted credential credential embedded into presentation', (callback) => {
-	launchApiHubAndCreateDIDs(async (err, result) => {
-		if (err) {
-			throw err;
-		}
+    launchApiHubAndCreateDIDs(async (err, result) => {
+        if (err) {
+            throw err;
+        }
 
-		try {
-			const { issuerDidDocument, subjectDidDocument, audienceDidDocument } = result;
-			const jwtVcInstance = await credentials.createJWTVerifiableCredentialAsync(issuerDidDocument, subjectDidDocument, { exp: 1678812494957 });
+        try {
+            const {issuerDidDocument, subjectDidDocument, audienceDidDocument} = result;
+            const jwtVcInstance = await credentials.createJWTVerifiableCredentialAsync(issuerDidDocument, subjectDidDocument, {exp: 1678812494957});
 
-			const encodedJwtVc1 = await jwtVcInstance.getEncodedJWTAsync();
-			const jwtVpInstance = await credentials.createJWTVerifiablePresentationAsync(subjectDidDocument, {
-				exp: 1678812494957,
-				aud: audienceDidDocument.getIdentifier()
-			});
-			await jwtVpInstance.addEncryptedCredentialAsync(encodedJwtVc1);
+            const encodedJwtVc1 = await jwtVcInstance.getEncodedJWTAsync();
+            const jwtVpInstance = await credentials.createJWTVerifiablePresentationAsync(subjectDidDocument, {
+                exp: 1678812494957,
+                aud: audienceDidDocument.getIdentifier()
+            });
+            await jwtVpInstance.addEncryptedCredentialAsync(encodedJwtVc1);
 
-			const encodedJwtVp = await jwtVpInstance.getEncodedJWTAsync();
-			const loadedJWTVpInstance = await credentials.loadJWTVerifiablePresentationAsync(encodedJwtVp);
-			const verificationStatus = await loadedJWTVpInstance.verifyJWTAsync(Date.now());
+            const encodedJwtVp = await jwtVpInstance.getEncodedJWTAsync();
+            const loadedJWTVpInstance = await credentials.loadJWTVerifiablePresentationAsync(encodedJwtVp);
+            const verificationStatus = await loadedJWTVpInstance.verifyJWTAsync();
 
-			assert.notNull(loadedJWTVpInstance, 'Load Result should be a JWTVp Instance');
-			assert.notNull(verificationStatus, 'Verify Result should be an object');
-			assert.true(verificationStatus.verifyResult, verificationStatus.errorMessage);
-			callback();
-		} catch (e) {
-			console.error(e);
-			throw e;
-		}
-	});
+            assert.notNull(loadedJWTVpInstance, 'Load Result should be a JWTVp Instance');
+            assert.notNull(verificationStatus, 'Verify Result should be an object');
+            assert.true(verificationStatus.verifyResult, verificationStatus.errorMessage);
+
+            const validationStrategies = credentials.validationStrategies;
+            const {DEFAULT, ROOTS_OF_TRUST} = validationStrategies.VALIDATION_STRATEGIES;
+            const environmentData = {
+                atDate: new Date().getTime(),
+                presentationPublicClaims: {aud: audienceDidDocument.getIdentifier()},
+                rootsOfTrust: [issuerDidDocument.getIdentifier()]
+            };
+            const validateVPDefault = await validationStrategies.validatePresentationAsync(DEFAULT, "", environmentData, JSON.parse(JSON.stringify(verificationStatus)));
+            const validateVPRootsOfTrust = await validationStrategies.validatePresentationAsync(ROOTS_OF_TRUST, "", environmentData, JSON.parse(JSON.stringify(verificationStatus)));
+            const validateVPDefaultAndRootsOfTrust = await validationStrategies.validatePresentationAsync([DEFAULT, ROOTS_OF_TRUST], "", environmentData, JSON.parse(JSON.stringify(verificationStatus)));
+
+            assert.true(validateVPDefault, `Validation for DEFAULT strategy failed!`);
+            assert.true(validateVPRootsOfTrust, `Validation for ROOTS_OF_TRUST strategy failed!`);
+            assert.true(validateVPDefaultAndRootsOfTrust, `Validation for both DEFAULT and ROOTS_OF_TRUST strategies failed!`);
+            callback();
+        } catch (e) {
+            console.error(e);
+            throw e;
+        }
+    });
 }, 1000);
