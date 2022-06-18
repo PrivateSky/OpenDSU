@@ -124,6 +124,48 @@ async function compareOriginalFileWithOneFromDSU(originalFilePath, chunkSize, ds
 }
 
 assert.callback(
+    "Writing big file with writeFileFromBricks without sizeSSI test",
+    async (testFinished) => {
+        const folder = await $$.promisify(dc.createTestFolder)("createTest1");
+
+        await $$.promisify(tir.launchApiHubTestNode)(10, folder);
+
+        const templateSeedSSI = keySSIApi.createTemplateSeedSSI(DOMAIN);
+        const dsu = await $$.promisify(resolver.createDSU)(templateSeedSSI);
+
+        const ORIGINAL_FILE_SIZE = FILE_CHUNK_SIZE * 10;
+        const originalFilePath = path.join(folder, "original");
+        await generateRandomFile(originalFilePath, ORIGINAL_FILE_SIZE);
+
+        const hashLinks = [];
+        const originalFileReadStream = fs.createReadStream(originalFilePath, { highWaterMark: FILE_CHUNK_SIZE });
+        for await (const chunk of originalFileReadStream) {
+            const chunkHashLinks = await writeDataToBricks(templateSeedSSI, chunk);
+            chunkHashLinks.forEach((hashLink) => hashLinks.push(hashLink));
+        }
+
+        try {
+            await $$.promisify(dsu.writeFileFromBricks)(DSU_ADDED_FILE_PATH, []);
+            assert.true(false); // should not execute this code since cannot call writeFileFromBricks without sizeSSI
+        } catch (error) {
+            console.log("Read as BigFile error", error);
+            assert.notNull(error);
+        }
+
+        try {
+            await $$.promisify(dsu.writeFileFromBricks)(DSU_ADDED_FILE_PATH, hashLinks);
+            assert.true(false); // should not execute this code since cannot call writeFileFromBricks without sizeSSI
+        } catch (error) {
+            console.log("Read as BigFile error", error);
+            assert.notNull(error);
+        }
+
+        testFinished();
+    },
+    100000
+);
+
+assert.callback(
     "Writing big file with writeFileFromBricks and compare the saved file test",
     async (testFinished) => {
         const folder = await $$.promisify(dc.createTestFolder)("createTest1");
@@ -177,7 +219,7 @@ assert.callback(
             );
             assert.true(false); // should not execute this code since a normal file cannot be read as BigFile
         } catch (error) {
-            console.log("Read as BigFile error", error)
+            console.log("Read as BigFile error", error);
             assert.notNull(error);
         }
 
@@ -214,7 +256,6 @@ assert.callback(
     },
     100000
 );
-
 
 assert.callback(
     "Writing big file file with writeFileFromBricks and failure to read as normal file stream test",

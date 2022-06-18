@@ -213,7 +213,7 @@ const constructBricksFromData = (keySSI, data, options, callback) => {
 
     const bar = require("bar");
     const archiveConfigurator = bar.createArchiveConfigurator();
-    archiveConfigurator.setBufferSize(MAX_BRICK_SIZE);
+    archiveConfigurator.setBufferSize(options.maxBrickSize);
     archiveConfigurator.setKeySSI(keySSI);
     
     const envTypes = require("overwrite-require").constants;
