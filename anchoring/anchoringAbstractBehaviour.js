@@ -47,7 +47,7 @@ function AnchoringAbstractBehaviour(persistenceStrategy) {
         }
 
         if (!anchorIdKeySSI.canAppend()) {
-            return callback(Error(`Cannot append anchor for ${anchorId}`));
+            return callback(Error(`Cannot append anchor for ${anchorId} because of the keySSI type`));
         }
         persistenceStrategy.getAllVersions(anchorId, (err, data) => {
             // throw Error("Get all versions callback");
