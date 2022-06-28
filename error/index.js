@@ -172,6 +172,8 @@ function printOpenDSUError(...args){
     }
 }
 
+const DB_INSERT_EXISTING_RECORD_ERROR = "Trying to insert into existing record";
+
 module.exports = {
     createOpenDSUErrorWrapper,
     reportUserRelevantError,
@@ -182,5 +184,6 @@ module.exports = {
     unobserveUserRelevantMessages,
     OpenDSUSafeCallback,
     registerMandatoryCallback,
-    printOpenDSUError
+    printOpenDSUError,
+    DB_INSERT_EXISTING_RECORD_ERROR
 }

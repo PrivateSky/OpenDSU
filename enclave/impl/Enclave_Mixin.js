@@ -6,6 +6,7 @@ function Enclave_Mixin(target, did) {
     const SREAD_SSIS_TABLE = "sreadssis";
     const SEED_SSIS_TABLE = "seedssis";
     const DIDS_PRIVATE_KEYS = "dids_private";
+    const errorAPI = openDSU.loadAPI("error");
 
     const ObservableMixin = require("../../utils/ObservableMixin");
     ObservableMixin(target);
@@ -164,13 +165,17 @@ function Enclave_Mixin(target, did) {
         const keySSIIdentifier = seedSSI.getIdentifier();
         const sReadSSIIdentifier = seedSSI.derive().getIdentifier();
 
+        const isExistingKeyError = (error)  => error.originalMessage === errorAPI.DB_INSERT_EXISTING_RECORD_ERROR;
+
         function registerDerivedKeySSIs(derivedKeySSI) {
             target.storageDB.insertRecord(KEY_SSIS_TABLE, derivedKeySSI.getIdentifier(), {capableOfSigningKeySSI: keySSIIdentifier}, (err) => {
-                if (err) {
+                if (err && !isExistingKeyError(err)) {
+                    // ignore if KeySSI is already present
                     return callback(err);
                 }
                 target.storageDB.insertRecord(SREAD_SSIS_TABLE, derivedKeySSI.getIdentifier(), {sReadSSI: sReadSSIIdentifier}, (err) => {
-                    if (err) {
+                    if (err && !isExistingKeyError(err)) {
+                        // ignore if sReadSSI is already present
                         return callback(err);
                     }
 
@@ -186,7 +191,8 @@ function Enclave_Mixin(target, did) {
         }
 
         target.storageDB.insertRecord(SEED_SSIS_TABLE, alias, {seedSSI: keySSIIdentifier}, (err) => {
-            if (err) {
+            if (err && !isExistingKeyError(err)) {
+                // ignore if SeedSSI is already present
                 return callback(err);
             }
 
