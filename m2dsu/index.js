@@ -87,6 +87,8 @@ function MappingEngine(storageService, options) {
         try {
           await mappingFnc.call(instance, message);
         } catch (err) {
+          //we need to return the list of touched DSUs for partial rollback procedure
+          err.mappingInstance = {registeredDSUs: instance.registeredDSUs};
           return reject(err);
         }
         return resolve({registeredDSUs: instance.registeredDSUs});
@@ -140,6 +142,8 @@ function MappingEngine(storageService, options) {
         //commitPromisses will contain promises for each of message
         let commitPromisses = [];
         let mappingsInstances = [];
+        //we will use this array to keep all the failed mapping instance in order to cancel batch operations on touched DSUs
+        let failedMappingInstances = [];
 
         let failedMessages = [];
 
@@ -150,24 +154,35 @@ function MappingEngine(storageService, options) {
         for (let i = 0; i < messages.length; i++) {
           let message = messages[i];
           if (typeof message !== "object") {
-            throw errMap.newCustomError(errMap.errorTypes.MESSAGE_IS_NOT_AN_OBJECT, [{detailsMessage: `Found type: ${typeof message} expected type object`}])
-          }
+            let err = errMap.newCustomError(errMap.errorTypes.MESSAGE_IS_NOT_AN_OBJECT, [{detailsMessage: `Found type: ${typeof message} expected type object`}]);
+            failedMessages.push({
+              message: message,
+              reason: err.message,
+              error: err
+            });
 
+            //wrong message type... so we log, and then we continue the execution with the rest of the messages
+            continue;
+          }
 
           try {
             let mappingInstance = await executeMappingFor(message);
             mappingsInstances.push(mappingInstance);
           } catch (err) {
+            //this .mappingInstance prop is artificial injected from the executeMappingFor function in case of an error during mapping execution
+            //isn't too nice, but it does the job
+            if(err.mappingInstance){
+              failedMappingInstances.push(err.mappingInstance);
+            }
+
             errorHandler.reportUserRelevantError("Caught error during message digest", err);
             failedMessages.push({
               message: message,
               reason: err.message,
               error: err
-            })
+            });
           }
-
         }
-
 
         function digestConfirmation(results) {
 
@@ -194,7 +209,24 @@ function MappingEngine(storageService, options) {
             }
           }
 
-          finish().then(() => {
+          finish().then(async () => {
+            //in case that we have failed messages we need to reset touched DSUs of that mapping;
+            //the reason being that a DSU can be kept in a local cache and later on this fact that the DSU is in a "batch" state creates a strange situation
+            for (let j = 0; j < failedMappingInstances.length; j++) {
+              let mapInstance = failedMappingInstances[j];
+              if (mapInstance.registeredDSUs) {
+                for (let i = 0; i < mapInstance.registeredDSUs.length; i++) {
+                  let touchedDSU = mapInstance.registeredDSUs[i];
+                  try{
+                    await $$.promisify(touchedDSU.cancelBatch, touchedDSU)();
+                  }catch(err){
+                    //we ignore any cancel errors for the moment
+                  }
+                }
+              }
+            }
+
+            //not that we finished with the partial rollback we can return the failed messages
             resolve(failedMessages);
           }).catch(async (err) => {
             await rollback();
@@ -205,6 +237,7 @@ function MappingEngine(storageService, options) {
         for (let i = 0; i < mappingsInstances.length; i++) {
           commitPromisses.push(commitMapping(mappingsInstances[i]));
         }
+
         Promise.allSettled(commitPromisses)
           .then(digestConfirmation)
           .catch(handleErrorsDuringPromiseResolving);
