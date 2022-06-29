@@ -137,8 +137,9 @@ registry.defineApi("loadArraySSIDSU", async function (domain, arr) {
 });
 
 registry.defineApi("createDSU", async function (domain, ssiType, options) {
-    const template = require("opendsu").loadApi("keyssi").createTemplateKeySSI(domain, ssiType);
-    let dsu = await this.getResolver().createDSU(template, options);
+    const template = require("opendsu").loadApi("keyssi").createTemplateKeySSI(ssiType, domain);
+    let resolver = await this.getResolver();
+    let dsu = await resolver.createDSU(template, options);
     //take note that this.registerDSU returns a Proxy Object over the DSU and this Proxy we need to return also
     return this.registerDSU(dsu);
 });
