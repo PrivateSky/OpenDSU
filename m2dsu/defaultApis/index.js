@@ -104,7 +104,6 @@ registry.defineApi("loadConstSSIDSU", async function (constSSI, options) {
     try {
         dsu = await resolver.loadDSU(constSSI);
     } catch (e) {
-        console.log(e);
         //TODO check error type
         //on purpose if DSU does not exists an error gets throw
     }
