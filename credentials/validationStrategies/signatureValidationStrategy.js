@@ -16,14 +16,14 @@ class SignatureValidationStrategy {
             });
         }
 
-        const {jwtHeader, jwtPayload, jwtSignature} = verifiableCredential;
+        const {jwtPayload} = verifiableCredential;
         const {credentialPublicClaims, subjectClaims} = environmentData;
         const arePublicClaimsValid = utils.validateClaims(credentialPublicClaims, jwtPayload);
         if (!arePublicClaimsValid) return callback(undefined, false);
         const areSubjectClaimsValid = utils.validateClaims(subjectClaims, jwtPayload.vc.credentialSubject);
         if (!areSubjectClaimsValid) return callback(undefined, false);
 
-        const {kid} = jwtHeader;
+        // const {kid} = verifiableCredential.jwtHeader;
         // TODO: Using kid value (which in this case will be the verifier's DID), the verifier will be able to validate the signature.
         //  The signature is made using asymmetric encryption using kid.
 
@@ -45,12 +45,12 @@ class SignatureValidationStrategy {
             });
         }
 
-        const {jwtHeader, jwtPayload, jwtSignature} = verifiablePresentation;
+        const {jwtPayload} = verifiablePresentation;
         const {presentationPublicClaims} = environmentData;
         const arePublicClaimsValid = utils.validateClaims(presentationPublicClaims, jwtPayload);
         if (!arePublicClaimsValid) return callback(undefined, false);
 
-        const {kid} = jwtHeader;
+        // const {kid} = verifiablePresentation.jwtHeader;
         // TODO: Using kid value (which in this case will be the verifier's DID), the verifier will be able to validate the signature.
         //  The signature is made using asymmetric encryption using kid.
 
