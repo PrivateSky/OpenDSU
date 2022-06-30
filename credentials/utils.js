@@ -44,7 +44,7 @@ function dateTimeFormatter(timestamp) {
 }
 
 function isValidURL(str) {
-    const pattern = new RegExp('https?:\\/\\/(www\\.)?[-a-zA-Z\d@:%._\\+~#=]{1,256}\\.[a-zA-Z\d()]{1,6}\\b([-a-zA-Z\d()@:%_\\+.~#?&//=]*)', 'i');
+    const pattern = new RegExp('https?:\\/\\/(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b([-a-zA-Z0-9()@:%_\\+.~#?&//=]*)', 'i');
     return !!pattern.test(str);
 }
 
