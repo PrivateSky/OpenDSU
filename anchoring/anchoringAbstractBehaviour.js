@@ -33,43 +33,56 @@ function AnchoringAbstractBehaviour(persistenceStrategy) {
     }
 
     self.appendAnchor = function (anchorId, anchorValueSSI, callback) {
-        if (typeof anchorId === 'undefined' || typeof anchorValueSSI === 'undefined' || anchorId === null || anchorValueSSI === null) {
-            return callback(Error(`Invalid call for append anchor ${anchorId}:${anchorValueSSI}`));
-        }
-        //convert to keySSI
-        let anchorIdKeySSI = anchorId;
-        if (typeof anchorId === "string") {
-            anchorIdKeySSI = keySSISpace.parse(anchorId);
-        }
-        let anchorValueSSIKeySSI = anchorValueSSI;
-        if (typeof anchorValueSSI === "string") {
-            anchorValueSSIKeySSI = keySSISpace.parse(anchorValueSSI);
-        }
+        const __appendAnchor = () => {
+            if (typeof anchorId === 'undefined' || typeof anchorValueSSI === 'undefined' || anchorId === null || anchorValueSSI === null) {
+                return callback(Error(`Invalid call for append anchor ${anchorId}:${anchorValueSSI}`));
+            }
+            //convert to keySSI
+            let anchorIdKeySSI = anchorId;
+            if (typeof anchorId === "string") {
+                anchorIdKeySSI = keySSISpace.parse(anchorId);
+            }
+            let anchorValueSSIKeySSI = anchorValueSSI;
+            if (typeof anchorValueSSI === "string") {
+                anchorValueSSIKeySSI = keySSISpace.parse(anchorValueSSI);
+            }
 
-        if (!anchorIdKeySSI.canAppend()) {
-            return callback(Error(`Cannot append anchor for ${anchorId}`));
+            if (!anchorIdKeySSI.canAppend()) {
+                return callback(Error(`Cannot append anchor for ${anchorId} because of the keySSI type`));
+            }
+            persistenceStrategy.getAllVersions(anchorId, (err, data) => {
+                // throw Error("Get all versions callback");
+                if (err) {
+                    return callback(err);
+                }
+                if (typeof data === 'undefined' || data === null) {
+                    data = [];
+                }
+                const historyOfKeySSI = data.map(el => keySSISpace.parse(el));
+                const signer = determineSigner(anchorIdKeySSI, historyOfKeySSI);
+                const signature = anchorValueSSIKeySSI.getSignature();
+                if (typeof data[data.length - 1] === 'undefined') {
+                    return callback(`Cannot update non existing anchor ${anchorId}`);
+                }
+                const lastSignedHashLinkKeySSI = keySSISpace.parse(data[data.length - 1]);
+                const dataToVerify = anchorValueSSIKeySSI.getDataToSign(anchorIdKeySSI, lastSignedHashLinkKeySSI);
+                if (!signer.verify(dataToVerify, signature)) {
+                    return callback({statusCode: 428, message: "Versions out of sync"});
+                }
+
+                persistenceStrategy.appendAnchor(anchorIdKeySSI.getAnchorId(), anchorValueSSIKeySSI.getIdentifier(), callback);
+            })
         }
-        persistenceStrategy.getAllVersions(anchorId, (err, data) => {
-            // throw Error("Get all versions callback");
-            if (err) {
-                return callback(err);
-            }
-            if (typeof data === 'undefined' || data === null) {
-                data = [];
-            }
-            const historyOfKeySSI = data.map(el => keySSISpace.parse(el));
-            const signer = determineSigner(anchorIdKeySSI, historyOfKeySSI);
-            const signature = anchorValueSSIKeySSI.getSignature();
-            if (typeof data[data.length - 1] === 'undefined') {
-                return callback(`Cannot update non existing anchor ${anchorId}`);
-            }
-            const lastSignedHashLinkKeySSI = keySSISpace.parse(data[data.length - 1]);
-            const dataToVerify = anchorValueSSIKeySSI.getDataToSign(anchorIdKeySSI, lastSignedHashLinkKeySSI);
-            if (!signer.verify(dataToVerify, signature)) {
-                return callback({statusCode: 428, message: "Versions out of sync"});
-            }
-            persistenceStrategy.appendAnchor(anchorIdKeySSI.getAnchorId(), anchorValueSSIKeySSI.getIdentifier(), callback);
-        })
+        if (typeof persistenceStrategy.prepareAnchoring === "function") {
+            persistenceStrategy.prepareAnchoring(anchorId, err => {
+                if (err) {
+                    return callback(err);
+                }
+                __appendAnchor();
+            });
+        } else {
+            __appendAnchor();
+        }
     }
 
     self.getAllVersions = function (anchorId, callback) {

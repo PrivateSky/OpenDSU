@@ -178,7 +178,7 @@ assert.callback("createCredential test", (callback) => {
             });
         });
     });
-}, 3000);
+}, 10000);
 
 assert.callback("full manual verifyAuthToken test", (callback) => {
     dc.createTestFolder('JWT', async (err, folder) => {
