@@ -486,16 +486,20 @@ function Enclave_Mixin(target, did) {
             }
         }
 
-        if (!keySSI.canAppend()) {
-            return resolverAPI.loadDSU(keySSI, options, callback);
-        }
-
-        target.getReadForKeySSI(undefined, keySSI.getIdentifier(), (err, sReadSSI) => {
+        resolverAPI.loadDSU(keySSI, options, (err, dsu)=>{
             if (err) {
-                return callback(err);
+                target.getReadForKeySSI(undefined, keySSI.getIdentifier(), (err, sReadSSI) => {
+                    if (err) {
+                        return callback(err);
+                    }
+                    resolverAPI.loadDSU(sReadSSI, options, callback);
+                });
+
+                return;
             }
-            resolverAPI.loadDSU(sReadSSI, options, callback);
-        });
+
+            callback(undefined, dsu);
+        })
     }
 }
 
