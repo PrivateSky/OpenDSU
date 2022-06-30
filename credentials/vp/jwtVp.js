@@ -1,7 +1,7 @@
 const JWT = require('../jwt');
 const JWT_ERRORS = require('../constants').JWT_ERRORS;
 const { jwtVpBuilder, jwtVpParser, jwtVpVerifier } = require('./model');
-const { createEncryptedCredential } = require('../utils');
+const { asymmetricalEncryption } = require('../utils');
 
 class JwtVP extends JWT {
 	constructor(issuer, options, isInitialisation = false) {
@@ -38,7 +38,7 @@ class JwtVP extends JWT {
 		if (!this.jwtPayload.aud) return callback(JWT_ERRORS.AUDIENCE_OF_PRESENTATION_NOT_DEFINED);
 
 		const { iss, aud } = this.jwtPayload;
-		createEncryptedCredential(iss, aud, encodedJwtVc, (err, encryptedCredential) => {
+		asymmetricalEncryption(iss, aud, encodedJwtVc, (err, encryptedCredential) => {
 			if (err) {
 				return callback(err);
 			}

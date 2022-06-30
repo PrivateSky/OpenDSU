@@ -60,7 +60,7 @@ function jwtVpVerifier(decodedJWT, rootsOfTrust, callback) {
         return verifyRootsOfTrust(jwtPayload, rootsOfTrust, callback);
     }
 
-    verifyJWT(jwtPayload.iss, jwtSignature, dataToSign, (err, verifyResult) => {
+    verifyJWT(jwtPayload.iss, jwtSignature, dataToSign, {kid: jwtHeader.kid}, (err, verifyResult) => {
         if (err) return callback(err);
         if (!verifyResult) return callback(JWT_ERRORS.INVALID_JWT_SIGNATURE);
 

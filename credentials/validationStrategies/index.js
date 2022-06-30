@@ -50,12 +50,11 @@ async function validateCredentialAsync(validationStrategyName, environmentData) 
 
 /**
  * @param validationStrategyNamesArray {string|string[]} array of names of validationStrategies that are allowed to validate. If is a string then only that strategy can do it.
- * @param useCase {string} a string identifying the name of the use case in which a validationStrategy is used. Could be empty.
  * @param environmentData {Object} object with arbitrary data required for validation
  * @param presentationSerialisation {string} JWT Verifiable Presentation
  * @param callback {Function}
  */
-function validatePresentation(validationStrategyNamesArray, useCase, environmentData, presentationSerialisation, callback) {
+function validatePresentation(validationStrategyNamesArray, environmentData, presentationSerialisation, callback) {
     if (typeof validationStrategyNamesArray === "string") {
         validationStrategyNamesArray = [validationStrategyNamesArray];
     }
@@ -70,6 +69,7 @@ function validatePresentation(validationStrategyNamesArray, useCase, environment
             return callback(VALIDATION_STRATEGIES.INVALID_VALIDATION_STRATEGY);
         }
 
+        console.log(presentationSerialisation);
         const jwtVp = JSON.parse(JSON.stringify(presentationSerialisation));
         validationStrategies[validationStrategyName].validatePresentation(jwtVp, environmentData, (err, isValidPresentation) => {
             if (err) return callback(err);
@@ -84,13 +84,12 @@ function validatePresentation(validationStrategyNamesArray, useCase, environment
 /**
  * Async version of validatePresentation method
  * @param validationStrategyNamesArray
- * @param useCase
  * @param environmentData
  * @param presentationSerialisation
  * @returns {Promise<*>}
  */
-async function validatePresentationAsync(validationStrategyNamesArray, useCase, environmentData, presentationSerialisation) {
-    return await $$.promisify(validatePresentation)(validationStrategyNamesArray, useCase, environmentData, presentationSerialisation);
+async function validatePresentationAsync(validationStrategyNamesArray, environmentData, presentationSerialisation) {
+    return await $$.promisify(validatePresentation)(validationStrategyNamesArray, environmentData, presentationSerialisation);
 }
 
 registerValidationStrategy(VALIDATION_STRATEGIES.DEFAULT, new DefaultValidationStrategy());

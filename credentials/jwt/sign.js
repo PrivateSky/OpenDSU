@@ -6,7 +6,7 @@ const keySSIResolver = require('key-ssi-resolver');
 const cryptoRegistry = keySSIResolver.CryptoAlgorithmsRegistry;
 
 const {LABELS, JWT_ERRORS} = require('../constants');
-const {base64UrlEncode, getIssuerFormat} = require('../utils');
+const {base64UrlEncode, getIssuerFormat, asymmetricalEncryption} = require('../utils');
 
 /**
  * This method is signing the encoded header and payload of a JWT and returns the full signed JWT (header.payload.signature)
@@ -21,9 +21,10 @@ function signJWT(jwtHeader, jwtPayload, callback) {
 
     const issuer = jwtPayload.iss;
     const issuerType = getIssuerFormat(issuer);
-    const dataToSign = [base64UrlEncode(JSON.stringify(jwtHeader)), base64UrlEncode(JSON.stringify(jwtPayload))].join('.');
+    let dataToSign = [base64UrlEncode(JSON.stringify(jwtHeader)), base64UrlEncode(JSON.stringify(jwtPayload))].join('.');
     const kidType = getIssuerFormat(jwtHeader.kid);
     if (kidType === LABELS.ISSUER_DID) {
+        dataToSign = base64UrlEncode(JSON.stringify({iss: issuer, kid: jwtHeader.kid}));
         return asymmetricalEncryption(issuer, jwtHeader.kid, dataToSign, callback);
     }
 
@@ -40,10 +41,6 @@ function signJWT(jwtHeader, jwtPayload, callback) {
             return callback(JWT_ERRORS.INVALID_ISSUER_FORMAT);
         }
     }
-}
-
-function asymmetricalEncryption(issuer, kid, dataToSign, callback) {
-    // Asymmetrical sign implementation here
 }
 
 /**

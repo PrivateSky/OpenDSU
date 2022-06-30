@@ -66,7 +66,7 @@ function jwtVcVerifier(decodedJWT, rootsOfTrust, callback) {
     const {jwtHeader, jwtPayload, jwtSignature} = decodedJWT;
     const dataToSign = [utils.base64UrlEncode(JSON.stringify(jwtHeader)), utils.base64UrlEncode(JSON.stringify(jwtPayload))].join('.');
 
-    verifyJWT(jwtPayload.iss, jwtSignature, dataToSign, (err, verifyResult) => {
+    verifyJWT(jwtPayload.iss, jwtSignature, dataToSign, {kid: jwtHeader.kid}, (err, verifyResult) => {
         if (err) return callback(err);
         if (!verifyResult) return callback(JWT_ERRORS.INVALID_JWT_SIGNATURE);
 

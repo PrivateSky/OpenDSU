@@ -6,7 +6,7 @@ const keySSIResolver = require('key-ssi-resolver');
 const cryptoRegistry = keySSIResolver.CryptoAlgorithmsRegistry;
 
 const {JWT_ERRORS, LABELS} = require("../constants");
-const {parseJWTSegments, loadEncryptedCredential, getIssuerFormat} = require("../utils");
+const {parseJWTSegments, asymmetricalDecryption, getIssuerFormat} = require("../utils");
 
 /**
  * This method verifies the encrypted credentials using the private key of the audience. <br />
@@ -33,7 +33,7 @@ function verifyEncryptedCredential(jwtPayload, callback) {
         }
 
         const encryptedCredential = encryptedCredentials[index];
-        loadEncryptedCredential(audience, encryptedCredential, (err, decryptedJWTVc) => {
+        asymmetricalDecryption(audience, encryptedCredential, (err, decryptedJWTVc) => {
             if (err) {
                 verifyResult.verifyResult = false;
                 verifyResult.verifiableCredential.push({
@@ -114,9 +114,14 @@ function verifyRootsOfTrust(jwtPayload, rootsOfTrust, callback) {
  * @param issuer
  * @param signature
  * @param signedData
+ * @param options
  * @param callback {Function}
  */
-function verifyJWT(issuer, signature, signedData, callback) {
+function verifyJWT(issuer, signature, signedData, options, callback) {
+    if (options.kid) {
+        return asymmetricalDecryption(options.kid, signature, callback);
+    }
+
     const issuerType = getIssuerFormat(issuer);
     switch (issuerType) {
         case LABELS.ISSUER_SSI: {

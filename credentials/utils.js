@@ -44,7 +44,7 @@ function dateTimeFormatter(timestamp) {
 }
 
 function isValidURL(str) {
-    const pattern = new RegExp('https?:\\/\\/(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b([-a-zA-Z0-9()@:%_\\+.~#?&//=]*)', 'i');
+    const pattern = new RegExp('https?:\\/\\/(www\\.)?[-a-zA-Z\d@:%._\\+~#=]{1,256}\\.[a-zA-Z\d()]{1,6}\\b([-a-zA-Z\d()@:%_\\+.~#?&//=]*)', 'i');
     return !!pattern.test(str);
 }
 
@@ -60,7 +60,7 @@ function getReadableIdentity(identity) {
         return identity;
     }
 
-    identity = identity.getIdentifier ? identity.getIdentifier() : identity;
+    identity = identity.hasOwnProperty('getIdentifier') ? identity.getIdentifier() : identity;
     if (identity.indexOf('did') === 0) {
         return identity;
     }
@@ -128,6 +128,8 @@ function parseJWTSegments(jwt, callback) {
  * @returns {null | string}
  */
 function getIssuerFormat(issuer) {
+    if (!issuer) return null;
+
     if (issuer.indexOf('did') === 0) {
         return LABELS.ISSUER_DID;
     }
@@ -148,6 +150,8 @@ function getIssuerFormat(issuer) {
  * @returns {null | string}
  */
 function getSubjectFormat(subject) {
+    if (!subject) return null;
+
     if (subject.indexOf('did') === 0) {
         return LABELS.SUBJECT_DID;
     }
@@ -196,31 +200,31 @@ function isJWTNotActive(payload, atDate) {
 }
 
 /**
- * This method is encrypting a JWT VC using asymmetric encryption, so only the intended audience can decrypt the credential.
+ * This method is encrypting a string using asymmetric encryption, so only the pair of the DIDs can decrypt the message.
  * @param holder
- * @param audience
- * @param encodedJwtVc
+ * @param verifier
+ * @param dataToSign
  * @param callback
  */
-function createEncryptedCredential(holder, audience, encodedJwtVc, callback) {
+function asymmetricalEncryption(holder, verifier, dataToSign, callback) {
     const issuerFormat = getIssuerFormat(holder);
-    const audienceFormat = getSubjectFormat(audience);
+    const audienceFormat = getSubjectFormat(verifier);
     if (issuerFormat !== LABELS.ISSUER_DID || audienceFormat !== LABELS.SUBJECT_DID) {
-        return callback(JWT_ERRORS.HOLDER_AND_AUDIENCE_MUST_BE_DID);
+        return callback(JWT_ERRORS.HOLDER_AND_VERIFIER_MUST_BE_DID);
     }
 
     const securityContext = scAPI.getSecurityContext();
     const resolveDids = async () => {
         try {
             const holderDidDocument = await $$.promisify(w3cDID.resolveDID)(holder);
-            const audienceDidDocument = await $$.promisify(w3cDID.resolveDID)(audience);
+            const verifierDidDocument = await $$.promisify(w3cDID.resolveDID)(verifier);
 
-            holderDidDocument.encryptMessage(audienceDidDocument, encodedJwtVc, (err, encryptedJwtVc) => {
+            holderDidDocument.encryptMessage(verifierDidDocument, dataToSign, (err, encryptedData) => {
                 if (err) {
                     return callback(err);
                 }
 
-                callback(undefined, base64UrlEncode(JSON.stringify(encryptedJwtVc)));
+                callback(undefined, base64UrlEncode(JSON.stringify(encryptedData)));
             });
         } catch (e) {
             return callback(e);
@@ -236,27 +240,27 @@ function createEncryptedCredential(holder, audience, encodedJwtVc, callback) {
 
 /**
  * Thi9s method is decrypting a JWT VC which was previously encrypted using asymmetric encryption.
- * @param audience
- * @param encryptedCredential
+ * @param verifier
+ * @param encryptedData
  * @param callback
  */
-function loadEncryptedCredential(audience, encryptedCredential, callback) {
-    const audienceFormat = getSubjectFormat(audience);
+function asymmetricalDecryption(verifier, encryptedData, callback) {
+    const audienceFormat = getSubjectFormat(verifier);
     if (audienceFormat !== LABELS.SUBJECT_DID) {
-        return callback(JWT_ERRORS.HOLDER_AND_AUDIENCE_MUST_BE_DID);
+        return callback(JWT_ERRORS.HOLDER_AND_VERIFIER_MUST_BE_DID);
     }
 
-    const encryptedJWTVc = JSON.parse(base64UrlDecode(encryptedCredential));
+    const encryptedDataJSON = JSON.parse(base64UrlDecode(encryptedData));
     const securityContext = scAPI.getSecurityContext();
     const resolveDid = async () => {
         try {
-            const audienceDidDocument = await $$.promisify(w3cDID.resolveDID)(audience);
-            audienceDidDocument.decryptMessage(encryptedJWTVc, (err, decryptedJwtVc) => {
+            const verifierDidDocument = await $$.promisify(w3cDID.resolveDID)(verifier);
+            verifierDidDocument.decryptMessage(encryptedDataJSON, (err, decryptedData) => {
                 if (err) {
                     return callback(err);
                 }
 
-                callback(undefined, decryptedJwtVc);
+                callback(undefined, decryptedData);
             });
         } catch (e) {
             return callback(e);
@@ -301,8 +305,6 @@ function validateClaims(environmentDataClaims, jwtClaims) {
 
 module.exports = {
     base64UrlEncode,
-    base58Decode,
-
     dateTimeFormatter,
     isValidURL,
 
@@ -311,10 +313,9 @@ module.exports = {
     isJWTExpired,
     isJWTNotActive,
     getReadableIdentity,
-    safeParseEncodedJson,
     parseJWTSegments,
     validateClaims,
 
-    createEncryptedCredential,
-    loadEncryptedCredential
+    asymmetricalEncryption,
+    asymmetricalDecryption
 };
