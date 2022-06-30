@@ -70,7 +70,7 @@ assert.callback("[DID] Test JWT verifiable credential validation strategy possib
             rootsOfTrust: ["invalidRootOfTrust"]
         };
         try {
-            await validationStrategies.validatePresentationAsync(ROOTS_OF_TRUST, '', environmentData, JSON.parse(JSON.stringify(verificationStatus)));
+            await validationStrategies.validatePresentationAsync(ROOTS_OF_TRUST, environmentData, JSON.parse(JSON.stringify(verificationStatus)));
         } catch (e) {
             assert.equal(e, credentials.JWT_ERRORS.ROOT_OF_TRUST_NOT_VALID);
         }
@@ -81,23 +81,23 @@ assert.callback("[DID] Test JWT verifiable credential validation strategy possib
             subjectClaims: {test: 'test'},
             presentationPublicClaims: {nonce: '98ijs!%$1651_invalid', testClaim: 'Claim'}
         };
-        const validPresentationPublicClaim = await validationStrategies.validatePresentationAsync(DEFAULT, '', environmentData, JSON.parse(JSON.stringify(verificationStatus)));
+        const validPresentationPublicClaim = await validationStrategies.validatePresentationAsync(DEFAULT, environmentData, JSON.parse(JSON.stringify(verificationStatus)));
 
         environmentData = {
             atDate: new Date().getTime(),
             credentialPublicClaims: {sub: subjectDidDocument.getIdentifier()},
             subjectClaims: {test: 'test_invalid'}
         };
-        const validSubjectClaim = await validationStrategies.validatePresentationAsync(DEFAULT, '', environmentData, JSON.parse(JSON.stringify(verificationStatus)));
+        const validSubjectClaim = await validationStrategies.validatePresentationAsync(DEFAULT, environmentData, JSON.parse(JSON.stringify(verificationStatus)));
 
         environmentData = {
             atDate: new Date().getTime(),
             credentialPublicClaims: {sub: "invalidSubject"}
         };
-        const validCredentialPublicClaim = await validationStrategies.validatePresentationAsync(DEFAULT, '', environmentData, JSON.parse(JSON.stringify(verificationStatus)));
+        const validCredentialPublicClaim = await validationStrategies.validatePresentationAsync(DEFAULT, environmentData, JSON.parse(JSON.stringify(verificationStatus)));
 
         try {
-            await validationStrategies.validatePresentationAsync("INVALID_VALIDATION_STRATEGY", '', environmentData, JSON.parse(JSON.stringify(verificationStatus)));
+            await validationStrategies.validatePresentationAsync("INVALID_VALIDATION_STRATEGY", environmentData, JSON.parse(JSON.stringify(verificationStatus)));
         } catch (e) {
             assert.equal(e, INVALID_VALIDATION_STRATEGY);
         }

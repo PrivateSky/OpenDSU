@@ -69,7 +69,6 @@ function validatePresentation(validationStrategyNamesArray, environmentData, pre
             return callback(VALIDATION_STRATEGIES.INVALID_VALIDATION_STRATEGY);
         }
 
-        console.log(presentationSerialisation);
         const jwtVp = JSON.parse(JSON.stringify(presentationSerialisation));
         validationStrategies[validationStrategyName].validatePresentation(jwtVp, environmentData, (err, isValidPresentation) => {
             if (err) return callback(err);

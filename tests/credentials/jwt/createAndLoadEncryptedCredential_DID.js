@@ -68,9 +68,9 @@ assert.callback('[DID] Create JWT VC and VP with encrypted credential credential
                 presentationPublicClaims: {aud: audienceDidDocument.getIdentifier()},
                 rootsOfTrust: [issuerDidDocument.getIdentifier()]
             };
-            const validateVPDefault = await validationStrategies.validatePresentationAsync(DEFAULT, "", environmentData, JSON.parse(JSON.stringify(verificationStatus)));
-            const validateVPRootsOfTrust = await validationStrategies.validatePresentationAsync(ROOTS_OF_TRUST, "", environmentData, JSON.parse(JSON.stringify(verificationStatus)));
-            const validateVPDefaultAndRootsOfTrust = await validationStrategies.validatePresentationAsync([DEFAULT, ROOTS_OF_TRUST], "", environmentData, JSON.parse(JSON.stringify(verificationStatus)));
+            const validateVPDefault = await validationStrategies.validatePresentationAsync(DEFAULT, environmentData, JSON.parse(JSON.stringify(verificationStatus)));
+            const validateVPRootsOfTrust = await validationStrategies.validatePresentationAsync(ROOTS_OF_TRUST, environmentData, JSON.parse(JSON.stringify(verificationStatus)));
+            const validateVPDefaultAndRootsOfTrust = await validationStrategies.validatePresentationAsync([DEFAULT, ROOTS_OF_TRUST], environmentData, JSON.parse(JSON.stringify(verificationStatus)));
 
             assert.true(validateVPDefault, `Validation for DEFAULT strategy failed!`);
             assert.true(validateVPRootsOfTrust, `Validation for ROOTS_OF_TRUST strategy failed!`);
