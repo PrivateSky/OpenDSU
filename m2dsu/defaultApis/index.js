@@ -104,6 +104,7 @@ registry.defineApi("loadConstSSIDSU", async function (constSSI, options) {
     try {
         dsu = await resolver.loadDSU(constSSI);
     } catch (e) {
+        console.log(e);
         //TODO check error type
         //on purpose if DSU does not exists an error gets throw
     }
@@ -145,7 +146,8 @@ registry.defineApi("createDSU", async function (domain, ssiType, options) {
 });
 
 registry.defineApi("loadDSU", async function (keySSI, options) {
-    let dsu = await this.getResolver().loadDSU(keySSI, options);
+    let resolver = await this.getResolver();
+    let dsu = await resolver.loadDSU(keySSI, options);
     if (!dsu) {
         throw new Error("No DSU found for " + keySSI);
     }
