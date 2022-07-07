@@ -27,7 +27,7 @@ function publish(keySSI, message, timeout, callback){
 
         let options = {body: message, method: 'PUT'};
 
-		let request = http.poll(url, options, timeout);
+		let request = http.poll(url, options, undefined, timeout);
 
 		request.then((response)=>{
 			callback(undefined, response);
@@ -56,7 +56,7 @@ function getObservableHandler(keySSI, timeout){
 			let options = {
 				method: 'POST'
 			};
-			let request = http.poll(url, options, timeout);
+			let request = http.poll(url, options, undefined, timeout);
 
 			request.then((response) => {
 				obs.dispatchEvent("message", response);

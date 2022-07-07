@@ -76,6 +76,7 @@ function unsubscribe(keySSI, observable) {
 }
 
 function MQHandler(didDocument, domain, pollingTimeout) {
+    let connectionTimeout;
     let timeout = pollingTimeout || 1000;
     let token;
     let expiryTime;
@@ -149,7 +150,10 @@ function MQHandler(didDocument, domain, pollingTimeout) {
             if (!token || (expiryTime && Date.now() + 2000 > expiryTime)) {
                 callback = $$.makeSaneCallback(callback);
                 return http.fetch(url)
-                    .then(response => response.json())
+                    .then(response => {
+                        connectionTimeout = parseInt(response.headers["connection-timeout"]);
+                        return response.json()
+                    })
                     .then(data => {
                         token = data.token;
                         expiryTime = data.expires;
@@ -208,7 +212,7 @@ function MQHandler(didDocument, domain, pollingTimeout) {
                     let options = {headers: {Authorization: token}};
 
                     function makeRequest() {
-                        let request = http.poll(url, options, timeout);
+                        let request = http.poll(url, options, connectionTimeout, timeout);
                         originalCb.__requestInProgress = request;
 
                         request.then(response => response.json())
@@ -232,6 +236,13 @@ function MQHandler(didDocument, domain, pollingTimeout) {
                 })
             })
         })
+    }
+
+    function getMessage(url, callback) {
+        const urlObj = new URL(url);
+        const protocol = urlObj.protocol.slice(0, -1);
+        const httpNode = require(protocol);
+
     }
 
     this.previewMessage = (callback) => {

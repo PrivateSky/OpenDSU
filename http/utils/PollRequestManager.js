@@ -1,4 +1,4 @@
-function PollRequestManager(fetchFunction, pollingTimeout = 1000){
+function PollRequestManager(fetchFunction,  connectionTimeout = 10000, pollingTimeout = 1000){
 
 	const requests = new Map();
 
@@ -78,7 +78,7 @@ function PollRequestManager(fetchFunction, pollingTimeout = 1000){
 
 		const promise = new Promise((resolve, reject) => {
 			request.setExecutor(resolve, reject);
-			createPollThread(request);
+			createPollingTask(request);
 		});
 		promise.abort = () => {
 			this.cancelRequest(promise);
@@ -101,31 +101,64 @@ function PollRequestManager(fetchFunction, pollingTimeout = 1000){
 		}
 	}
 
+	this.setConnectionTimeout = (_connectionTimeout)=>{
+		connectionTimeout = _connectionTimeout;
+	}
 
 	/* *************************** polling zone ****************************/
-	function createPollThread(request) {
+	function createPollingTask(request) {
+		let pollingTimeoutHandler;
+		let safePeriodTimeoutHandler;
+
+		function beginSafePeriod() {
+			safePeriodTimeoutHandler = setTimeout(()=>{
+				beginSafePeriod()
+			}, connectionTimeout)
+
+			reArm();
+		}
+
+		function endSafePeriod() {
+			clearTimeout(safePeriodTimeoutHandler);
+			clearTimeout(pollingTimeoutHandler);
+		}
+
 		function reArm() {
 			request.execute().then( (response) => {
 				if (!response.ok) {
 					//todo check for http errors like 404
-					return setTimeout(reArm, pollingTimeout);
+					return beginSafePeriod();
 				}
+
+				if (response.statusCode === 100) {
+					endSafePeriod();
+					beginSafePeriod();
+					return;
+				}
+
+				if (pollingTimeoutHandler) {
+					clearTimeout(pollingTimeoutHandler);
+				}
+
 				request.resolve(response);
 			}).catch( (err) => {
 				switch(err.code){
 					case "ETIMEDOUT":
-						setTimeout(reArm, pollingTimeout);
+						endSafePeriod();
+						beginSafePeriod();
 						break;
 					case "ECONNREFUSED":
-						setTimeout(reArm, pollingTimeout*1.5);
+						endSafePeriod();
+						beginSafePeriod();
 						break;
 					default:
 						request.reject(err);
 				}
 			});
+
 		}
 
-		reArm();
+		beginSafePeriod();
 	}
 
 }
