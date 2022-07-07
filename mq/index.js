@@ -238,12 +238,6 @@ function MQHandler(didDocument, domain, pollingTimeout) {
         })
     }
 
-    function getMessage(url, callback) {
-        const urlObj = new URL(url);
-        const protocol = urlObj.protocol.slice(0, -1);
-        const httpNode = require(protocol);
-
-    }
 
     this.previewMessage = (callback) => {
         consumeMessage("get", callback);
