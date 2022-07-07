@@ -7,11 +7,15 @@ const utils = require('../utils');
  * @returns {{typ: string, alg: string}}
  */
 function getRequiredJWTHeader(options) {
-	const { alg, typ } = options; // can be extended with other attributes
+	const { alg, typ, kid } = options; // can be extended with other attributes
 
 	return {
 		alg: alg || JWT_DEFAULTS.ALG,
-		typ: typ || JWT_DEFAULTS.TYP
+		typ: typ || JWT_DEFAULTS.TYP,
+		// Used in case of asymmetric encryption of the signature.
+		// Kid is actually the did of the verifier who can validate the signature.
+		// This is part of signatureValidationStrategy proposal
+		kid: kid
 	};
 }
 

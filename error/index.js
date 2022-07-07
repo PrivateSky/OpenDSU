@@ -63,21 +63,18 @@ function registerMandatoryCallback(callback, timeout){
     if(timeout == undefined){
         timeout = 5000; //5 seconds
     }
-    let callbackCalled = false;
     let callStackErr = false;
     try{
         throw new Error("Callback should be called");
     } catch(err){
         callStackErr = err;
     }
-    setTimeout(function(){
-        if(!callbackCalled){
-            reportUserRelevantError("Expected callback not called after " + timeout + " seconds. The calling stack is here: ", callStackErr);
-        }
+    const timeoutId = setTimeout(function () {
+        reportUserRelevantError("Expected callback not called after " + timeout + " seconds. The calling stack is here: ", callStackErr);
     }, timeout);
 
     return function(...args){
-        callbackCalled = true;
+        clearTimeout(timeoutId);
         callback(...args);
     };
 }
