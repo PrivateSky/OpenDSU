@@ -120,7 +120,6 @@ function PollRequestManager(fetchFunction,  connectionTimeout = 10000, pollingTi
 
 		function endSafePeriod() {
 			clearTimeout(safePeriodTimeoutHandler);
-			clearTimeout(pollingTimeoutHandler);
 		}
 
 		function reArm() {
@@ -136,8 +135,8 @@ function PollRequestManager(fetchFunction,  connectionTimeout = 10000, pollingTi
 					return;
 				}
 
-				if (pollingTimeoutHandler) {
-					clearTimeout(pollingTimeoutHandler);
+				if (safePeriodTimeoutHandler) {
+					clearTimeout(safePeriodTimeoutHandler);
 				}
 
 				request.resolve(response);
