@@ -1,7 +1,7 @@
 const JWT = require('../jwt');
 const JWT_ERRORS = require('../constants').JWT_ERRORS;
 const { jwtVpBuilder, jwtVpParser, jwtVpVerifier } = require('./model');
-const { createZeroKnowledgeProofCredential } = require('../utils');
+const { asymmetricalEncryption } = require('../utils');
 
 class JwtVP extends JWT {
 	constructor(issuer, options, isInitialisation = false) {
@@ -33,23 +33,23 @@ class JwtVP extends JWT {
 		return this.asyncMyFunction(this.addVerifiableCredential, [...arguments]);
 	}
 
-	addZeroKnowledgeProofCredential = (encodedJwtVc, callback) => {
+	addEncryptedCredential = (encodedJwtVc, callback) => {
 		if (!encodedJwtVc) return callback(JWT_ERRORS.INVALID_JWT_FORMAT);
 		if (!this.jwtPayload.aud) return callback(JWT_ERRORS.AUDIENCE_OF_PRESENTATION_NOT_DEFINED);
 
 		const { iss, aud } = this.jwtPayload;
-		createZeroKnowledgeProofCredential(iss, aud, encodedJwtVc, (err, zkpCredential) => {
+		asymmetricalEncryption(iss, aud, encodedJwtVc, (err, encryptedCredential) => {
 			if (err) {
 				return callback(err);
 			}
 
-			this.jwtPayload.vp.verifiableCredential.push(zkpCredential);
+			this.jwtPayload.vp.verifiableCredential.push(encryptedCredential);
 			callback(undefined, true);
 		});
 	};
 
-	async addZeroKnowledgeProofCredentialAsync(encodedJwtVc) {
-		return this.asyncMyFunction(this.addZeroKnowledgeProofCredential, [...arguments]);
+	async addEncryptedCredentialAsync(encodedJwtVc) {
+		return this.asyncMyFunction(this.addEncryptedCredential, [...arguments]);
 	}
 
 	loadEncodedJWTVp(encodedJWTVp) {
@@ -65,14 +65,14 @@ class JwtVP extends JWT {
 		});
 	}
 
-	verifyJWT(atDate, rootsOfTrust, callback) {
+	verifyJWT(rootsOfTrust, callback) {
 		if (typeof rootsOfTrust === 'function') {
 			callback = rootsOfTrust;
 			rootsOfTrust = [];
 		}
 
 		const decodedJWT = { jwtHeader: this.jwtHeader, jwtPayload: this.jwtPayload, jwtSignature: this.jwtSignature };
-		jwtVpVerifier(decodedJWT, atDate, rootsOfTrust, (err, result) => {
+		jwtVpVerifier(decodedJWT, rootsOfTrust, (err, result) => {
 			if (err) {
 				return callback(undefined, { verifyResult: false, errorMessage: err });
 			}
@@ -92,7 +92,7 @@ class JwtVP extends JWT {
 		});
 	}
 
-	async verifyJWTAsync(adDate, rootsOfTrust) {
+	async verifyJWTAsync(rootsOfTrust) {
 		return this.asyncMyFunction(this.verifyJWT, [...arguments]);
 	}
 }
