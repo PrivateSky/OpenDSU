@@ -68,13 +68,22 @@ assert.callback('[DID] Create JWT VC and VP with encrypted credential credential
                 presentationPublicClaims: {aud: audienceDidDocument.getIdentifier()},
                 rootsOfTrust: [issuerDidDocument.getIdentifier()]
             };
+
+            const validateVCDefault = await validationStrategies.validateCredentialAsync(DEFAULT, {atDate: new Date().getTime()}, JSON.parse(JSON.stringify(encodedJwtVc1)));
+            const validateVCRootsOfTrust = await validationStrategies.validateCredentialAsync(ROOTS_OF_TRUST, {
+                atDate: new Date().getTime(),
+                rootsOfTrust: [issuerDidDocument.getIdentifier()]
+            }, JSON.parse(JSON.stringify(encodedJwtVc1)));
+
             const validateVPDefault = await validationStrategies.validatePresentationAsync(DEFAULT, environmentData, JSON.parse(JSON.stringify(verificationStatus)));
             const validateVPRootsOfTrust = await validationStrategies.validatePresentationAsync(ROOTS_OF_TRUST, environmentData, JSON.parse(JSON.stringify(verificationStatus)));
             const validateVPDefaultAndRootsOfTrust = await validationStrategies.validatePresentationAsync([DEFAULT, ROOTS_OF_TRUST], environmentData, JSON.parse(JSON.stringify(verificationStatus)));
 
-            assert.true(validateVPDefault, `Validation for DEFAULT strategy failed!`);
-            assert.true(validateVPRootsOfTrust, `Validation for ROOTS_OF_TRUST strategy failed!`);
-            assert.true(validateVPDefaultAndRootsOfTrust, `Validation for both DEFAULT and ROOTS_OF_TRUST strategies failed!`);
+            assert.true(validateVCDefault, `Credential Validation for DEFAULT strategy failed!`);
+            assert.true(validateVCRootsOfTrust, `Credential Validation for ROOTS_OF_TRUST strategy failed!`);
+            assert.true(validateVPDefault, `Presentation Validation for DEFAULT strategy failed!`);
+            assert.true(validateVPRootsOfTrust, `Presentation Validation for ROOTS_OF_TRUST strategy failed!`);
+            assert.true(validateVPDefaultAndRootsOfTrust, `Presentation Validation for both DEFAULT and ROOTS_OF_TRUST strategies failed!`);
             callback();
         } catch (e) {
             console.error(e);
