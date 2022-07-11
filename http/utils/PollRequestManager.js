@@ -129,7 +129,7 @@ function PollRequestManager(fetchFunction,  connectionTimeout = 10000, pollingTi
 					return beginSafePeriod();
 				}
 
-				if (response.statusCode === 100) {
+				if (response.status === 204) {
 					endSafePeriod();
 					beginSafePeriod();
 					return;
