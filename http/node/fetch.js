@@ -139,7 +139,7 @@ function Response(httpRequest, httpResponse) {
 	}
 
 	this.ok = httpResponse.statusCode >= 200 && httpResponse.statusCode < 300 ? true : false;
-	this.statusCode = httpResponse.statusCode;
+	this.status = httpResponse.statusCode;
 	this.statusMessage = httpResponse.statusMessage;
 	this.headers = httpResponse.headers;
 
