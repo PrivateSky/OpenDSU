@@ -125,7 +125,7 @@ function PollRequestManager(fetchFunction,  connectionTimeout = 10000, pollingTi
 					request.abort();
 				}
 				beginSafePeriod()
-			}, connectionTimeout);
+			}, connectionTimeout + 1000);
 
 			reArm();
 		}
