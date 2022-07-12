@@ -7,8 +7,11 @@ function PollRequestManager(fetchFunction,  connectionTimeout = 10000, pollingTi
 		let currentState = undefined;
 		let timeout;
 		this.url = url;
-		const abortController = new AbortController();
-		options.signal = abortController.signal;
+		let abortController;
+		if (typeof AbortController !== "undefined") {
+			abortController = new AbortController();
+            options.signal = abortController.signal;
+		}
 		this.execute = function() {
 			if (!currentState && delay) {
 				currentState = new Promise((resolve, reject) => {
@@ -74,7 +77,9 @@ function PollRequestManager(fetchFunction,  connectionTimeout = 10000, pollingTi
 		}
 
 		this.abort = () => {
-			abortController.abort();
+            if (typeof abortController !== "undefined") {
+                abortController.abort();
+            }
 		}
 	}
 
