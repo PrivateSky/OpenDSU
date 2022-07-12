@@ -108,8 +108,9 @@ function Response(httpRequest, httpResponse) {
 		//data collecting
 		let rawData;
 		const contentType = httpResponse.headers['content-type'];
+        const isPartialContent = httpResponse.statusCode === 206;
 
-		if (contentType === "application/octet-stream") {
+		if (contentType === "application/octet-stream" || isPartialContent) {
 			rawData = [];
 		} else {
 			rawData = '';

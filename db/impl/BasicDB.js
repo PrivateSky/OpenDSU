@@ -36,6 +36,8 @@ function BasicDB(storageStrategy, conflictSolvingStrategy, options) {
     options = options || {events: false};
     ObservableMixin(this);
 
+    const errorAPI = require("opendsu").loadAPI("error");
+
     storageStrategy.on("initialised", () => {
         this.finishInitialisation();
         this.dispatchEvent("initialised");
@@ -89,7 +91,7 @@ function BasicDB(storageStrategy, conflictSolvingStrategy, options) {
         self.getRecord(tableName, key, function (err, res) {
             if (!err || res) {
                 //newRecord = Object.assign(newRecord, {__version:-1});
-                return callback(createOpenDSUErrorWrapper("Failed to insert over an existing record", new Error("Trying to insert into existing record")));
+                return callback(createOpenDSUErrorWrapper("Failed to insert over an existing record", new Error(errorAPI.DB_INSERT_EXISTING_RECORD_ERROR)));
             }
             const sharedDSUMetadata = {}
             sharedDSUMetadata.__version = 0;
