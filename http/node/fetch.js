@@ -142,7 +142,16 @@ function Response(httpRequest, httpResponse) {
 	this.ok = httpResponse.statusCode >= 200 && httpResponse.statusCode < 300 ? true : false;
 	this.status = httpResponse.statusCode;
 	this.statusMessage = httpResponse.statusMessage;
-	this.headers = httpResponse.headers;
+
+	function Headers(headers) {
+		headers = headers || {};
+
+		this.get = (headerKey)=>{
+			return headers[headerKey];
+		}
+	}
+
+	this.headers = new Headers(httpResponse.headers);
 
 	this.arrayBuffer = function () {
 		let promise = new Promise((resolve, reject) => {

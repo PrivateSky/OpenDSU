@@ -8,11 +8,14 @@ function PollRequestManager(fetchFunction,  connectionTimeout = 10000, pollingTi
 		let timeout;
 		this.url = url;
 		let abortController;
-		if (typeof AbortController !== "undefined") {
-			abortController = new AbortController();
-            options.signal = abortController.signal;
-		}
+		let previousAbortController;
+
 		this.execute = function() {
+			if (typeof AbortController !== "undefined") {
+				previousAbortController = abortController;
+				abortController = new AbortController();
+				options.signal = abortController.signal;
+			}
 			if (!currentState && delay) {
 				currentState = new Promise((resolve, reject) => {
 					timeout = setTimeout(() => {
@@ -77,8 +80,8 @@ function PollRequestManager(fetchFunction,  connectionTimeout = 10000, pollingTi
 		}
 
 		this.abort = () => {
-            if (typeof abortController !== "undefined") {
-                abortController.abort();
+            if (typeof previousAbortController !== "undefined") {
+				previousAbortController.abort();
             }
 		}
 	}
@@ -118,12 +121,15 @@ function PollRequestManager(fetchFunction,  connectionTimeout = 10000, pollingTi
 	/* *************************** polling zone ****************************/
 	function createPollingTask(request) {
 		let safePeriodTimeoutHandler;
-        let serverResponded = false;
+		let serverResponded = false;
+		let receivedError = false;
 		function beginSafePeriod() {
 			safePeriodTimeoutHandler = setTimeout(() => {
-				if (!serverResponded) {
+				if (!serverResponded && !receivedError) {
 					request.abort();
 				}
+				serverResponded = false;
+				receivedError = false;
 				beginSafePeriod()
 			}, connectionTimeout + 1000);
 
@@ -131,7 +137,6 @@ function PollRequestManager(fetchFunction,  connectionTimeout = 10000, pollingTi
 		}
 
 		function endSafePeriod() {
-			serverResponded = false;
 			clearTimeout(safePeriodTimeoutHandler);
 		}
 
@@ -143,7 +148,8 @@ function PollRequestManager(fetchFunction,  connectionTimeout = 10000, pollingTi
 				}
 
 				if (response.status === 204) {
-                    serverResponded = true;
+					serverResponded = true;
+					receivedError = false;
 					endSafePeriod();
 					beginSafePeriod();
 					return;
@@ -157,12 +163,12 @@ function PollRequestManager(fetchFunction,  connectionTimeout = 10000, pollingTi
 			}).catch( (err) => {
 				switch(err.code){
 					case "ETIMEDOUT":
+					case "ECONNREFUSED":
+						receivedError = true;
 						endSafePeriod();
 						beginSafePeriod();
 						break;
-					case "ECONNREFUSED":
-						endSafePeriod();
-						beginSafePeriod();
+					case 20:
 						break;
 					default:
 						request.reject(err);

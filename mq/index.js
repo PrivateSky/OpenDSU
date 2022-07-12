@@ -151,7 +151,7 @@ function MQHandler(didDocument, domain, pollingTimeout) {
                 callback = $$.makeSaneCallback(callback);
                 return http.fetch(url)
                     .then(response => {
-                        connectionTimeout = parseInt(response.headers["connection-timeout"]);
+                        connectionTimeout = parseInt(response.headers.get("connection-timeout"));
                         return response.json()
                     })
                     .then(data => {
