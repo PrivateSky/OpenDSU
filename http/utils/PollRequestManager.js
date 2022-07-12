@@ -7,7 +7,8 @@ function PollRequestManager(fetchFunction,  connectionTimeout = 10000, pollingTi
 		let currentState = undefined;
 		let timeout;
 		this.url = url;
-
+		const abortController = new AbortController();
+		options.signal = abortController.signal;
 		this.execute = function() {
 			if (!currentState && delay) {
 				currentState = new Promise((resolve, reject) => {
@@ -71,6 +72,10 @@ function PollRequestManager(fetchFunction,  connectionTimeout = 10000, pollingTi
 				requests.delete(identifier);
 			}
 		}
+
+		this.abort = () => {
+			abortController.abort();
+		}
 	}
 
 	this.createRequest = function (url, options, delayedStart = 0) {
@@ -107,18 +112,21 @@ function PollRequestManager(fetchFunction,  connectionTimeout = 10000, pollingTi
 
 	/* *************************** polling zone ****************************/
 	function createPollingTask(request) {
-		let pollingTimeoutHandler;
 		let safePeriodTimeoutHandler;
-
+        let serverResponded = false;
 		function beginSafePeriod() {
-			safePeriodTimeoutHandler = setTimeout(()=>{
+			safePeriodTimeoutHandler = setTimeout(() => {
+				if (!serverResponded) {
+					request.abort();
+				}
 				beginSafePeriod()
-			}, connectionTimeout)
+			}, connectionTimeout);
 
 			reArm();
 		}
 
 		function endSafePeriod() {
+			serverResponded = false;
 			clearTimeout(safePeriodTimeoutHandler);
 		}
 
@@ -130,6 +138,7 @@ function PollRequestManager(fetchFunction,  connectionTimeout = 10000, pollingTi
 				}
 
 				if (response.status === 204) {
+                    serverResponded = true;
 					endSafePeriod();
 					beginSafePeriod();
 					return;
