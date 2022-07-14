@@ -107,7 +107,6 @@ function PollRequestManager(fetchFunction,  connectionTimeout = 10000, pollingTi
 
 	/* *************************** polling zone ****************************/
 	function createPollingTask(request) {
-		let pollingTimeoutHandler;
 		let safePeriodTimeoutHandler;
 
 		function beginSafePeriod() {
