@@ -23,27 +23,23 @@ assert.callback('key DID SSI test', (testFinished) => {
         await tir.launchConfigurableApiHubTestNodeAsync({domains: [{name: "vault", config: vaultDomainConfig}]});
         sc = scAPI.getSecurityContext();
         sc.on("initialised", async () => {
-            try {
-                const messages = ["message1", "message2", "message3", "message4"];
+            const messages = ["message1", "message2", "message3", "message4"];
 
-                const didDocumentSender = await $$.promisify(w3cDID.createIdentity)("ssi:name", domain, "publicNameSender");
-                const didDocumentReceiver = await $$.promisify(w3cDID.createIdentity)("ssi:name", domain, "publicNameReceiver");
+            const didDocumentSender = await $$.promisify(w3cDID.createIdentity)("ssi:name", domain, "publicNameSender");
+            const didDocumentReceiver = await $$.promisify(w3cDID.createIdentity)("ssi:name", domain, "publicNameReceiver");
 
-                for (const message of messages) {
-                    await $$.promisify(didDocumentSender.sendMessage)(message, didDocumentReceiver);
-                }
-
-                for (let index = 0; index < messages.length; ++index) {
-                    const receivedMessage = await $$.promisify(didDocumentReceiver.readMessage)();
-                    // console.log(`Messages should be the same: Original: ${messages[index]} - Received: ${receivedMessage}`)
-                    assert.equal(receivedMessage, messages[index], `Messages should be the same: Original: ${messages[index]} - Received: ${receivedMessage}`);
-                }
-
-                testFinished();
-            } catch (e) {
-                throw e;
+            for (const message of messages) {
+                await $$.promisify(didDocumentSender.sendMessage)(message, didDocumentReceiver);
             }
-        })
+
+            for (let index = 0; index < messages.length; ++index) {
+                const receivedMessage = await $$.promisify(didDocumentReceiver.readMessage)();
+                // console.log(`Messages should be the same: Original: ${messages[index]} - Received: ${receivedMessage}`)
+                assert.equal(receivedMessage, messages[index], `Messages should be the same: Original: ${messages[index]} - Received: ${receivedMessage}`);
+            }
+
+            testFinished();
+        });
     });
 }, 5000000);
 
