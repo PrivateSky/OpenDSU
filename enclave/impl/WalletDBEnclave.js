@@ -43,6 +43,7 @@ function WalletDBEnclave(keySSI, did) {
             }
         }
 
+        resolver.invalidateDSUCache(keySSI);
         this.storageDB = db.getSimpleWalletDB(DB_NAME, {keySSI});
         this.storageDB.on("initialised", () => {
             initialised = true;
