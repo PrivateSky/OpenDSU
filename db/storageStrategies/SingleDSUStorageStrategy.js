@@ -287,8 +287,17 @@ function SingleDSUStorageStrategy() {
             }
 
             const TaskCounter = require("swarmutils").TaskCounter;
+            let batchInProgress = false;
+            if (storageDSU.batchInProgress()) {
+                batchInProgress = true
+            } else {
+                storageDSU.beginBatch();
+            }
             const taskCounter = new TaskCounter(() => {
-                return callback();
+                if (batchInProgress) {
+                    return callback();
+                }
+                storageDSU.commitBatch(callback);
             })
 
             if (primaryKeys.length === 0) {
@@ -297,7 +306,10 @@ function SingleDSUStorageStrategy() {
                         return callback(createOpenDSUErrorWrapper(`Failed to create empty index for field ${fieldName} in table ${tableName}`, err));
                     }
 
-                    callback();
+                    if (batchInProgress) {
+                        return callback();
+                    }
+                    storageDSU.commitBatch(callback);
                 });
             }
 
@@ -496,6 +508,12 @@ function SingleDSUStorageStrategy() {
         }
 
         const recordPath = getRecordPath(tableName, key);
+        let batchInProgress = false;
+        if (storageDSU.batchInProgress()) {
+            batchInProgress = true
+        } else {
+            storageDSU.beginBatch();
+        }
         storageDSU.writeFile(recordPath, JSON.stringify(record), function (err, res) {
             if (err) {
                 return callback(createOpenDSUErrorWrapper(`Failed to update record in ${recordPath}`, err));
@@ -512,7 +530,10 @@ function SingleDSUStorageStrategy() {
                             return callback(createOpenDSUErrorWrapper(`Failed to update indexes for record ${record}`, err));
                         }
 
-                        callback(undefined, record);
+                        if (batchInProgress) {
+                            return callback(undefined, record);
+                        }
+                        storageDSU.commitBatch(err => callback(err, record));
                     });
                 });
             }
@@ -522,7 +543,10 @@ function SingleDSUStorageStrategy() {
                     return callback(createOpenDSUErrorWrapper(`Failed to update indexes for record ${record}`, err));
                 }
 
-                callback(undefined, record);
+                if (batchInProgress) {
+                    return callback(undefined, record);
+                }
+                storageDSU.commitBatch(err => callback(err, record));
             });
         });
     };
@@ -569,6 +593,12 @@ function SingleDSUStorageStrategy() {
 
     const READ_WRITE_KEY_TABLE = "KeyValueTable";
     this.writeKey = function (key, value, callback) {
+        let batchInProgress = false;
+        if (storageDSU.batchInProgress()) {
+            batchInProgress = true
+        } else {
+            storageDSU.beginBatch();
+        }
         let valueObject = {
             type: typeof value,
             value: value
@@ -589,7 +619,15 @@ function SingleDSUStorageStrategy() {
         }
 
         const recordPath = getRecordPath(READ_WRITE_KEY_TABLE, key);
-        storageDSU.writeFile(recordPath, JSON.stringify(valueObject), callback);
+        storageDSU.writeFile(recordPath, JSON.stringify(valueObject), err => {
+            if (err) {
+                return callback(err);
+            }
+            if (batchInProgress) {
+                return callback(undefined);
+            }
+            storageDSU.commitBatch(callback);
+        });
     };
 
     this.readKey = function (key, callback) {
