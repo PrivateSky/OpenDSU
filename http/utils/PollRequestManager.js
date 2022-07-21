@@ -123,6 +123,11 @@ function PollRequestManager(fetchFunction,  connectionTimeout = 10000, pollingTi
 		let safePeriodTimeoutHandler;
 		let serverResponded = false;
 		let receivedError = false;
+
+		/**
+		 * default connection timeout in api-hub is @connectionTimeout
+		 * we wait double the time before aborting the request
+		 */
 		function beginSafePeriod() {
 			safePeriodTimeoutHandler = setTimeout(() => {
 				if (!serverResponded && !receivedError) {
@@ -131,7 +136,7 @@ function PollRequestManager(fetchFunction,  connectionTimeout = 10000, pollingTi
 				serverResponded = false;
 				receivedError = false;
 				beginSafePeriod()
-			}, connectionTimeout + 1000);
+			}, connectionTimeout * 2);
 
 			reArm();
 		}
