@@ -33,7 +33,7 @@ function callInterceptors(target, callback){
 }
 
 function setupInterceptors(handler){
-    const interceptMethods = [{name: "doPost", position: 2}, {name:"doPut", position: 2}];
+    const interceptMethods = [{name: "doPost", position: 2}, {name:"doPut", position: 2}, {name:"doGet", position: 1}];
     interceptMethods.forEach(function(target){
         let method = handler[target.name];
         handler[target.name] = function(...args){
