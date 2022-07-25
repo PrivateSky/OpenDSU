@@ -4,24 +4,35 @@ function ProxyMixin(target) {
     const commandNames = require("./lib/commandsNames");
     const EnclaveMixin = require("./Enclave_Mixin");
     EnclaveMixin(target);
+    const ObservableMixin = require("../../utils/ObservableMixin");
+    ObservableMixin(target);
+
     target.insertRecord = (forDID, table, pk, plainRecord, encryptedRecord, callback) => {
+        if (typeof encryptedRecord === "function") {
+            callback = encryptedRecord;
+            encryptedRecord = undefined;
+        }
         target.__putCommandObject(commandNames.INSERT_RECORD, forDID, table, pk, plainRecord, callback);
     };
 
     target.updateRecord = (forDID, table, pk, plainRecord, encryptedRecord, callback) => {
+        if (typeof encryptedRecord === "function") {
+            callback = encryptedRecord;
+            encryptedRecord = undefined;
+        }
         target.__putCommandObject(commandNames.UPDATE_RECORD, forDID, table, pk, plainRecord, callback);
     }
 
     target.getRecord = (forDID, table, pk, callback) => {
         target.__putCommandObject(commandNames.GET_RECORD, forDID, table, pk, (err, record) => {
             if (err) {
-                return createOpenDSUErrorWrapper(`Failed to get record with pk ${pk}`, err);
+                return callback(createOpenDSUErrorWrapper(`Failed to get record with pk ${pk}`, err));
             }
 
             try {
                 record = JSON.parse(record);
             } catch (e) {
-                return createOpenDSUErrorWrapper(`Failed to parse record with pk ${pk}`, e);
+                return callback(createOpenDSUErrorWrapper(`Failed to parse record with pk ${pk}`, e));
             }
 
             callback(undefined, record);
@@ -48,13 +59,13 @@ function ProxyMixin(target) {
         }
         target.__putCommandObject(commandNames.FILTER_RECORDS, forDID, table, filter, sort, limit, (err, records) => {
             if (err) {
-                return createOpenDSUErrorWrapper(`Failed to filter records in table ${table}`, err);
+                return callback(createOpenDSUErrorWrapper(`Failed to filter records in table ${table}`, err));
             }
 
             try {
                 records = JSON.parse(records);
             } catch (e) {
-                return createOpenDSUErrorWrapper(`Failed to parse record `, e);
+                return callback(createOpenDSUErrorWrapper(`Failed to parse record `, e));
             }
 
             callback(undefined, records);

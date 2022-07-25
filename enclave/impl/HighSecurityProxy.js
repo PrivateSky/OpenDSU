@@ -22,11 +22,13 @@ function HighSecurityProxy(domain, did) {
                 did = didDocument.getIdentifier();
                 this.url = `${system.getBaseURL()}/runEnclaveEncryptedCommand/${domain}/${did}`;
                 this.finishInitialisation();
+                this.dispatchEvent("initialised");
             })
         } else {
             didDocument = await $$.promisify(w3cDID.resolveDID)(did);
             this.url = `${system.getBaseURL()}/runEnclaveEncryptedCommand/${domain}/${did}`;
             this.finishInitialisation();
+            this.dispatchEvent("initialised");
         }
     }
 
@@ -49,7 +51,7 @@ function HighSecurityProxy(domain, did) {
     }
 
     const bindAutoPendingFunctions = require(".././../utils/BindAutoPendingFunctions").bindAutoPendingFunctions;
-    bindAutoPendingFunctions(this, "__putCommandObject");
+    bindAutoPendingFunctions(this, "__putCommandObject", "on", "off");
     init();
 }
 

@@ -1,4 +1,3 @@
-const {bindAutoPendingFunctions} = require(".././../utils/BindAutoPendingFunctions");
 const {createCommandObject} = require("./lib/createCommandObject");
 
 function APIHUBProxy(domain, did) {
@@ -12,19 +11,22 @@ function APIHUBProxy(domain, did) {
     const ProxyMixin = require("./ProxyMixin");
     ProxyMixin(this);
     let url;
+    let didDocument;
     const init = async () => {
-        if (typeof domain === "undefined") {
-            domain = await $$.promisify(scAPI.getVaultDomain)();
-        }
-
         if (typeof did === "undefined") {
-            did = CryptoSkills.applySkill("key", CryptoSkills.NAMES.CREATE_DID_DOCUMENT).getIdentifier();
+            didDocument = CryptoSkills.applySkill("key", CryptoSkills.NAMES.CREATE_DID_DOCUMENT);
+            didDocument.on("initialised", () => {
+                did = didDocument.getIdentifier();
+                url = `${system.getBaseURL()}/runEnclaveCommand/${domain}/${did}`;
+                this.finishInitialisation();
+                this.dispatchEvent("initialised");
+            })
+        } else {
+            didDocument = await $$.promisify(w3cDID.resolveDID)(did);
+            url = `${system.getBaseURL()}/runEnclaveCommand/${domain}/${did}`;
+            this.finishInitialisation();
+            this.dispatchEvent("initialised");
         }
-
-        url = `${system.getBaseURL()}/runEnclaveCommand/${domain}/${did}`;
-        initialised = true;
-        this.finishInitialisation();
-        this.dispatchEvent("initialised");
     }
 
     this.isInitialised = ()=>{
@@ -42,7 +44,7 @@ function APIHUBProxy(domain, did) {
     }
 
     const bindAutoPendingFunctions = require(".././../utils/BindAutoPendingFunctions").bindAutoPendingFunctions;
-    bindAutoPendingFunctions(this, "__putCommandObject", "isInitialised");
+    bindAutoPendingFunctions(this, "__putCommandObject", "isInitialised", "on", "off");
     init();
 }
 

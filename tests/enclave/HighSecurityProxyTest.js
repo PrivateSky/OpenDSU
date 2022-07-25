@@ -21,10 +21,10 @@ assert.callback('HighSecurityProxy test', (testFinished) => {
         const TABLE = "test_table";
         const addedRecord = {data: 1};
         const newAddedRecord = {data: 2};
-        setTimeout(async () => {
+        apihubProxy.on("initialised", async () => {
             try {
-                await $$.promisify(apihubProxy.insertRecord)("some_did", TABLE, "pk1", addedRecord, addedRecord);
-                await $$.promisify(apihubProxy.insertRecord)("some_did", TABLE, "pk2",newAddedRecord, newAddedRecord);
+                await $$.promisify(apihubProxy.insertRecord)(undefined, TABLE, "pk1", addedRecord, addedRecord);
+                await $$.promisify(apihubProxy.insertRecord)(undefined, TABLE, "pk2", newAddedRecord, newAddedRecord);
                 const record = await $$.promisify(apihubProxy.getRecord)("some_did", TABLE, "pk1");
                 assert.objectsAreEqual(record, addedRecord, "Records do not match");
                 let records = await $$.promisify(apihubProxy.filter)("some_did", TABLE);
@@ -37,7 +37,7 @@ assert.callback('HighSecurityProxy test', (testFinished) => {
             }
 
             testFinished();
-        }, 1000)
+        });
     });
 }, 2000000);
 
