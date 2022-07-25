@@ -51,7 +51,7 @@ function HighSecurityProxy(domain, did) {
     }
 
     const bindAutoPendingFunctions = require(".././../utils/BindAutoPendingFunctions").bindAutoPendingFunctions;
-    bindAutoPendingFunctions(this, "__putCommandObject", "on", "off");
+    bindAutoPendingFunctions(this, ["__putCommandObject", "on", "off"]);
     init();
 }
 

@@ -44,7 +44,7 @@ function APIHUBProxy(domain, did) {
     }
 
     const bindAutoPendingFunctions = require(".././../utils/BindAutoPendingFunctions").bindAutoPendingFunctions;
-    bindAutoPendingFunctions(this, "__putCommandObject", "isInitialised", "on", "off");
+    bindAutoPendingFunctions(this, ["__putCommandObject", "isInitialised", "on", "off"]);
     init();
 }
 
