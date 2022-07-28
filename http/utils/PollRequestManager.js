@@ -12,9 +12,13 @@ function PollRequestManager(fetchFunction,  connectionTimeout = 10000, pollingTi
 
 		this.execute = function() {
 			if (typeof AbortController !== "undefined") {
-				previousAbortController = abortController;
+				if (typeof abortController === "undefined") {
+					previousAbortController = new AbortController()
+				} else {
+                    previousAbortController = abortController;
+                }
 				abortController = new AbortController();
-				options.signal = abortController.signal;
+				options.signal = previousAbortController.signal;
 			}
 			if (!currentState && delay) {
 				currentState = new Promise((resolve, reject) => {
@@ -122,39 +126,40 @@ function PollRequestManager(fetchFunction,  connectionTimeout = 10000, pollingTi
 	function createPollingTask(request) {
 		let safePeriodTimeoutHandler;
 		let serverResponded = false;
-		let receivedError = false;
-
 		/**
 		 * default connection timeout in api-hub is @connectionTimeout
 		 * we wait double the time before aborting the request
 		 */
 		function beginSafePeriod() {
 			safePeriodTimeoutHandler = setTimeout(() => {
-				if (!serverResponded && !receivedError) {
+				if (!serverResponded) {
 					request.abort();
 				}
 				serverResponded = false;
-				receivedError = false;
 				beginSafePeriod()
 			}, connectionTimeout * 2);
-
 			reArm();
 		}
 
 		function endSafePeriod() {
+			serverResponded = true;
 			clearTimeout(safePeriodTimeoutHandler);
 		}
 
 		function reArm() {
 			request.execute().then( (response) => {
 				if (!response.ok) {
+					endSafePeriod();
+
 					//todo check for http errors like 404
+					if (response.status === 403) {
+						request.reject(Error("Token expired"));
+						return
+					}
 					return beginSafePeriod();
 				}
 
 				if (response.status === 204) {
-					serverResponded = true;
-					receivedError = false;
 					endSafePeriod();
 					beginSafePeriod();
 					return;
@@ -169,7 +174,6 @@ function PollRequestManager(fetchFunction,  connectionTimeout = 10000, pollingTi
 				switch(err.code){
 					case "ETIMEDOUT":
 					case "ECONNREFUSED":
-						receivedError = true;
 						endSafePeriod();
 						beginSafePeriod();
 						break;
