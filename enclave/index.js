@@ -51,5 +51,7 @@ module.exports = {
     initialiseHighSecurityProxy,
     connectEnclave,
     createEnclave,
-    registerEnclave
+    registerEnclave,
+    EnclaveMixin: require("./impl/Enclave_Mixin"),
+    ProxyMixin: require("./impl/ProxyMixin")
 }
