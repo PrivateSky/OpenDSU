@@ -28,37 +28,27 @@ const initializeSC = async () => {
     }
 }
 
-assert.callback("Create and verify valid JWT test", (callback) => {
-    dc.createTestFolder('JWT', async (err, folder) => {
-        tir.launchApiHubTestNode(100, folder, async err => {
-            if (err) {
-                throw err;
+let tests = [
+    {
+    name: "Create and verify valid JWT test",
+    test: async (callback) => {
+            try {
+                const didDocument = await $$.promisify(w3cDID.createIdentity)("ssi:name", domain, crypto.generateRandom(10).toString("hex"));
+                const jwt = await $$.promisify(crypto.createJWTForDID)(didDocument.getIdentifier(), "/", credentials, options);
+                const verifyResult = await $$.promisify(crypto.verifyDID_JWT)(jwt, null);
+
+                assert.true(verifyResult);
+                callback();
+
+            } catch (e) {
+                console.log(e);
             }
-
-            scAPI.getSecurityContext().on("initialised", async () => {
-                try {
-                    const didDocument = await $$.promisify(w3cDID.createIdentity)("ssi:name", domain, crypto.generateRandom(10).toString("hex"));
-                    const jwt = await $$.promisify(crypto.createJWTForDID)(didDocument.getIdentifier(), "/", credentials, options);
-                    const verifyResult = await $$.promisify(crypto.verifyDID_JWT)(jwt, null);
-
-                    assert.true(verifyResult);
-                    callback();
-
-                } catch (e) {
-                    console.log(e);
-                }
-            });
-        });
-    });
-}, 100000);
-
-assert.callback("Create and verify valid JWT and rootOfTrustVerificationStrategy success test", (callback) => {
-    dc.createTestFolder('JWT', async (err, folder) => {
-        tir.launchApiHubTestNode(100, folder, async err => {
-            if (err) {
-                throw err;
-            }
-            scAPI.getSecurityContext().on("initialised", async () => {
+        },
+    timeout: 10000
+},
+    {
+        name: "Create and verify valid JWT and rootOfTrustVerificationStrategy success test",
+        test:  async (callback) => {
                 try {
                     const didDocument = await $$.promisify(w3cDID.createIdentity)("ssi:name", domain, crypto.generateRandom(10).toString("hex"));
                     const jwt = await $$.promisify(crypto.createJWTForDID)(didDocument.getIdentifier(), "/", credentials, options);
@@ -76,18 +66,12 @@ assert.callback("Create and verify valid JWT and rootOfTrustVerificationStrategy
                     console.log(e);
 
                 }
-            });
-        });
-    });
-}, 10000);
-
-assert.callback("Create and verify valid JWT and rootOfTrustVerificationStrategy failure test", (callback) => {
-    dc.createTestFolder('JWT', async (err, folder) => {
-        tir.launchApiHubTestNode(100, folder, async err => {
-            if (err) {
-                throw err;
-            }
-            scAPI.getSecurityContext().on("initialised", async () => {
+            },
+        timeout: 10000
+    },
+    {
+        name: "Create and verify valid JWT and rootOfTrustVerificationStrategy failure test",
+        test: async (callback) => {
                 try {
                     const didDocument = await $$.promisify(w3cDID.createIdentity)("ssi:name", domain, crypto.generateRandom(10).toString("hex"));
                     const jwt = await $$.promisify(crypto.createJWTForDID)(didDocument.getIdentifier(), "/", credentials, options);
@@ -103,18 +87,12 @@ assert.callback("Create and verify valid JWT and rootOfTrustVerificationStrategy
                     assert.equal(e, JWT_ERRORS.ROOT_OF_TRUST_VERIFICATION_FAILED);
                     callback();
                 }
-            })
-        })
-    })
-}, 10000);
-
-assert.callback("Create and verify invalid JWT test", (callback) => {
-    dc.createTestFolder('JWT', async (err, folder) => {
-        tir.launchApiHubTestNode(100, folder, async err => {
-            if (err) {
-                throw err;
-            }
-            scAPI.getSecurityContext().on("initialised", async () => {
+            },
+        timeout: 10000
+    },
+    {
+        name: "Create and verify invalid JWT test",
+        test:  async (callback) => {
                 try {
                     const didDocument = await $$.promisify(w3cDID.createIdentity)("ssi:name", domain, crypto.generateRandom(10).toString("hex"));
                     const jwt = await $$.promisify(crypto.createJWTForDID)(didDocument.getIdentifier(), "/", credentials, options);
@@ -124,18 +102,12 @@ assert.callback("Create and verify invalid JWT test", (callback) => {
                     assert.notNull(e);
                     callback();
                 }
-            })
-        })
-    })
-}, 10000);
-
-assert.callback("Create and verify invalid JWT (someone modifies the payload) test", (callback) => {
-    dc.createTestFolder('JWT', async (err, folder) => {
-        tir.launchApiHubTestNode(100, folder, async err => {
-            if (err) {
-                throw err;
-            }
-            scAPI.getSecurityContext().on("initialised", async () => {
+            },
+        timeout: 10000
+    },
+    {
+        name: "Create and verify invalid JWT (someone modifies the payload) test",
+        test: async (callback) => {
                 try {
                     const didDocument1 = await $$.promisify(w3cDID.createIdentity)("ssi:name", domain, crypto.generateRandom(10).toString("hex"));
                     const didDocument2 = await $$.promisify(w3cDID.createIdentity)("ssi:name", domain, crypto.generateRandom(10).toString("hex"));
@@ -149,18 +121,12 @@ assert.callback("Create and verify invalid JWT (someone modifies the payload) te
                     assert.notNull(e);
                     callback();
                 }
-            });
-        });
-    });
-}, 10000);
-
-assert.callback("createCredential test", (callback) => {
-    dc.createTestFolder('JWT', async (err, folder) => {
-        tir.launchApiHubTestNode(100, folder, async err => {
-            if (err) {
-                throw err;
-            }
-            scAPI.getSecurityContext().on("initialised", async () => {
+            },
+        timeout: 10000
+    },
+    {
+        name: "createCredential test",
+        test: async (callback) => {
                 try {
                     const didDocument = await $$.promisify(w3cDID.createIdentity)("ssi:name", domain, crypto.generateRandom(10).toString("hex"));
                     const jwt = await $$.promisify(crypto.createJWTForDID)(didDocument.getIdentifier(), "/", credentials, options);
@@ -175,22 +141,16 @@ assert.callback("createCredential test", (callback) => {
                 } catch (e) {
                     console.log(e);
                 }
-            });
-        });
-    });
-}, 10000);
-
-assert.callback("full manual verifyAuthToken test", (callback) => {
-    dc.createTestFolder('JWT', async (err, folder) => {
-        tir.launchApiHubTestNode(100, folder, async err => {
-            if (err) {
-                throw err;
-            }
-            let didDocument1;
-            let didDocument2;
-            let credentialJWT;
-            let authToken;
-            scAPI.getSecurityContext().on("initialised", async () => {
+            },
+        timeout: 10000
+    },
+    {
+        name: "full manual verifyAuthToken test",
+        test: async (callback) => {
+                let didDocument1;
+                let didDocument2;
+                let credentialJWT;
+                let authToken;
                 try {
                     didDocument1 = await $$.promisify(w3cDID.createIdentity)("ssi:name", domain, crypto.generateRandom(10).toString("hex"));
                     didDocument2 = await $$.promisify(w3cDID.createIdentity)("ssi:name", domain, crypto.generateRandom(10).toString("hex"));
@@ -222,23 +182,17 @@ assert.callback("full manual verifyAuthToken test", (callback) => {
                         callback();
                     }
                 );
-            });
-        });
-    });
-}, 10000);
-
-assert.callback("verifyAuthToken test", (callback) => {
-    dc.createTestFolder('JWT', async (err, folder) => {
-        tir.launchApiHubTestNode(100, folder, async err => {
-            if (err) {
-                throw err;
-            }
-            let didDocument1;
-            let didDocument2;
-            let credentialJWT;
-            let authToken;
-            let verifyResult;
-            scAPI.getSecurityContext().on("initialised", async () => {
+            },
+        timeout: 10000
+    },
+    {
+        name: "verifyAuthToken test",
+        test: async (callback) => {
+                let didDocument1;
+                let didDocument2;
+                let credentialJWT;
+                let authToken;
+                let verifyResult;
                 try {
                     didDocument1 = await $$.promisify(w3cDID.createIdentity)("ssi:name", domain, crypto.generateRandom(10).toString("hex"));
                     didDocument2 = await $$.promisify(w3cDID.createIdentity)("ssi:name", domain, crypto.generateRandom(10).toString("hex"));
@@ -250,23 +204,17 @@ assert.callback("verifyAuthToken test", (callback) => {
                 } catch (e) {
                     console.log(e);
                 }
-            });
-        });
-    });
-}, 10000);
-
-assert.callback("verifyAuthToken with invalid issuer test", (callback) => {
-    dc.createTestFolder('JWT', async (err, folder) => {
-        tir.launchApiHubTestNode(100, folder, async err => {
-            if (err) {
-                throw err;
-            }
-            let didDocument1;
-            let didDocument2;
-            let credentialJWT;
-            let authToken;
-            let verifyResult;
-            scAPI.getSecurityContext().on("initialised", async () => {
+            },
+        timeout: 10000
+    },
+    {
+        name: "verifyAuthToken with invalid issuer test",
+        test: async (callback) => {
+                let didDocument1;
+                let didDocument2;
+                let credentialJWT;
+                let authToken;
+                let verifyResult;
                 try {
                     didDocument1 = await $$.promisify(w3cDID.createIdentity)("ssi:name", domain, crypto.generateRandom(10).toString("hex"));
                     didDocument2 = await $$.promisify(w3cDID.createIdentity)("ssi:name", domain, crypto.generateRandom(10).toString("hex"));
@@ -277,7 +225,47 @@ assert.callback("verifyAuthToken with invalid issuer test", (callback) => {
                     assert.notNull(e);
                     callback();
                 }
+            },
+        timeout: 10000
+    }
+];
+
+
+
+assert.callback("JWTTests", (callback)=>{
+    let finalFinish;
+    let prepareSetup = function(callback){
+        dc.createTestFolder('JWT', async (err, folder) => {
+            if (err) {
+                throw err;
+            }
+            tir.launchApiHubTestNode(100, folder, async err => {
+                if (err) {
+                    throw err;
+                }
+                scAPI.getSecurityContext().on("initialised", callback);
             });
         });
-    });
-}, 10000);
+    }
+    let executeTests = function(){
+        if(tests.length){
+            let {name, test, timeout} = tests.pop();
+            assert.callback(name, async (finish)=>{
+
+                test(()=>{
+                    finish();
+                    executeTests();
+                });
+
+            }, timeout);
+        }else{
+            if(finalFinish){
+                finalFinish();
+            }
+        }
+    }
+
+    finalFinish = callback;
+    prepareSetup(executeTests);
+}, tests.length*10000);
+
