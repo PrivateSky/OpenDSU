@@ -1,31 +1,45 @@
 const methodsNames = require("../didMethodsNames");
 
-function KeyDID_Document(enclave, isInitialisation, publicKey) {
+function KeyDID_Document(enclave, isInitialisation, publicKey, privateKey) {
     const DID_mixin = require("../W3CDID_Mixin");
     const ObservableMixin = require("../../utils/ObservableMixin");
     DID_mixin(this, enclave);
     ObservableMixin(this);
-    let privateKey;
     let domain;
     const openDSU = require("opendsu");
     const crypto = openDSU.loadAPI("crypto");
 
-    const init = async () => {
-        if (isInitialisation) {
-            const keyPair = crypto.generateKeyPair();
-            privateKey = keyPair.privateKey;
-            publicKey = crypto.encodeBase58(keyPair.publicKey);
-            setTimeout(() => {
-                this.dispatchEvent("initialised");
-            })
-        } else {
-            if (!publicKey) {
-                throw Error("Public key is missing from argument list.")
+    const create = () => {
+        if (typeof privateKey === "undefined") {
+            if (typeof publicKey === "undefined") {
+                const keyPair = crypto.generateKeyPair();
+                privateKey = keyPair.privateKey;
+                publicKey = crypto.encodeBase58(keyPair.publicKey);
             }
-            publicKey = publicKey.slice(4);
-            setTimeout(() => {
-                this.dispatchEvent("initialised");
-            });}
+        } else {
+            if (typeof privateKey === "string") {
+                privateKey = Buffer.from(privateKey);
+            }
+            publicKey = crypto.encodeBase58(crypto.getPublicKeyFromPrivateKey(privateKey));
+        }
+    }
+
+    const load = () => {
+        if (!publicKey) {
+            throw Error("Public key is missing from argument list.")
+        }
+        publicKey = publicKey.slice(4);
+    }
+
+    const init = () => {
+        if (isInitialisation) {
+            create();
+        } else {
+            load();
+        }
+        setTimeout(() => {
+            this.dispatchEvent("initialised");
+        })
     };
 
     const getRawPublicKey = () => {
@@ -66,10 +80,9 @@ function KeyDID_Document(enclave, isInitialisation, publicKey) {
 }
 
 module.exports = {
-    initiateDIDDocument: function (enclave, seedSSI) {
-        return new KeyDID_Document(enclave, true, seedSSI)
-    },
-    createDIDDocument: function (enclave, tokens) {
+    initiateDIDDocument: function (enclave, publicKey, privateKey) {
+        return new KeyDID_Document(enclave, true, publicKey, privateKey);
+    }, createDIDDocument: function (enclave, tokens) {
         return new KeyDID_Document(enclave, false, tokens[2]);
     }
 };

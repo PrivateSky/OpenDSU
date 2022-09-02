@@ -141,6 +141,12 @@ const convertPrivateKey = (rawPrivateKey, outputFormat) => {
     return ecGenerator.getPemKeys(rawPrivateKey, rawPublicKey, {outputFormat}).privateKey;
 }
 
+const getPublicKeyFromPrivateKey = (rawPrivateKey, outputFormat = "raw") => {
+    const ecGenerator = crypto.createKeyPairGenerator();
+    const rawPublicKey = ecGenerator.getPublicKey(rawPrivateKey);
+    return convertPublicKey(rawPublicKey, outputFormat);
+};
+
 const createJWT = (seedSSI, scope, credentials, options, callback) => {
     jwtUtils.createJWT(
         {
@@ -322,6 +328,7 @@ module.exports = {
     generateKeyPair,
     convertPrivateKey,
     convertPublicKey,
+    getPublicKeyFromPrivateKey,
     ecies_encrypt_ds,
     ecies_decrypt_ds,
     createJWTForDID,

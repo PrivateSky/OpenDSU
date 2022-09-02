@@ -1,11 +1,17 @@
 function KeyDID_Method() {
     let KeyDIDDocument = require("./KeyDID_Document");
-    this.create = function (enclave, seedSSI, callback) {
-        if (typeof seedSSI === "function") {
-            callback = seedSSI;
-            seedSSI = undefined;
+    this.create = function (enclave, publicKey, privateKey, callback) {
+        if (typeof privateKey === "function") {
+            callback = privateKey;
+            privateKey = undefined;
         }
-        const keyDIDDocument = KeyDIDDocument.initiateDIDDocument(enclave, seedSSI);
+
+        if (typeof publicKey === "function") {
+            callback = publicKey;
+            publicKey = undefined;
+        }
+
+        const keyDIDDocument = KeyDIDDocument.initiateDIDDocument(enclave,  publicKey, privateKey);
         keyDIDDocument.on("initialised", () => {
             callback(undefined, keyDIDDocument);
         });

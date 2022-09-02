@@ -5,10 +5,9 @@ const dc = require("double-check");
 const assert = dc.assert;
 const openDSU = require('../../index');
 $$.__registerModule("opendsu", openDSU);
-const keySSI = openDSU.loadAPI("keyssi");
-const resolver = openDSU.loadAPI("resolver");
 const scAPI = openDSU.loadAPI("sc");
 const w3cDID = openDSU.loadAPI("w3cdid");
+const crypto = openDSU.loadAPI("crypto");
 
 assert.callback('W3C Key DID test', (testFinished) => {
     const domain = 'default';
@@ -22,23 +21,21 @@ assert.callback('W3C Key DID test', (testFinished) => {
             }
         }
         await tir.launchConfigurableApiHubTestNodeAsync({domains: [{name: "vault", config: vaultDomainConfig}]});
-        // sc = scAPI.getSecurityContext();
-        // sc.on("initialised", async () => {
-        //     try {
-        //         const seedSSI = await $$.promisify(keySSI.createSeedSSI)(domain);
-                const didDocument = await $$.promisify(w3cDID.createIdentity)("key", "pub_key");
+        sc = scAPI.getSecurityContext();
+        sc.on("initialised", async () => {
+            try {
+                const keyPair = crypto.generateKeyPair();
+                const didDocument = await $$.promisify(w3cDID.createIdentity)("key", undefined, keyPair.privateKey);
 
-                // const dataToSign = "someData";
-                // const signature = await $$.promisify(didDocument.sign)(dataToSign);
-                // const resolvedDIDDocument = await $$.promisify(w3cDID.resolveDID)(didDocument.getIdentifier());
-                // const verificationResult = await $$.promisify(resolvedDIDDocument.verify)(dataToSign, signature);
-                // assert.true(verificationResult, "Failed to verify signature");
-        console.log(didDocument.getIdentifier());
+                const dataToSign = "someData";
+                const signature = await $$.promisify(didDocument.sign)(dataToSign);
+                const verificationResult = await $$.promisify(didDocument.verify)(dataToSign, signature);
+                assert.true(verificationResult, "Failed to verify signature");
                 testFinished();
-            // } catch (e) {
-            //     throw e;
-            // }
-        // });
+            } catch (e) {
+                throw e;
+            }
+        });
     });
 }, 2000000);
 
