@@ -1,5 +1,3 @@
-const ObservableMixin = require("../../utils/ObservableMixin");
-
 function Enclave_Mixin(target, did) {
     const openDSU = require("opendsu");
     const keySSISpace = openDSU.loadAPI("keyssi")
