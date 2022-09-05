@@ -19,6 +19,10 @@ function initialiseHighSecurityProxy(domain, did) {
     return new HighSecurityProxy(domain, did)
 }
 
+function initialiseRemoteEnclave(clientDID, remoteDID) {
+    const RemoteEnclave = require("./impl/RemoteEnclave");
+    return new RemoteEnclave(clientDID, remoteDID);}
+
 function connectEnclave(forDID, enclaveDID, ...args) {
     throw Error("Not implemented");
 }
@@ -43,12 +47,14 @@ registerEnclave(constants.ENCLAVE_TYPES.MEMORY_ENCLAVE, initialiseMemoryEnclave)
 registerEnclave(constants.ENCLAVE_TYPES.WALLET_DB_ENCLAVE, initialiseWalletDBEnclave);
 registerEnclave(constants.ENCLAVE_TYPES.APIHUB_ENCLAVE, initialiseAPIHUBProxy);
 registerEnclave(constants.ENCLAVE_TYPES.HIGH_SECURITY_ENCLAVE, initialiseHighSecurityProxy);
+registerEnclave(constants.ENCLAVE_TYPES.MQ_PROXY_ENCLAVE, initialiseRemoteEnclave)
 
 module.exports = {
     initialiseWalletDBEnclave,
     initialiseMemoryEnclave,
     initialiseAPIHUBProxy,
     initialiseHighSecurityProxy,
+    initialiseRemoteEnclave,
     connectEnclave,
     createEnclave,
     registerEnclave
