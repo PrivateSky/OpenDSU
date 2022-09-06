@@ -44,7 +44,7 @@ if(!PREVENT_DOUBLE_LOADING_OF_OPENDSU.INITIALISED){
             case "dt":return require("./dt"); break;
             case "enclave":return require("./enclave"); break;
             case "keyssi":return require("./keyssi"); break;
-            case "mq":return require("./mq"); break;
+            case "mq":return require("./mq/mqClient"); break;
             case "notifications":return require("./notifications"); break;
             case "oauth":return require("./oauth"); break;
             case "resolver":return require("./resolver"); break;

@@ -71,7 +71,7 @@ function getHandler(keySSI, timeout) {
 }
 
 function unsubscribe(keySSI, observable) {
-    console.log("unsubscribe method from OpenDSU.loadApi('mq') is absolute. Adapt you code to use the new getMQHandlerForDID");
+    console.log("unsubscribe method from OpenDSU.loadApi('mq') is obsolete. Adapt you code to use the new getMQHandlerForDID");
     http.unpoll(requests[observable]);
 }
 
@@ -252,6 +252,8 @@ function MQHandler(didDocument, domain, pollingTimeout) {
     this.readAndWaitForMessages = (callback) => {
         consumeMessage("take", true, callback);
     };
+
+    this.subscribe = this.readAndWaitForMessages;
 
     this.abort = (callback) => {
         let request = callback.__requestInProgress;
