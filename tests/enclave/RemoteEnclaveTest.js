@@ -27,6 +27,7 @@ assert.callback('MqProxy test', (testFinished) => {
             "enable": ["enclave", "mq"]
         }
 
+        process.env.REMOTE_ENCLAVE_SECRET = "some secret";
         await tir.launchConfigurableApiHubTestNodeAsync({ domains: [{ name: "default", config: vaultDomainConfig }] });
         const sc = scAPI.getSecurityContext();
 
@@ -34,7 +35,7 @@ assert.callback('MqProxy test', (testFinished) => {
             try {
                 const domain = "default";
                 const clientDIDDocument = await $$.promisify(w3cDID.createIdentity)("ssi:name", domain, "client");
-                const remoteDIDDocument = await $$.promisify(w3cDID.createIdentity)("ssi:name", domain, "remote");
+                const remoteDIDDocument = await $$.promisify(w3cDID.createIdentity)("key", undefined, process.env.REMOTE_ENCLAVE_SECRET);
 
                 const remoteEnclave = enclaveAPI.initialiseRemoteEnclave(clientDIDDocument.getIdentifier(), remoteDIDDocument.getIdentifier());
                 const TABLE = "test_table";
@@ -48,7 +49,7 @@ assert.callback('MqProxy test', (testFinished) => {
                        
                         setTimeout(async () => {
                             console.log("GET Message");
-                            const record = await $$.promisify(mqProxy.getRecord)("some_did", TABLE, "pk1");
+                            const record = await $$.promisify(remoteEnclave.getRecord)("some_did", TABLE, "pk1");
                             console.log("@@Record!", record);
                             testFinished();
                         }, 1000)
