@@ -31,8 +31,14 @@ function RemoteEnclave(clientDID, remoteDID) {
 
     this.__putCommandObject = (commandName, ...args) => {
         const callback = args.pop();
+        args.push(clientDID);
         const command = JSON.stringify(createCommandObject(commandName, ...args));
-        this.clientDIDDocument.sendMessage(command, this.remoteDIDDocument, callback);
+        this.clientDIDDocument.sendMessage(command, this.remoteDIDDocument, (err, res)=>{
+            this.clientDIDDocument.readMessage((err, res)=>{
+                callback(err, res);
+            })
+        });
+        
     }
 
     init();

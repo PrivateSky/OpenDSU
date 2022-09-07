@@ -9,13 +9,6 @@ const enclaveAPI = openDSU.loadAPI("enclave");
 const scAPI = openDSU.loadAPI("sc");
 const w3cDID = openDSU.loadAPI("w3cdid");
 
-function sleep(timeoutMs) {
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            resolve();
-        }, timeoutMs);
-    });
-}
 
 assert.callback('MqProxy test', (testFinished) => {
     dc.createTestFolder('createDSU', async (err, folder) => {
@@ -42,23 +35,15 @@ assert.callback('MqProxy test', (testFinished) => {
                 const addedRecord = { data: 1 };
                 remoteEnclave.on("initialised", async () => {
                     try {
-
-                        console.log("@@AIIIIICI");
-
                         await $$.promisify(remoteEnclave.insertRecord)("some_did", TABLE, "pk1", addedRecord, addedRecord);
-                       
-                        setTimeout(async () => {
-                            console.log("GET Message");
-                            const record = await $$.promisify(remoteEnclave.getRecord)("some_did", TABLE, "pk1");
-                            console.log("@@Record!", record);
-                            testFinished();
-                        }, 1000)
-
-
+                        await $$.promisify(remoteEnclave.insertRecord)("some_did", TABLE, "pk2", addedRecord, addedRecord);
+                        const record = await $$.promisify(remoteEnclave.getRecord)("some_did", TABLE, "pk1");
+                        console.log("@@TEST RESULT", record);
+                        testFinished();
                     } catch (e) {
                         return console.log(e);
                     }
-                    
+
                 });
 
             } catch (e) {
