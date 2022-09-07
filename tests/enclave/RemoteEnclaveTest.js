@@ -10,7 +10,7 @@ const scAPI = openDSU.loadAPI("sc");
 const w3cDID = openDSU.loadAPI("w3cdid");
 
 
-assert.callback('MqProxy test', (testFinished) => {
+assert.callback('Remote test', (testFinished) => {
     dc.createTestFolder('createDSU', async (err, folder) => {
         const vaultDomainConfig = {
             "anchoring": {
@@ -38,7 +38,9 @@ assert.callback('MqProxy test', (testFinished) => {
                         await $$.promisify(remoteEnclave.insertRecord)("some_did", TABLE, "pk1", addedRecord, addedRecord);
                         await $$.promisify(remoteEnclave.insertRecord)("some_did", TABLE, "pk2", addedRecord, addedRecord);
                         const record = await $$.promisify(remoteEnclave.getRecord)("some_did", TABLE, "pk1");
-                        console.log("@@TEST RESULT", record);
+                        assert.objectsAreEqual(record, addedRecord, "Records do not match");
+                        const allRecords = await $$.promisify(remoteEnclave.getAllRecords)("some_did", TABLE);
+                        assert.equal(allRecords.length, 2, "Not all inserted records have been retrieved")
                         testFinished();
                     } catch (e) {
                         return console.log(e);
