@@ -6,7 +6,7 @@ let http = require("../http");
 let bdns = require("../bdns")
 
 function send(keySSI, message, callback) {
-    console.log("Send method from OpenDSU.loadApi('mq') is absolute. Adapt you code to use the new getMQHandlerForDID");
+    console.log("Send method from OpenDSU.loadApi('mq') is absolute. Adapt your code to use the new getMQHandlerForDID");
     bdns.getAnchoringServices(keySSI, (err, endpoints) => {
         if (err) {
             return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to get anchoring services from bdns`, err));
@@ -27,7 +27,7 @@ function send(keySSI, message, callback) {
 let requests = {};
 
 function getHandler(keySSI, timeout) {
-    console.log("getHandler method from OpenDSU.loadApi('mq') is absolute. Adapt you code to use the new getMQHandlerForDID");
+    console.log("getHandler method from OpenDSU.loadApi('mq') is absolute. Adapt your code to use the new getMQHandlerForDID");
     let obs = require("../utils/observable").createObservable();
     bdns.getMQEndpoints(keySSI, (err, endpoints) => {
         if (err || endpoints.length === 0) {
@@ -71,7 +71,7 @@ function getHandler(keySSI, timeout) {
 }
 
 function unsubscribe(keySSI, observable) {
-    console.log("unsubscribe method from OpenDSU.loadApi('mq') is obsolete. Adapt you code to use the new getMQHandlerForDID");
+    console.log("unsubscribe method from OpenDSU.loadApi('mq') is obsolete. Adapt your code to use the new getMQHandlerForDID");
     http.unpoll(requests[observable]);
 }
 
@@ -209,7 +209,7 @@ function MQHandler(didDocument, domain, pollingTimeout) {
                         return callback(err);
                     }
                     let originalCb = callback;
-                    callback = $$.makeSaneCallback(callback);
+                    //callback = $$.makeSaneCallback(callback);
 
                     let options = {headers: {Authorization: token}};
 
