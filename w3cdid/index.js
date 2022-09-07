@@ -122,5 +122,7 @@ module.exports = {
     resolveDID,
     we_resolveDID,
     registerDIDMethod,
-    CryptographicSkills: require("./CryptographicSkills/CryptographicSkills")
+    CryptographicSkills: require("./CryptographicSkills/CryptographicSkills"),
+    W3CDIDMixin: require('./W3CDID_Mixin'),
+    W3CCVCMixin: require('./W3CVC_Mixin')
 }
