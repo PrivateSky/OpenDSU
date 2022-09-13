@@ -12,7 +12,7 @@ function send(keySSI, message, callback) {
             return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to get anchoring services from bdns`, err));
         }
         let url = endpoints[0] + `/mq/send-message/${keySSI}`;
-        let options = {body: message};
+        let options = { body: message };
 
         let request = http.poll(url, options, timeout);
 
@@ -179,7 +179,7 @@ function MQHandler(didDocument, domain, pollingTimeout) {
                     return callback(err);
                 }
 
-                http.doPut(url, message, {headers: {"Authorization": token}}, callback);
+                http.doPut(url, message, { headers: { "Authorization": token } }, callback);
             });
         })
 
@@ -211,7 +211,7 @@ function MQHandler(didDocument, domain, pollingTimeout) {
                     let originalCb = callback;
                     //callback = $$.makeSaneCallback(callback);
 
-                    let options = {headers: {Authorization: token}};
+                    let options = { headers: { Authorization: token } };
 
                     function makeRequest() {
                         let request = http.poll(url, options, connectionTimeout, timeout);
@@ -225,9 +225,10 @@ function MQHandler(didDocument, domain, pollingTimeout) {
                                 if (waitForMore && !stop) {
                                     makeRequest();
                                 }
-                            }).catch((err) => {
-                            callback(err);
-                        });
+                            })
+                            .catch((err) => {
+                                callback(err);
+                            });
                     }
 
                     //somebody called abort before we arrived here
@@ -240,6 +241,49 @@ function MQHandler(didDocument, domain, pollingTimeout) {
         })
     }
 
+    this.waitForMessages = (callback) => {
+        callback.__requestInProgress = true;
+
+        ensureAuth((err, token) => {
+            if (err) {
+                return callback(err);
+            }
+            //somebody called abort before the ensureAuth resolved
+            if (!callback.__requestInProgress) {
+                return;
+            }
+            didDocument.sign(token, (err, signature) => {
+                if (err) {
+                    return callback(createOpenDSUErrorWrapper(`Failed to sign token`, err));
+                }
+
+                getURL(queueName, "take", signature.toString("hex"), async (err, url) => {
+                    if (err) {
+                        return callback(err);
+                    }
+
+                    let options = { headers: { Authorization: token } };
+
+                    if (!callback.__requestInProgress) {
+                        return;
+                    }
+                    while (callback.on) {
+                        try {
+                            const request = http.poll(url, options, connectionTimeout, timeout);
+                            callback.__requestInProgress = request;
+                            const response = await request;
+                            const jsonResponse = await response.json();
+                            callback(undefined, jsonResponse);
+                        }
+                        catch (err) {
+                            callback(err);
+                        }
+                    }
+                })
+            })
+        })
+
+    }
 
     this.previewMessage = (callback) => {
         consumeMessage("get", callback);
@@ -289,7 +333,7 @@ function MQHandler(didDocument, domain, pollingTimeout) {
 
                     http.fetch(url, {
                         method: "DELETE",
-                        headers: {"Authorization": token}
+                        headers: { "Authorization": token }
                     })
                         .then(response => callback())
                         .catch(e => callback(e));

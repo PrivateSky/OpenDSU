@@ -1,10 +1,14 @@
 const { createCommandObject } = require("./lib/createCommandObject");
+const ProxyMixin = require("./ProxyMixin");
+const openDSU = require('../../index');
+const w3cDID = openDSU.loadAPI("w3cdid");
 
-function RemoteEnclave(clientDID, remoteDID) {
+function RemoteEnclave(clientDID, remoteDID, requestTimeout) {
     let initialised = false;
-    const ProxyMixin = require("./ProxyMixin");
-    const openDSU = require('../../index');
-    const w3cDID = openDSU.loadAPI("w3cdid");
+    const DEFAULT_TIMEOUT = 5000;
+
+    this.commandsMap = new Map();
+    this.requestTimeout = requestTimeout ?? DEFAULT_TIMEOUT;
 
     ProxyMixin(this);
 
@@ -33,12 +37,28 @@ function RemoteEnclave(clientDID, remoteDID) {
         const callback = args.pop();
         args.push(clientDID);
         const command = JSON.stringify(createCommandObject(commandName, ...args));
-        this.clientDIDDocument.sendMessage(command, this.remoteDIDDocument, (err, res)=>{
-            this.clientDIDDocument.readMessage((err, res)=>{
-                callback(err, res);
-            })
+        this.clientDIDDocument.sendMessage(command, this.remoteDIDDocument, (err, res) => {
+            this.commandsMap.set(command.commandID, { "callback": callback, "time": Date.now() });
+            if (this.commandsMap.size == 1) {
+                this.subscribe();
+            }
         });
-        
+    }
+
+    this.subscribe = () => {
+        this.clientDIDDocument.waitForMessages((err, res) => {
+            if (err) {
+                console.log(err);
+                return;
+            }
+
+            const callback = this.commandsMap.get(res.commandID).callback;
+            callback(err, res);
+            this.commandsMap.delete(res.commandID);
+            if(this.commandsMap.size == 0) { 
+                this.clientDIDDocument.stopWaitingForMessages();
+            }
+        })
     }
 
     init();
