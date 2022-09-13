@@ -134,7 +134,6 @@ function W3CDID_Mixin(target, enclave) {
         });
     };
 
-
     target.subscribe = function (callback) {
         const mqHandler = require("opendsu")
             .loadAPI("mq")
@@ -153,6 +152,32 @@ function W3CDID_Mixin(target, enclave) {
             target.decryptMessage(message, callback);
         });
     };
+
+    target.waitForMessages = function (callback) {
+        const mqHandler = require("opendsu")
+            .loadAPI("mq")
+            .getMQHandlerForDID(target);
+
+        target.onCallback = (err, encryptedMessage) => {
+            if (err) {
+                return callback(createOpenDSUErrorWrapper(`Failed to read message`, err));
+            }
+            let message;
+            try {
+                message = JSON.parse(encryptedMessage.message);
+            } catch (e) {
+                return callback(createOpenDSUErrorWrapper(`Failed to parse received message`, err));
+            }
+
+            target.decryptMessage(message, callback);
+        }
+        target.onCallback.on = true;
+        mqHandler.waitForMessages(target.onCallback);
+    };
+
+    target.stopWaitingForMessages = function () {
+        target.onCallback.on = false;
+    }
 
     target.getEnclave = () => {
         return enclave;
