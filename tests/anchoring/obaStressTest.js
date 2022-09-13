@@ -9,39 +9,6 @@ const anchoring = openDSU.loadAPI("anchoring");
 const keySSISpace = openDSU.loadAPI("keyssi");
 
 const DOMAIN = "default";
-async function createSeedSSI() {
-    const keySSISpace = openDSU.loadApi("keyssi");
-    const seedSSI = await $$.promisify(keySSISpace.createSeedSSI)(DOMAIN, 'v0', 'hint');
-    return seedSSI;
-}
-
-async function getAnchorId(seedSSI, raw = false) {
-    const keySSISpace = openDSU.loadApi("keyssi");
-    const anchorSSI = keySSISpace.parse(seedSSI.getAnchorId());
-    const anchorID = anchorSSI.getIdentifier(raw);
-    return anchorID;
-}
-
-async function createNewVersionForAnchor(seedSSI, brickMapHash = "hash1", previousVersion) {
-    const crypto = openDSU.loadAPI("crypto");
-    const keySSISpace = openDSU.loadAPI("keyssi");
-    let timestamp = Date.now() + '';
-    let anchorID = await getAnchorId(seedSSI, true);
-    let dataToSign = anchorID + brickMapHash + timestamp;
-    if (previousVersion) {
-        previousVersion = keySSISpace.parse(previousVersion);
-        previousVersion = previousVersion.getIdentifier(true);
-        dataToSign = anchorID + brickMapHash + previousVersion + timestamp;
-    }
-    let signature = await $$.promisify(crypto.sign)(seedSSI, dataToSign);
-    let signedHashLinkSSI1 = keySSISpace.createSignedHashLinkSSI(DOMAIN, brickMapHash, timestamp, signature.toString("base64"));
-    return signedHashLinkSSI1.getIdentifier();
-}
-async function createSeedSSI() {
-    const keySSISpace = openDSU.loadApi("keyssi");
-    const seedSSI = await $$.promisify(keySSISpace.createSeedSSI)(DOMAIN, 'v0', 'hint');
-    return seedSSI;
-}
 
 async function getAnchorId(seedSSI, raw = false) {
     const keySSISpace = openDSU.loadApi("keyssi");
@@ -78,7 +45,7 @@ assert.callback('key DID SSI test', (testFinished) => {
             }
         }
         await tir.launchConfigurableApiHubTestNodeAsync({domains: [{name: DOMAIN, config: domainConfig}]});
-        const NO_ANCHORS = 1000;
+        const NO_ANCHORS = 10000;
         const TaskCounter = require("swarmutils").TaskCounter;
         const taskCounter = new TaskCounter(async () => {
             console.timeEnd("anchorProcessing");
