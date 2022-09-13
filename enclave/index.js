@@ -57,5 +57,7 @@ module.exports = {
     initialiseRemoteEnclave,
     connectEnclave,
     createEnclave,
-    registerEnclave
+    registerEnclave,
+    EnclaveMixin: require("./impl/Enclave_Mixin"),
+    ProxyMixin: require("./impl/ProxyMixin")
 }
