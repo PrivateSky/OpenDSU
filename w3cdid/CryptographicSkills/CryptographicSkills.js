@@ -23,5 +23,6 @@ registerSkills(methodsNames.KEY_SUBTYPE, new KeyDID_CryptographicSkills());
 module.exports = {
     registerSkills,
     applySkill,
-    NAMES: require("./cryptographicSkillsNames")
+    NAMES: require("./cryptographicSkillsNames"),
+    CryptographicSkillsMixin: require("./CryptographicSkillsMixin")
 };

@@ -7,7 +7,7 @@ errorTypes = {
         errorType: this.errorCode,
         errorMessage: this.message,
         errorDetails: data,
-        errorField: "unknown"
+        errorField: data.errorField || "unknown"
       }]
     }
   },
@@ -47,8 +47,8 @@ errorTypes = {
         return {
           errorType: this.errorCode,
           errorMessage: this.message,
-          errorDetails: item.detailsMessage,
-          errorField: "unknown"
+          errorDetails: item.errorDetails,
+          errorField: data.errorField || "unknown"
         }
       })
     }
@@ -60,8 +60,8 @@ errorTypes = {
       return [{
         errorType: this.errorCode,
         errorMessage: this.message,
-        errorDetails: "",
-        errorField: "unknown"
+        errorDetails: data.errorDetails || "",
+        errorField: data.errorField || "unknown"
       }]
     }
   },
@@ -69,12 +69,14 @@ errorTypes = {
     errorCode: 5,
     message: "Not able to digest message due to missing mapping",
     getDetails: function (data) {
-      return [{
-        errorType: this.errorCode,
-        errorMessage: this.message,
-        errorDetails: "",
-        errorField: "unknown"
-      }]
+      return data.map(item => {
+        return {
+          errorType: this.errorCode,
+          errorMessage: this.message,
+          errorDetails: item.errorDetails,
+          errorField: data.errorField || "messageType"
+        }
+      })
     }
   },
   "MAPPING_ERROR": {
@@ -84,8 +86,8 @@ errorTypes = {
       return [{
         errorType: this.errorCode,
         errorMessage: this.message,
-        errorDetails: "",
-        errorField: "unknown"
+        errorDetails: data.errorDetails || "",
+        errorField: data.errorField || "unknown"
       }]
     }
   }
