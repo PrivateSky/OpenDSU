@@ -97,7 +97,7 @@ function RemoteEnclave(clientDID, remoteDID, requestTimeout) {
 
     this.generateTimestamp = () => {
         const lastTimestamp = this.lastTimestamp;
-        const now = Date.now();
+        let now = Date.now();
         if (now == lastTimestamp) {
             now += 1;
         }
