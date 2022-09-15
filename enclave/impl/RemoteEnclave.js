@@ -5,10 +5,11 @@ const w3cDID = openDSU.loadAPI("w3cdid");
 
 function RemoteEnclave(clientDID, remoteDID, requestTimeout) {
     let initialised = false;
-    const DEFAULT_TIMEOUT = 5000;
+    const DEFAULT_TIMEOUT = 30000;
 
     this.commandsMap = new Map();
     this.requestTimeout = requestTimeout ?? DEFAULT_TIMEOUT;
+    this.lastTimestamp = 0;
 
     ProxyMixin(this);
 
@@ -36,6 +37,7 @@ function RemoteEnclave(clientDID, remoteDID, requestTimeout) {
     this.__putCommandObject = (commandName, ...args) => {
         const callback = args.pop();
         args.push(clientDID);
+        args.push(this.generateTimestamp());
 
         const command = JSON.stringify(createCommandObject(commandName, ...args));
         const commandID = JSON.parse(command).commandID;
@@ -66,6 +68,8 @@ function RemoteEnclave(clientDID, remoteDID, requestTimeout) {
                 const commandResult = resObj.commandResult;
                 const commandID = resObj.commandID;
 
+                if (!this.commandsMap.get(commandID)) return;
+
                 const callback = this.commandsMap.get(commandID).callback;
                 callback(err, JSON.stringify(commandResult));
 
@@ -89,6 +93,16 @@ function RemoteEnclave(clientDID, remoteDID, requestTimeout) {
         if (this.commandsMap.size == 0) {
             this.clientDIDDocument.stopWaitingForMessages();
         }
+    }
+
+    this.generateTimestamp = () => {
+        const lastTimestamp = this.lastTimestamp;
+        const now = Date.now();
+        if (now == lastTimestamp) {
+            now += 1;
+        }
+        this.lastTimestamp = now;
+        return now;
     }
 
     init();
