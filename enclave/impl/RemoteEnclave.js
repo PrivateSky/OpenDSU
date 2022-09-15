@@ -36,12 +36,21 @@ function RemoteEnclave(clientDID, remoteDID, requestTimeout) {
     this.__putCommandObject = (commandName, ...args) => {
         const callback = args.pop();
         args.push(clientDID);
+
         const command = JSON.stringify(createCommandObject(commandName, ...args));
+        const commandID = JSON.parse(command).commandID;
+        this.commandsMap.set(commandID, { "callback": callback, "time": Date.now() });
+
+        if (this.commandsMap.size == 1) {
+            this.subscribe();
+        }
+        
         this.clientDIDDocument.sendMessage(command, this.remoteDIDDocument, (err, res) => {
-            this.commandsMap.set(command.commandID, { "callback": callback, "time": Date.now() });
-            if (this.commandsMap.size == 1) {
-                this.subscribe();
+            if (err) {
+                console.log(err);
             }
+
+
         });
     }
 
@@ -52,11 +61,21 @@ function RemoteEnclave(clientDID, remoteDID, requestTimeout) {
                 return;
             }
 
-            const callback = this.commandsMap.get(res.commandID).callback;
-            callback(err, res);
-            this.commandsMap.delete(res.commandID);
-            if(this.commandsMap.size == 0) { 
-                this.clientDIDDocument.stopWaitingForMessages();
+            try {
+                const resObj = JSON.parse(res);
+                const commandResult = resObj.commandResult;
+                const commandID = resObj.commandID;
+
+                const callback = this.commandsMap.get(commandID).callback;
+                callback(err, JSON.stringify(commandResult));
+
+                this.commandsMap.delete(commandID);
+                if (this.commandsMap.size == 0) {
+                    this.clientDIDDocument.stopWaitingForMessages();
+                }
+            }
+            catch (err) {
+                console.log(err);
             }
         })
     }

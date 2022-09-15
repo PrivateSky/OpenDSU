@@ -257,28 +257,35 @@ function MQHandler(didDocument, domain, pollingTimeout) {
                     return callback(createOpenDSUErrorWrapper(`Failed to sign token`, err));
                 }
 
-                getURL(queueName, "take", signature.toString("hex"), async (err, url) => {
+                getURL(queueName, "take", signature.toString("hex"), (err, url) => {
                     if (err) {
                         return callback(err);
                     }
 
                     let options = { headers: { Authorization: token } };
 
+                    async function makeRequest() {
+                        
+                        let request = http.poll(url, options, connectionTimeout, timeout);
+                        callback.__requestInProgress = request;
+
+                        request.then(response => response.json())
+                            .then((response) => {
+                                callback(undefined, response);
+                                if (callback.on) {
+                                    makeRequest();
+                                }
+                            })
+                            .catch((err) => {
+                                callback(err);
+                            });
+                    }
+
+                    //somebody called abort before we arrived here
                     if (!callback.__requestInProgress) {
                         return;
                     }
-                    while (callback.on) {
-                        try {
-                            const request = http.poll(url, options, connectionTimeout, timeout);
-                            callback.__requestInProgress = request;
-                            const response = await request;
-                            const jsonResponse = await response.json();
-                            callback(undefined, jsonResponse);
-                        }
-                        catch (err) {
-                            callback(err);
-                        }
-                    }
+                    makeRequest();
                 })
             })
         })
