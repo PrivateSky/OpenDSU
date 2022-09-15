@@ -43,14 +43,14 @@ function RemoteEnclave(clientDID, remoteDID, requestTimeout) {
 
         if (this.commandsMap.size == 1) {
             this.subscribe();
+
         }
-        
+
         this.clientDIDDocument.sendMessage(command, this.remoteDIDDocument, (err, res) => {
             if (err) {
                 console.log(err);
             }
-
-
+            setTimeout(this.checkTimeout, this.requestTimeout, commandID);
         });
     }
 
@@ -78,6 +78,17 @@ function RemoteEnclave(clientDID, remoteDID, requestTimeout) {
                 console.log(err);
             }
         })
+    }
+
+    this.checkTimeout = (commandID) => {
+        if (!this.commandsMap.has(commandID)) return;
+
+        const callback = this.commandsMap.get(commandID).callback;
+        callback(createOpenDSUErrorWrapper(`Timeout for command ${commandID}`), undefined);
+        this.commandsMap.delete(commandID);
+        if (this.commandsMap.size == 0) {
+            this.clientDIDDocument.stopWaitingForMessages();
+        }
     }
 
     init();
