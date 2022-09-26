@@ -303,7 +303,7 @@ const convertKeySSIObjectToMnemonic = (keySSIObject) => {
     const mnemonic = new Mnemonic("english");
     const randomBase64 = keySSIObject.getSpecificString();
     const randomBytes = $$.Buffer.from(randomBase64, "base64");
-    return mnemonic.toMnemonic(randomBytes);
+    return mnemonic.toMnemonic(randomBytes, sha256JOSE);
 }
 
 const convertMnemonicToKeySSIIdentifier = (phrase, typeName, domain, vn) => {
