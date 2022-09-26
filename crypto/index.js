@@ -7,6 +7,7 @@ const CryptoFunctionTypes = keySSIResolver.CryptoFunctionTypes;
 const jwtUtils = require("./jwt");
 const constants = require("../moduleConstants");
 const config = require("./index");
+const { Mnemonic } = require("./mnemonic");
 
 const templateSeedSSI = keySSIFactory.createType(SSITypes.SEED_SSI);
 templateSeedSSI.load(SSITypes.SEED_SSI, "default");
@@ -297,6 +298,20 @@ const base64UrlEncodeJOSE = (data) => {
     return data.toString("base64").replaceAll('+', '-').replaceAll('/', '_').replaceAll('=', '');
 }
 
+const convertKeySSIObjectToMnemonic = (keySSIObject) => {
+
+    const mnemonic = new Mnemonic("english");
+    const randomBase64 = keySSIObject.getSpecificString();
+    const randomBytes = $$.Buffer.from(randomBase64, "base64");
+    return mnemonic.toMnemonic(randomBytes, sha256JOSE);
+}
+
+const convertMnemonicToKeySSIIdentifier = (phrase, typeName, domain, vn) => {
+    const mnemonic = new Mnemonic("english");
+    const specificStringHex = mnemonic.toRawEntropyHex(phrase);
+    const specificStringBase64 = $$.Buffer.from(specificStringHex, "hex").toString("base64");
+    return `ssi:${typeName}:${domain}:${specificStringBase64}::${vn}`
+}
 
 module.exports = {
     getCryptoFunctionForKeySSI,
@@ -338,5 +353,7 @@ module.exports = {
     createCredentialForDID,
     base64UrlEncodeJOSE,
     sha256JOSE,
-    joseAPI: require("pskcrypto").joseAPI
+    joseAPI: require("pskcrypto").joseAPI,
+    convertKeySSIObjectToMnemonic,
+    convertMnemonicToKeySSIIdentifier
 };
