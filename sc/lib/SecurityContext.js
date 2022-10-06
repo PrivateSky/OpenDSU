@@ -1,6 +1,6 @@
 const constants = require("../../moduleConstants");
 
-function SecurityContext(target) {
+function SecurityContext(target, PIN) {
     target = target || this;
 
     const ObservableMixin = require("../../utils/ObservableMixin");
@@ -8,11 +8,14 @@ function SecurityContext(target) {
     const openDSU = require("opendsu");
     const config = openDSU.loadAPI("config");
     const enclaveAPI = openDSU.loadAPI("enclave");
+    const keySSIApi = openDSU.loadAPI("keyssi");
+    const crypto = openDSU.loadAPI("crypto");
     let enclave;
     let sharedEnclave;
     let storageDSU;
     let scDSUKeySSI;
     let mainDID;
+    let paddedPIN;
 
     let initialised = false;
 
@@ -35,8 +38,35 @@ function SecurityContext(target) {
             }
         }
 
-        sharedEnclave = enclaveAPI.createEnclave(sharedEnclaveType, sharedEnclaveKeySSI);
-        return sharedEnclave;
+        if (PIN == undefined) {
+            try {
+                keySSIApi.parse(sharedEnclaveKeySSI);
+                sharedEnclave = enclaveAPI.createEnclave(sharedEnclaveType, sharedEnclaveKeySSI);
+                return sharedEnclave;
+            }
+            catch (err) {
+                sharedEnclave = new Promise((res, rej) => {
+                    target.on("pinSet", async () => {
+                        await initSharedEnclave();
+                        res(sharedEnclave)
+                    })
+                })
+                return;
+            }
+        } else {
+            const decodedBase58 = crypto.decodeBase58(sharedEnclaveKeySSI);
+            const decryptedKey = crypto.decrypt(decodedBase58, paddedPIN);
+            const keySSI = crypto.encodeBase58(decryptedKey);
+            try {
+                sharedEnclave = enclaveAPI.createEnclave(sharedEnclaveType, keySSI);
+            }
+            catch (e) {
+                throw Error(e);
+            }
+        }
+
+
+
     }
 
     target.init = async () => {
@@ -70,7 +100,7 @@ function SecurityContext(target) {
                 }
             }
 
-            if (!sharedEnclave) {
+            if (!sharedEnclave || isPromise(sharedEnclave)) {
                 return finishInit();
             }
             if (!sharedEnclave.isInitialised()) {
@@ -227,6 +257,13 @@ function SecurityContext(target) {
             if (!sharedEnclave) {
                 return callback(Error(`No shared db found`))
             }
+            if (isPromise(sharedEnclave)) {
+                sharedEnclave.then((sharedEnclave) => {
+                    sharedEnclaveDB = wrapEnclave(asDID, sharedEnclave);
+                    callback(undefined, sharedEnclaveDB);
+                })
+                return;
+            }
             sharedEnclaveDB = wrapEnclave(asDID, sharedEnclave);
             callback(undefined, sharedEnclaveDB);
         }
@@ -247,8 +284,38 @@ function SecurityContext(target) {
         return true;
     }
 
+    target.setPIN = (pin) => {
+        PIN = pin;
+        if (PIN == undefined) return;
+        paddedPIN = pad(pin, 32);
+        target.dispatchEvent("pinSet");
+    }
+
+    target.getPIN = () => {
+        return PIN;
+    }
+
+    target.getPaddedPIN = () => {
+        return paddedPIN;
+    }
+
+    const pad = (key, length) => {
+        if (key == undefined) return;
+        const padding = "0".repeat(length - key.length);
+        return key + padding;
+    }
+
+    function isPromise(p) {
+        if (typeof p === 'object' && typeof p.then === 'function') {
+            return true;
+        }
+        return false;
+    }
+
+    paddedPIN = pad(PIN, 32);
+
     const bindAutoPendingFunctions = require("../../utils/BindAutoPendingFunctions").bindAutoPendingFunctions;
-    bindAutoPendingFunctions(target, ["on", "off", "isInitialised", "init", "sharedEnclaveExists"]);
+    bindAutoPendingFunctions(target, ["on", "off", "isInitialised", "init", "sharedEnclaveExists", "dispatchEvent"]);
     target.init();
     return target;
 }
