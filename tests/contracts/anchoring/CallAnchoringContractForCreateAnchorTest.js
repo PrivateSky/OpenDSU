@@ -23,7 +23,7 @@ assert.callback(
             const tokenSSI = createTemplateKeySSI("token", "contract");
             tokenSSI.initialize("contract", undefined, undefined, "vn0", "hint");
 
-            const anchorId = tokenSSI.getAnchorId();
+            const anchorId = await $$.promisify(tokenSSI.getAnchorId)();
             await generateSafeCommand(domain, contract, "createAnchor", [anchorId]);
 
             const { optimisticResult: versionsAfterCreateAnchor } = await generateSafeCommand(

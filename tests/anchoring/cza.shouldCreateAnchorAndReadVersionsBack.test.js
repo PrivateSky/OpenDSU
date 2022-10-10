@@ -5,7 +5,7 @@ const utils = require('./utils');
 
 assert.callback("Should create new anchor of type CZA and read versions back", async (callback) => {
         const constSSI = utils.generateConstSSI();
-        const anchorId = utils.getAnchorId(constSSI);
+        const anchorId = await utils.getAnchorId(constSSI);
         const hashlink = await utils.getHashLink(constSSI);
 
         const AnchoringAbstractBehaviour = require('../../anchoring/anchoringAbstractBehaviour').AnchoringAbstractBehaviour;

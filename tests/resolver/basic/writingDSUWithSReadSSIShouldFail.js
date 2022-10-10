@@ -21,8 +21,8 @@ assert.callback('Writing DSU with SReadSSI via SC', (testFinished) => {
                 const seedSSI = await $$.promisify(seedDSU.getKeySSIAsString)();
                 const mountedDSU = await $$.promisify(resolver.createSeedDSU)(domain);
                 const mountedDSUSeedSSI = await $$.promisify(mountedDSU.getKeySSIAsObject)();
-                const mountedDSUSreadSSI = mountedDSUSeedSSI.derive();
-                resolver.invalidateDSUCache(mountedDSUSeedSSI);
+                const mountedDSUSreadSSI = await $$.promisify(mountedDSUSeedSSI.derive)();
+                await $$.promisify(resolver.invalidateDSUCache)(mountedDSUSeedSSI);
                 await $$.promisify(seedDSU.mount)("/mountedDSU", mountedDSUSreadSSI);
                 let error;
                 try {

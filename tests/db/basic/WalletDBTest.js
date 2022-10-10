@@ -10,8 +10,8 @@ assert.callback("DB Indexing test", (testFinishCallback) => {
     dc.createTestFolder("wallet", function (err, folder) {
         const no_retries = 10;
 
-        function testPersistence(sreadSSI){
-            console.log("Persistence DSU is:", sreadSSI.getAnchorId());
+        async function testPersistence(sreadSSI){
+            console.log("Persistence DSU is:", await $$.promisify(sreadSSI.getAnchorId)());
             let mydb = db.getSharedDB(sreadSSI, "testDb");
             mydb.getRecord("test", "key1", function(err,res){
                 console.log("Result is", res);
@@ -31,8 +31,8 @@ assert.callback("DB Indexing test", (testFinishCallback) => {
             let mydb = db.getWalletDB(storageSSI, "testDb");
             mydb.insertRecord("test", "key1", {value:"v0"}, function(err,res){
                 mydb.updateRecord("test", "key1", {value:"v1"}, function(err,res){
-                    mydb.updateRecord("test", "key1", {value:"v2"}, function (err, res){
-                        testPersistence(mydb.getShareableSSI());
+                    mydb.updateRecord("test", "key1", {value:"v2"}, async function (err, res){
+                        await testPersistence(mydb.getShareableSSI());
                     });
                 });
             });

@@ -116,31 +116,35 @@ process.on('message', (args) => {
     createMockShipmentDSU(id, (err, shipmentSSI) => {
         if (err)
             return callback(err);
-        const shipmentReadSSI = shipmentSSI.derive();
-        process.send({
-            shipmentSSI: shipmentReadSSI.getIdentifier(),
-            status: 'status0'
-        });
+        shipmentSSI.derive((err, shipmentReadSSI) => {
+            if (err) {
+                return process.send({err})
+            }
+            process.send({
+                shipmentSSI: shipmentReadSSI.getIdentifier(),
+                status: 'status0'
+            });
 
-        console.log(`Shipment Created and sent. updating in ${updateTimeout / 1000} seconds`);
-        let updateCount = 1
-        const updater = function(){
-            setTimeout(() => {
-                if (updateCount > updates)
-                    return console.log(`All status updates sent`)
-                const newStatus = 'status' + updateCount;
-                updateShipmentStatus(shipmentSSI, newStatus, (err) => {
-                    if (err)
-                        return process.send({err: err});
-                    process.send({
-                        shipmentSSI: shipmentReadSSI.getIdentifier(),
-                        status: newStatus
-                    });
-                    updateCount++;
-                    updater();
-                })
-            }, updateTimeout)
-        }
-        updater();
+            console.log(`Shipment Created and sent. updating in ${updateTimeout / 1000} seconds`);
+            let updateCount = 1
+            const updater = function () {
+                setTimeout(() => {
+                    if (updateCount > updates)
+                        return console.log(`All status updates sent`)
+                    const newStatus = 'status' + updateCount;
+                    updateShipmentStatus(shipmentSSI, newStatus, (err) => {
+                        if (err)
+                            return process.send({err: err});
+                        process.send({
+                            shipmentSSI: shipmentReadSSI.getIdentifier(),
+                            status: newStatus
+                        });
+                        updateCount++;
+                        updater();
+                    })
+                }, updateTimeout)
+            }
+            updater();
+        });
     });
 })

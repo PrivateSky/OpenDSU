@@ -4,24 +4,36 @@ function validateHashLinks(keySSI, hashLinks, callback) {
     const validatedHashLinks = [];
     let lastSSI;
     let lastTransferSSI;
-    for (let i = 0; i < hashLinks.length; i++) {
-        const newSSI = hashLinks[i];
-        if (!verifySignature(keySSI, newSSI, lastSSI)) {
-            return callback(Error("Failed to verify signature"));
-        }
 
-        if (!validateAnchoredSSI(lastTransferSSI, newSSI)) {
-            return callback(Error("Failed to validate SSIs"));
+    const __validateHashLinksRecursively = (index) => {
+        const newSSI = hashLinks[index];
+        if (typeof newSSI === "undefined") {
+            return callback(undefined, validatedHashLinks);
         }
+        verifySignature(keySSI, newSSI, lastSSI, (err, status) => {
+            if (err) {
+                return callback(err);
+            }
 
-        if (newSSI.getTypeName() === constants.KEY_SSIS.TRANSFER_SSI) {
-            lastTransferSSI = newSSI;
-        } else {
-            validatedHashLinks.push(newSSI);
-            lastSSI = newSSI;
-        }
+            if (!status) {
+                return callback(Error("Failed to verify signature"));
+            }
+
+            if (!validateAnchoredSSI(lastTransferSSI, newSSI)) {
+                return callback(Error("Failed to validate SSIs"));
+            }
+
+            if (newSSI.getTypeName() === constants.KEY_SSIS.TRANSFER_SSI) {
+                lastTransferSSI = newSSI;
+            } else {
+                validatedHashLinks.push(newSSI);
+                lastSSI = newSSI;
+            }
+            __validateHashLinksRecursively(index + 1);
+        });
     }
-    callback(undefined, validatedHashLinks);
+
+    __validateHashLinksRecursively(0);
 }
 
 
@@ -36,12 +48,17 @@ function validateAnchoredSSI(lastTransferSSI, currentSSI) {
     return true;
 }
 
-function verifySignature(keySSI, newSSI, lastSSI) {
+function verifySignature(keySSI, newSSI, lastSSI, callback) {
+    if (typeof lastSSI === "function") {
+        callback = lastSSI;
+        lastSSI = undefined;
+    }
+
     if (!keySSI.canSign()) {
-        return true;
+        return callback(undefined, true);
     }
     if (!newSSI.canBeVerified()) {
-        return true;
+        return callback(undefined, true);
     }
     const timestamp = newSSI.getTimestamp();
     const signature = newSSI.getSignature();
@@ -51,16 +68,22 @@ function verifySignature(keySSI, newSSI, lastSSI) {
     }
 
     let dataToVerify;
-    if (newSSI.getTypeName() === constants.KEY_SSIS.SIGNED_HASH_LINK_SSI) {
-        dataToVerify = keySSI.hash(keySSI.getAnchorId() + newSSI.getHash() + lastEntryInAnchor + timestamp);
-        return keySSI.verify(dataToVerify, signature);
-    }
-    if (newSSI.getTypeName() === constants.KEY_SSIS.TRANSFER_SSI) {
-        dataToVerify += newSSI.getSpecificString();
-        return keySSI.verify(dataToVerify, signature);
-    }
+    keySSI.getAnchorId((err, anchorId) => {
+        if (err) {
+            return callback(err);
+        }
 
-    return false;
+        if (newSSI.getTypeName() === constants.KEY_SSIS.SIGNED_HASH_LINK_SSI) {
+            dataToVerify = keySSI.hash(anchorId + newSSI.getHash() + lastEntryInAnchor + timestamp);
+            return callback(undefined, keySSI.verify(dataToVerify, signature));
+        }
+        if (newSSI.getTypeName() === constants.KEY_SSIS.TRANSFER_SSI) {
+            dataToVerify += newSSI.getSpecificString();
+            return callback(undefined, keySSI.verify(dataToVerify, signature));
+        }
+
+        callback(undefined, false);
+    });
 }
 
 module.exports = {

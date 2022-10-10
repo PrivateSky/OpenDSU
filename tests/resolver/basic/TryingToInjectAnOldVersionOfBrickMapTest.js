@@ -38,7 +38,7 @@ assert.callback(`Trying to inject an old version of BrickMap in the latest Brick
 
     // clear cache for current DSU
     env.vault.put(keySSI.getIdentifier(), undefined);
-    resolver.invalidateDSUCache(keySSI);
+    await $$.promisify(resolver.invalidateDSUCache)(keySSI);
 
     // load DSU and check the targeted file
     let actualData;

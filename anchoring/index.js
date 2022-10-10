@@ -23,28 +23,31 @@ const buildGetVersionFunction = function(processingFunction){
         }
 
         const dlDomain = keySSI.getDLDomain();
-        const anchorId = keySSI.getAnchorId();
-
-        const bdns = require("../bdns");
-        // if (dlDomain === constants.DOMAINS.VAULT && isValidVaultCache()) {
-        //     return cachedAnchoring.versions(anchorId, callback);
-        // }
-
-        bdns.getAnchoringServices(dlDomain, function (err, anchoringServicesArray) {
+        keySSI.getAnchorId((err, anchorId) => {
             if (err) {
-                return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to get anchoring services from bdns`, err));
+                return callback(err);
             }
+            const bdns = require("../bdns");
+            // if (dlDomain === constants.DOMAINS.VAULT && isValidVaultCache()) {
+            //     return cachedAnchoring.versions(anchorId, callback);
+            // }
 
-            if (!anchoringServicesArray.length) {
-                return callback('No anchoring service provided');
-            }
+            bdns.getAnchoringServices(dlDomain, function (err, anchoringServicesArray) {
+                if (err) {
+                    return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to get anchoring services from bdns`, err));
+                }
 
-            //TODO: security issue (which response we trust)
-            const fetchAnchor = (service) => {
-                return fetch(`${service}/anchor/${dlDomain}/get-all-versions/${anchorId}`).then(processingFunction);
-            };
+                if (!anchoringServicesArray.length) {
+                    return callback('No anchoring service provided');
+                }
 
-            promiseRunner.runOneSuccessful(anchoringServicesArray, fetchAnchor, callback, new Error("get Anchoring Service"));
+                //TODO: security issue (which response we trust)
+                const fetchAnchor = (service) => {
+                    return fetch(`${service}/anchor/${dlDomain}/get-all-versions/${anchorId}`).then(processingFunction);
+                };
+
+                promiseRunner.runOneSuccessful(anchoringServicesArray, fetchAnchor, callback, new Error("get Anchoring Service"));
+            });
         });
     }
 }
@@ -136,56 +139,64 @@ const addVersion = (SSICapableOfSigning, newSSI, lastSSI, zkpValue, callback) =>
     }
 
     const dlDomain = SSICapableOfSigning.getDLDomain();
-    const anchorId = SSICapableOfSigning.getAnchorId();
-
-    // if (dlDomain === constants.DOMAINS.VAULT && isValidVaultCache()) {
-    //     return cachedAnchoring.addVersion(anchorId, newSSI ? newSSI.getIdentifier() : undefined, callback);
-    // }
-
-    const bdns = require("../bdns");
-    bdns.getAnchoringServices(dlDomain, (err, anchoringServicesArray) => {
+    SSICapableOfSigning.getAnchorId((err, anchorId) => {
         if (err) {
-            return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to get anchoring services from bdns`, err));
+            return callback(err);
         }
 
-        if (!anchoringServicesArray.length) {
-            return callback('No anchoring service provided');
-        }
+        // if (dlDomain === constants.DOMAINS.VAULT && isValidVaultCache()) {
+        //     return cachedAnchoring.addVersion(anchorId, newSSI ? newSSI.getIdentifier() : undefined, callback);
+        // }
 
-        const hashLinkIds = {
-            last: lastSSI ? lastSSI.getIdentifier() : null,
-            new: newSSI ? newSSI.getIdentifier() : null
-        };
+        const bdns = require("../bdns");
+        bdns.getAnchoringServices(dlDomain, (err, anchoringServicesArray) => {
+            if (err) {
+                return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to get anchoring services from bdns`, err));
+            }
 
-        createDigitalProof(SSICapableOfSigning, hashLinkIds.new, hashLinkIds.last, zkpValue, (err, digitalProof) => {
-            const body = {
-                hashLinkIds,
-                digitalProof,
-                zkp: zkpValue
+            if (!anchoringServicesArray.length) {
+                return callback('No anchoring service provided');
+            }
+
+            const hashLinkIds = {
+                last: lastSSI ? lastSSI.getIdentifier() : null,
+                new: newSSI ? newSSI.getIdentifier() : null
             };
 
-            const anchorAction = newSSI ? "append-to-anchor" : "create-anchor";
+            createDigitalProof(SSICapableOfSigning, hashLinkIds.new, hashLinkIds.last, zkpValue, (err, digitalProof) => {
+                const body = {
+                    hashLinkIds,
+                    digitalProof,
+                    zkp: zkpValue
+                };
 
-            const addAnchor = (service) => {
-                return new Promise((resolve, reject) => {
-                    const putResult = doPut(`${service}/anchor/${dlDomain}/${anchorAction}/${anchorId}`, JSON.stringify(body), (err, data) => {
-                        if (err) {
-                            return reject({
-                                statusCode: err.statusCode,
-                                message: err.statusCode === 428 ? 'Unable to add alias: versions out of sync' : err.message || 'Error'
+                const anchorAction = newSSI ? "append-to-anchor" : "create-anchor";
+
+                const addAnchor = (service) => {
+                    return new Promise((resolve, reject) => {
+                        const putResult = doPut(`${service}/anchor/${dlDomain}/${anchorAction}/${anchorId}`, JSON.stringify(body), (err, data) => {
+                            if (err) {
+                                return reject({
+                                    statusCode: err.statusCode,
+                                    message: err.statusCode === 428 ? 'Unable to add alias: versions out of sync' : err.message || 'Error'
+                                });
+                            }
+
+                            require("opendsu").loadApi("resolver").invalidateDSUCache(SSICapableOfSigning, err=>{
+                                if (err) {
+                                    return reject(err);
+                                }
+                                return resolve(data);
                             });
+                        });
+                        if (putResult) {
+                            putResult.then(resolve).catch(reject);
                         }
+                    })
+                };
 
-                        require("opendsu").loadApi("resolver").invalidateDSUCache(SSICapableOfSigning);
-                        return resolve(data);
-                    });
-                    if (putResult) {
-                        putResult.then(resolve).catch(reject);
-                    }
-                })
-            };
-
-            promiseRunner.runOneSuccessful(anchoringServicesArray, addAnchor, callback, new Error(`Failed during execution of ${anchorAction}`));
+                promiseRunner.runOneSuccessful(anchoringServicesArray, addAnchor, callback, new Error(`Failed during execution of ${anchorAction}`));
+            });
         });
     });
 };
@@ -196,17 +207,21 @@ function createDigitalProof(SSICapableOfSigning, newSSIIdentifier, lastSSIIdenti
         newSSIIdentifier = "";
     }
 
-    let anchorId = SSICapableOfSigning.getAnchorId();
-    let dataToSign = anchorId + newSSIIdentifier + zkp;
-    if (lastSSIIdentifier) {
-        dataToSign += lastSSIIdentifier;
-    }
+    SSICapableOfSigning.getAnchorId((err, anchorId) => {
+        if (err) {
+            return callback(err);
+        }
+        let dataToSign = anchorId + newSSIIdentifier + zkp;
+        if (lastSSIIdentifier) {
+            dataToSign += lastSSIIdentifier;
+        }
 
-    if (SSICapableOfSigning.getTypeName() === constants.KEY_SSIS.CONST_SSI || SSICapableOfSigning.getTypeName() === constants.KEY_SSIS.ARRAY_SSI || SSICapableOfSigning.getTypeName() === constants.KEY_SSIS.WALLET_SSI) {
-        return callback(undefined, {signature: "", publicKey: ""});
-    }
+        if (SSICapableOfSigning.getTypeName() === constants.KEY_SSIS.CONST_SSI || SSICapableOfSigning.getTypeName() === constants.KEY_SSIS.ARRAY_SSI || SSICapableOfSigning.getTypeName() === constants.KEY_SSIS.WALLET_SSI) {
+            return callback(undefined, {signature: "", publicKey: ""});
+        }
 
-    return SSICapableOfSigning.sign(dataToSign, callback);
+        return SSICapableOfSigning.sign(dataToSign, callback);
+    });
 }
 
 const getObservable = (keySSI, fromVersion, authToken, timeout) => {

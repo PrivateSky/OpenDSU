@@ -72,58 +72,61 @@ function createJWT({seedSSI, scope, credentials, options, sign}, callback) {
             return callback(e);
         }
     }
-    const sReadSSI = seedSSI.derive();
+    seedSSI.derive((err, sReadSSI) => {
+        if (err) {
+            return callback(err);
+        }
+        let {subject, valability, ...optionsRest} = options || {};
+        valability = valability || JWT_VALABILITY_SECONDS;
 
-    let {subject, valability, ...optionsRest} = options || {};
-    valability = valability || JWT_VALABILITY_SECONDS;
+        if (subject) {
+            subject = getReadableIdentity(subject);
+        } else {
+            subject = sReadSSI.getIdentifier(true);
+        }
+        if (!subject) {
+            return callback(JWT_ERRORS.INVALID_SSI_PROVIDED);
+        }
 
-    if (subject) {
-        subject = getReadableIdentity(subject);
-    } else {
-        subject = sReadSSI.getIdentifier(true);
-    }
-    if (!subject) {
-        return callback(JWT_ERRORS.INVALID_SSI_PROVIDED);
-    }
+        const issuer = sReadSSI.getIdentifier(true);
+        if (!issuer) {
+            return callback(JWT_ERRORS.INVALID_SSI_PROVIDED);
+        }
 
-    const issuer = sReadSSI.getIdentifier(true);
-    if (!issuer) {
-        return callback(JWT_ERRORS.INVALID_SSI_PROVIDED);
-    }
+        if (credentials) {
+            credentials = Array.isArray(credentials) ? credentials : [credentials];
+        }
 
-    if (credentials) {
-        credentials = Array.isArray(credentials) ? credentials : [credentials];
-    }
+        const header = {
+            typ: SEED_SSI_HEADER_TYPE,
+        };
 
-    const header = {
-        typ: SEED_SSI_HEADER_TYPE,
-    };
+        const now = nowEpochSeconds();
+        const body = {
+            sub: subject,
+            // aud: encodeBase58(scope),
+            scope,
+            iss: issuer,
+            publicKey: seedSSI.getPublicKey(),
+            iat: now,
+            nbf: now,
+            exp: now + valability,
+            credentials,
+            options: optionsRest,
+        };
 
-    const now = nowEpochSeconds();
-    const body = {
-        sub: subject,
-        // aud: encodeBase58(scope),
-        scope,
-        iss: issuer,
-        publicKey: seedSSI.getPublicKey(),
-        iat: now,
-        nbf: now,
-        exp: now + valability,
-        credentials,
-        options: optionsRest,
-    };
+        const segments = [encodeBase58(JSON.stringify(header)), encodeBase58(JSON.stringify(body))];
 
-    const segments = [encodeBase58(JSON.stringify(header)), encodeBase58(JSON.stringify(body))];
+        const jwtToSign = segments.join(".");
+        const hashFn = require("../crypto").getCryptoFunctionForKeySSI(seedSSI, "hash");
+        const hashResult = hashFn(jwtToSign);
+        sign(seedSSI, hashResult, (signError, signResult) => {
+            if (signError || !signResult) return callback(signError);
+            const encodedSignResult = encodeBase58(signResult);
 
-    const jwtToSign = segments.join(".");
-    const hashFn = require("../crypto").getCryptoFunctionForKeySSI(seedSSI, "hash");
-    const hashResult = hashFn(jwtToSign);
-    sign(seedSSI, hashResult, (signError, signResult) => {
-        if (signError || !signResult) return callback(signError);
-        const encodedSignResult = encodeBase58(signResult);
-
-        const jwt = `${jwtToSign}.${encodedSignResult}`;
-        callback(null, jwt);
+            const jwt = `${jwtToSign}.${encodedSignResult}`;
+            callback(null, jwt);
+        });
     });
 }
 

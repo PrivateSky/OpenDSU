@@ -5,7 +5,7 @@ const utils = require('./utils');
 
 assert.callback("Should not be able to create the same anchor multiple times", async (callback) => {
         const seedSSI = utils.generateSeedSSI();
-        const anchorId = utils.getAnchorId(seedSSI);
+        const anchorId = await utils.getAnchorId(seedSSI);
         const hashlink = await utils.getSignedHashLink(seedSSI,null);
 
         const AnchoringAbstractBehaviour = require('../../anchoring/anchoringAbstractBehaviour').AnchoringAbstractBehaviour;

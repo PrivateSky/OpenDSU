@@ -8,8 +8,8 @@ assert.callback("read write key test", (testFinishCallback) => {
     dc.createTestFolder("wallet", function (err, folder) {
         const no_retries = 10;
 
-        function testPersistence(sreadSSI) {
-            console.log("Persistence DSU is:", sreadSSI.getAnchorId());
+        async function testPersistence(sreadSSI) {
+            console.log("Persistence DSU is:", await $$.promisify(sreadSSI.getAnchorId)());
             let mydb = db.getSharedDB(sreadSSI, "testDb");
             mydb.readKey("buffer", (err, content) => {
                 assert.true(Buffer.isBuffer(content), "Expected a buffer");
@@ -43,8 +43,8 @@ assert.callback("read write key test", (testFinishCallback) => {
                 mydb.writeKey("string", "Some data", (err) => {
                     mydb.writeKey("object", {content: "some content"}, (err) => {
                         mydb.writeKey("undefined", undefined, (err) => {
-                            mydb.writeKey("null", null, (err) => {
-                                testPersistence(mydb.getShareableSSI());
+                            mydb.writeKey("null", null, async (err) => {
+                                await testPersistence(mydb.getShareableSSI());
                             });
                         });
                     });

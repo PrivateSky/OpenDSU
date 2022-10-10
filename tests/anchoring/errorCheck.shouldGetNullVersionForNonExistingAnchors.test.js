@@ -5,7 +5,7 @@ const utils = require('./utils');
 
 assert.callback("Should get null or empty array version for non existing anchors", async (callback) => {
         const seedSSI = utils.generateSeedSSI();
-        const anchorId = utils.getAnchorId(seedSSI);
+        const anchorId = await utils.getAnchorId(seedSSI);
 
         const AnchoringAbstractBehaviour = require('../../anchoring/anchoringAbstractBehaviour').AnchoringAbstractBehaviour;
         const MemoryPersistence = utils.MemoryPersistenceStrategy

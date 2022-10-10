@@ -163,11 +163,9 @@ function Enclave_Mixin(target, did) {
         }
 
         const keySSIIdentifier = seedSSI.getIdentifier();
-        const sReadSSIIdentifier = seedSSI.derive().getIdentifier();
-
         const isExistingKeyError = (error) => error.originalMessage === errorAPI.DB_INSERT_EXISTING_RECORD_ERROR;
 
-        function registerDerivedKeySSIs(derivedKeySSI) {
+        function registerDerivedKeySSIs(derivedKeySSI, sReadSSIIdentifier) {
             target.storageDB.insertRecord(KEY_SSIS_TABLE, derivedKeySSI.getIdentifier(), {capableOfSigningKeySSI: keySSIIdentifier}, (err) => {
                 if (err && !isExistingKeyError(err)) {
                     // ignore if KeySSI is already present
@@ -180,12 +178,17 @@ function Enclave_Mixin(target, did) {
                     }
 
                     try {
-                        derivedKeySSI = derivedKeySSI.derive();
-                    } catch (e) {
+
+                        derivedKeySSI.derive((err, _derivedKeySSI) => {
+                            if (err) {
+                                return callback(err);
+                            }
+
+                            registerDerivedKeySSIs(_derivedKeySSI, sReadSSIIdentifier);
+                        })
+                    }catch (e) {
                         return callback();
                     }
-
-                    registerDerivedKeySSIs(derivedKeySSI);
                 });
             });
         }
@@ -196,7 +199,14 @@ function Enclave_Mixin(target, did) {
                 return callback(err);
             }
 
-            return registerDerivedKeySSIs(seedSSI);
+            seedSSI.derive((err, sReadSSI)=>{
+                if (err) {
+                    return callback(err);
+                }
+
+                const sReadSSIIdentifier = sReadSSI.getIdentifier();
+                return registerDerivedKeySSIs(seedSSI, sReadSSIIdentifier);
+            })
         })
     }
 
@@ -457,7 +467,8 @@ function Enclave_Mixin(target, did) {
                 let seedSSI;
                 try {
                     seedSSI = await $$.promisify(target.createSeedSSI)(target, vaultDomain);
-                    await $$.promisify(target.storeReadForAliasSSI)(undefined, seedSSI.derive(), keySSI);
+                    const sReadSSI = await $$.promisify(seedSSI.derive)();
+                    await $$.promisify(target.storeReadForAliasSSI)(undefined, sReadSSI, keySSI);
                 } catch (e) {
                     return callback(e);
                 }

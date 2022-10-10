@@ -5,7 +5,7 @@ const utils = require('./utils');
 
 assert.callback("Should fail to append anchor of type CZA", async (callback) => {
         const constSSI = utils.generateConstSSI();
-        const anchorId = utils.getAnchorId(constSSI);
+        const anchorId = await utils.getAnchorId(constSSI);
         const hashlink = await utils.getHashLink(constSSI);
         const hashlink2 = await utils.getHashLink(constSSI);
 

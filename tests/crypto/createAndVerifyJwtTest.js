@@ -172,39 +172,44 @@ assert.callback("full manual verifyAuthToken test", (callback) => {
         seedSSI2.initialize("default", undefined, undefined, undefined, "hint", (err) => {
             if (err) throw err;
 
-            const userSReadSSI = seedSSI2.derive().getIdentifier(true);
+            seedSSI2.derive((err, userSReadSSI)=>{
+                if (err) {
+                    throw err;
+                }
 
-            crypto.createCredential(seedSSI, userSReadSSI, (error, credentialJwt) => {
-                if (error) throw error;
-
-                crypto.createAuthToken(seedSSI2, "scope1", credentialJwt, (error, authToken) => {
+                userSReadSSI = userSReadSSI.getIdentifier(true);
+                crypto.createCredential(seedSSI, userSReadSSI, (error, credentialJwt) => {
                     if (error) throw error;
 
-                    crypto.verifyJWT(
-                        authToken,
-                        (jwtContent, callback) => {
-                            crypto.verifyJWT(
-                                jwtContent.body.credentials[0],
-                                (jwtContent, callback) => {
-                                    if (userSReadSSI === jwtContent.body.sub) {
+                    crypto.createAuthToken(seedSSI2, "scope1", credentialJwt, (error, authToken) => {
+                        if (error) throw error;
+
+                        crypto.verifyJWT(
+                            authToken,
+                            (jwtContent, callback) => {
+                                crypto.verifyJWT(
+                                    jwtContent.body.credentials[0],
+                                    (jwtContent, callback) => {
+                                        if (userSReadSSI === jwtContent.body.sub) {
+                                            return callback(null, true);
+                                        }
+
+                                        return callback(null, false);
+                                    },
+                                    (verifyError, verifyResult) => {
+                                        if (verifyError) throw verifyError;
+                                        assert.true(verifyResult);
                                         return callback(null, true);
                                     }
-
-                                    return callback(null, false);
-                                },
-                                (verifyError, verifyResult) => {
-                                    if (verifyError) throw verifyError;
-                                    assert.true(verifyResult);
-                                    return callback(null, true);
-                                }
-                            );
-                        },
-                        (verifyError, verifyResult) => {
-                            if (verifyError) throw verifyError;
-                            assert.true(verifyResult);
-                            callback();
-                        }
-                    );
+                                );
+                            },
+                            (verifyError, verifyResult) => {
+                                if (verifyError) throw verifyError;
+                                assert.true(verifyResult);
+                                callback();
+                            }
+                        );
+                    });
                 });
             });
         });
@@ -219,11 +224,13 @@ assert.callback("verifyAuthToken test", (callback) => {
     seedSSI.initialize("default", undefined, undefined, undefined, "hint", (err) => {
         if (err) throw err;
 
-        seedSSI2.initialize("default", undefined, undefined, undefined, "hint", (err) => {
+        seedSSI2.initialize("default", undefined, undefined, undefined, "hint", async (err) => {
             if (err) throw err;
 
-            const organizationSReadSSI = seedSSI.derive().getIdentifier();
-            const userSReadSSI = seedSSI2.derive().getIdentifier();
+            let organizationSReadSSI = await $$.promisify(seedSSI.derive)()
+            organizationSReadSSI = organizationSReadSSI.getIdentifier();
+            let userSReadSSI = await $$.promisify(seedSSI2.derive)()
+            userSReadSSI = userSReadSSI.getIdentifier();
 
             crypto.createCredential(seedSSI, userSReadSSI, (error, credentialJwt) => {
                 if (error) throw error;
@@ -250,11 +257,11 @@ assert.callback("verifyAuthToken with invalid issuer test", (callback) => {
     seedSSI.initialize("default", undefined, undefined, undefined, "hint", (err) => {
         if (err) throw err;
 
-        seedSSI2.initialize("default", undefined, undefined, undefined, "hint", (err) => {
+        seedSSI2.initialize("default", undefined, undefined, undefined, "hint", async (err) => {
             if (err) throw err;
 
-            const userSReadSSI = seedSSI2.derive().getIdentifier();
-
+            let userSReadSSI = await $$.promisify(seedSSI2.derive)();
+            userSReadSSI = userSReadSSI.getIdentifier();
             crypto.createCredential(seedSSI, userSReadSSI, (error, credentialJwt) => {
                 if (error) throw error;
 

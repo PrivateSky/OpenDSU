@@ -12,7 +12,7 @@ const DOMAIN = "default";
 
 async function getAnchorId(seedSSI, raw = false) {
     const keySSISpace = openDSU.loadApi("keyssi");
-    const anchorSSI = keySSISpace.parse(seedSSI.getAnchorId());
+    const anchorSSI = keySSISpace.parse(await $$.promisify(seedSSI.getAnchorId)());
     const anchorID = anchorSSI.getIdentifier(raw);
     return anchorID;
 }
@@ -55,7 +55,7 @@ assert.callback('key DID SSI test', (testFinished) => {
         console.time("anchorProcessing")
         for (let i = 0; i < NO_ANCHORS; i++) {
             let dsuIdentifier = await keySSISpace.createSeedSSI(DOMAIN);
-            let anchorId = dsuIdentifier.getAnchorId();
+            let anchorId = await $$.promisify(dsuIdentifier.getAnchorId)();
             let anchorVersion = await createNewVersionForAnchor(dsuIdentifier);
             try {
                 await $$.promisify(anchoringX.createAnchor)(anchorId, anchorVersion);

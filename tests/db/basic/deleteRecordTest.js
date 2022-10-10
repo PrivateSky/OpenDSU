@@ -8,8 +8,8 @@ assert.callback("DB query+deleteRecord test", (testFinishCallback) => {
     dc.createTestFolder("wallet", function (err, folder) {
         const no_retries = 10;
 
-        function testPersistence(sreadSSI) {
-            console.log("Persistence DSU is:", sreadSSI.getAnchorId());
+        async function testPersistence(sreadSSI) {
+            console.log("Persistence DSU is:", await $$.promisify(sreadSSI.getAnchorId)());
             let mydb = db.getSharedDB(sreadSSI, "testDb");
             mydb.query("test", "__timestamp > 0", undefined, 10, (err, records) => {
                 console.log(err, records);

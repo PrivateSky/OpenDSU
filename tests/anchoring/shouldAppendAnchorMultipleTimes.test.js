@@ -5,7 +5,7 @@ const utils = require('./utils');
 
 assert.callback("Should append anchor multiple times", async (callback) => {
         const seedSSI = utils.generateSeedSSI();
-        const anchorId = utils.getAnchorId(seedSSI);
+        const anchorId = await utils.getAnchorId(seedSSI);
         const hashlink = await utils.getSignedHashLink(seedSSI,null);
         const hashlink2 = await utils.getSignedHashLink(seedSSI,hashlink);
         const hashlink3 = await utils.getSignedHashLink(seedSSI,hashlink2);

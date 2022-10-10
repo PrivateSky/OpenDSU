@@ -52,7 +52,12 @@ module.exports = {
                             if (err) {
                                 return callback(createOpenDSUErrorWrapper("Failed to anchor batch", err));
                             }
-                            doStorageDSUInitialisation(writableDSU, keySSI.derive());
+                            keySSI.derive((err, derivedKeySSI)=>{
+                                if (err) {
+                                    return callback(createOpenDSUErrorWrapper(`Failed to derive keySSI ${keySSI.getIdentifier()}`, err));
+                                }
+                                doStorageDSUInitialisation(writableDSU, derivedKeySSI);
+                            })
                         });
                     });
                 });

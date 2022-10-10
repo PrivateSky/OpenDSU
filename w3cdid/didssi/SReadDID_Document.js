@@ -48,7 +48,11 @@ function SReadDID_Document(enclave, isInitialisation, seedSSI) {
         }
 
         if (isInitialisation) {
-            sReadSSI = seedSSI.derive();
+            try {
+                sReadSSI = await $$.promisify(seedSSI.derive)();
+            } catch (e) {
+                throw createOpenDSUErrorWrapper(`Failed to derive seedSSI ${seedSSI.getIdentifier()}`, e);
+            }
             await createSeedDSU();
             this.finishInitialisation();
             this.dispatchEvent("initialised");

@@ -43,10 +43,16 @@ class DeriveCommand extends Command{
         }
 
         try{
-            const keySSI = _getKeySSISpace().parse(bar).derive();
-            callback(undefined, arg ? keySSI.getIdentifier() : keySSI);
+            const keySSI = _getKeySSISpace().parse(bar);
+            keySSI.derive((err, derivedKeySSI) => {
+                if (err) {
+                    return _err(`Could not derive Key ${JSON.stringify(bar)}`, err, callback)
+                }
+
+                callback(undefined, arg ? derivedKeySSI.getIdentifier() : derivedKeySSI);
+            });
         } catch (e) {
-            _err(`Could not derive Key ${JSON.stringify(bar)}`, e, callback)
+            _err(`Could not parse Key ${JSON.stringify(bar)}`, e, callback)
         }
     }
 }

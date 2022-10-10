@@ -10,8 +10,8 @@ assert.callback("DB query test that returns more than one result", (testFinishCa
         const databaseName = "queryTestDB";
         const tableName = "test";
 
-        function testPersistence(sreadSSI, records){
-            console.log("Persistence DSU is:", sreadSSI.getAnchorId());
+        async function testPersistence(sreadSSI, records){
+            console.log("Persistence DSU is:", await $$.promisify(sreadSSI.getAnchorId)());
 
             let mydb = db.getSharedDB(sreadSSI, databaseName);
             mydb.on("initialised", ()=>{
@@ -49,12 +49,12 @@ assert.callback("DB query test that returns more than one result", (testFinishCa
                         throw err;
                     }
                     confirmedInsertedRecords.push(res);
-                    mydb.insertRecord(tableName, "thirdRecord", {content:"abc"}, function (err, res){
+                    mydb.insertRecord(tableName, "thirdRecord", {content:"abc"}, async function (err, res){
                         if(err){
                             throw err;
                         }
                         confirmedInsertedRecords.push(res);
-                        testPersistence(mydb.getShareableSSI(), confirmedInsertedRecords);
+                        await testPersistence(mydb.getShareableSSI(), confirmedInsertedRecords);
                     });
                 });
             });

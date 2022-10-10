@@ -60,7 +60,8 @@ async function createDSUs() {
     const parentDSU = await createDSU();
     const parentKeySSI = await parentDSU.getKeySSIAsObject();
 
-    const sreadSSI = childKeySSI.derive().getIdentifier();
+    let sreadSSI = await $$.promisify(childKeySSI.derive)();
+    sreadSSI = sreadSSI.getIdentifier();
     // Mount child in parent
     await parentDSU.mount('/child', sreadSSI);
     return [parentKeySSI, childKeySSI];

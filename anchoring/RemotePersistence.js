@@ -38,15 +38,19 @@ function RemotePersistence() {
         }
 
         const dlDomain = anchorSSI.getDLDomain();
-        const anchorId = anchorSSI.getAnchorId();
-
-        getAnchoringServices(dlDomain, (err, anchoringServicesArray) => {
+        anchorSSI.getAnchorId((err, anchorId) => {
             if (err) {
                 return callback(err);
             }
 
-            const anchorHandler = getAnchorHandler(anchorId, anchorValue.getIdentifier(), dlDomain, anchorAction);
-            promiseRunner.runOneSuccessful(anchoringServicesArray, anchorHandler, callback, new Error(`Failed during execution of ${anchorAction}`));
+            getAnchoringServices(dlDomain, (err, anchoringServicesArray) => {
+                if (err) {
+                    return callback(err);
+                }
+
+                const anchorHandler = getAnchorHandler(anchorId, anchorValue.getIdentifier(), dlDomain, anchorAction);
+                promiseRunner.runOneSuccessful(anchoringServicesArray, anchorHandler, callback, new Error(`Failed during execution of ${anchorAction}`));
+            })
         })
     }
 
@@ -61,8 +65,12 @@ function RemotePersistence() {
                         });
                     }
 
-                    resolver.invalidateDSUCache(anchorId);
-                    return resolve(data);
+                    resolver.invalidateDSUCache(anchorId, err => {
+                        if (err) {
+                            return reject(err);
+                        }
+                        resolve(data);
+                    });
                 });
                 if (putResult) {
                     putResult.then(resolve).catch(reject);
@@ -87,9 +95,9 @@ function RemotePersistence() {
                         return reject(err);
                     }
 
-                    try{
+                    try {
                         data = JSON.parse(data);
-                    }catch (e) {
+                    } catch (e) {
                         return reject(e);
                     }
 
@@ -112,15 +120,19 @@ function RemotePersistence() {
         }
 
         const dlDomain = keySSI.getDLDomain();
-        const anchorId = keySSI.getAnchorId();
-        getAnchoringServices(dlDomain, (err, anchoringServicesArray) => {
+        keySSI.getAnchorId((err, anchorId) => {
             if (err) {
                 return callback(err);
             }
+            getAnchoringServices(dlDomain, (err, anchoringServicesArray) => {
+                if (err) {
+                    return callback(err);
+                }
 
-            const fetchAnchor = getFetchAnchor(anchorId, dlDomain, actionName, callback);
-            promiseRunner.runOneSuccessful(anchoringServicesArray, fetchAnchor, callback, new Error("get Anchoring Service"));
-        })
+                const fetchAnchor = getFetchAnchor(anchorId, dlDomain, actionName, callback);
+                promiseRunner.runOneSuccessful(anchoringServicesArray, fetchAnchor, callback, new Error("get Anchoring Service"));
+            })
+        });
     }
 
     this.getAllVersions = (keySSI, callback) => {

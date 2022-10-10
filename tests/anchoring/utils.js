@@ -10,13 +10,13 @@ function generateConstSSI(){
     return keySSIApis.createConstSSI(domain);
 }
 
-function getAnchorId(seedSSI){
-    return seedSSI.getAnchorId();
+async function getAnchorId(seedSSI){
+    return  await $$.promisify(seedSSI.getAnchorId)();
 }
 
 async function getSignedHashLink(seedSSI, previousSignHashLinkId){
     const domain = 'default';
-    let anchorSSI = keySSIApis.parse(getAnchorId(seedSSI));
+    let anchorSSI = keySSIApis.parse(await getAnchorId(seedSSI));
     let previousSignHashLinkSSI = null;
     if (previousSignHashLinkId){
         previousSignHashLinkSSI = keySSIApis.parse(previousSignHashLinkId);
@@ -39,7 +39,7 @@ function getHashLink(constSSI){
 
 async function getPopulatedCorruptedMemoryPersistence(){
     const seedSSI = generateSeedSSI();
-    const anchorId = getAnchorId(seedSSI);
+    const anchorId = await getAnchorId(seedSSI);
     const hashlink = await getSignedHashLink(seedSSI,null);
     const hashlink2 = await getSignedHashLink(seedSSI,hashlink);
     const hashlink3 = await getSignedHashLink(seedSSI,hashlink2);
