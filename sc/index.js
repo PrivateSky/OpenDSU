@@ -180,6 +180,11 @@
         const sc = getSecurityContext();
         sc.setPIN(pin);
     }
+
+    const isPINNeeded = async () => {
+        const sc = getSecurityContext();
+        return await sc.isPINNeeded();
+    }
     
     
     module.exports = {
@@ -199,6 +204,7 @@
         configEnvironment,
         sharedEnclaveExists,
         setPIN,
-        setEnclaveKeySSI
+        setEnclaveKeySSI,
+        isPINNeeded
     };
     
