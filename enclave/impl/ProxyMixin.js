@@ -2,8 +2,6 @@ const {createOpenDSUErrorWrapper} = require("../../error");
 
 function ProxyMixin(target) {
     const commandNames = require("./lib/commandsNames");
-    const EnclaveMixin = require("./Enclave_Mixin");
-    EnclaveMixin(target);
     const ObservableMixin = require("../../utils/ObservableMixin");
     ObservableMixin(target);
 
