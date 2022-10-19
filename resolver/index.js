@@ -158,36 +158,37 @@ const loadDSU = (keySSI, options, callback) => {
         }
     }
 
-    let cachingEnabled = true;
-    if (typeof options === 'object' && options !== null && options.skipCache) {
-        cachingEnabled = false;
-    }
+    const loadDSU = (addInCache) => {
 
-    if (cachingEnabled) {
-        keySSI.getAnchorId((err, cacheKey) => {
+        const keySSIResolver = initializeResolver(options);
+        keySSIResolver.loadDSU(keySSI, options, (err, dsuInstance) => {
             if (err) {
-                return callback(err);
-            }
-            const cachedDSU = dsuCache.get(cacheKey);
-            if (cachedDSU) {
-                return getLatestDSUVersion(cachedDSU, callback);
+                return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to load DSU`, err));
             }
 
+            if (addInCache) {
+                return addDSUInstanceInCache(dsuInstance, callback);
+            }
 
-            const keySSIResolver = initializeResolver(options);
-            keySSIResolver.loadDSU(keySSI, options, (err, dsuInstance) => {
-                if (err) {
-                    return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to load DSU`, err));
-                }
-
-                if (cachingEnabled) {
-                    return addDSUInstanceInCache(dsuInstance, callback);
-                }
-
-                callback(undefined, dsuInstance);
-            });
-        })
+            callback(undefined, dsuInstance);
+        });
     }
+
+    if (typeof options === 'object' && options !== null && options.skipCache) {
+        return loadDSU(false);
+    }
+
+    keySSI.getAnchorId((err, cacheKey) => {
+        if (err) {
+            return callback(err);
+        }
+        const cachedDSU = dsuCache.get(cacheKey);
+        if (cachedDSU) {
+            return getLatestDSUVersion(cachedDSU, callback);
+        }
+        loadDSU(true);
+    })
+
 };
 
 /*
