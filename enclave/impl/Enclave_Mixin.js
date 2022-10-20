@@ -1,5 +1,4 @@
 const constants = require("./constants");
-const path = require("path");
 
 function Enclave_Mixin(target, did) {
     const openDSU = require("opendsu");
@@ -77,6 +76,10 @@ function Enclave_Mixin(target, did) {
 
         target.storageDB.refresh(callback);
     }
+
+    target.getPrivateKeyForSlot = (forDID, slot, callback) => {
+        target.storageDB.getRecord(constants.TABLE_NAMES.PATH_KEY_SSI_PRIVATE_KEYS, slot, callback);
+    };
 
     target.addIndex = (forDID, table, field, forceReindex, callback) => {
         if (typeof forceReindex === "function") {
@@ -523,110 +526,6 @@ function Enclave_Mixin(target, did) {
 
             callback(undefined, dsu);
         })
-    }
-
-    target.storePathKeySSI = (pathKeySSI, callback) => {
-
-    };
-
-    const compactPathKeys = (callback) => {
-        let compactedContent = "";
-        const path = require("path");
-        const crypto = require("opendsu").loadAPI("crypto");
-        target.storageDB.listFiles(constants.PATHS.SCATTERED_PATH_KEYS, async (err, files) => {
-            if (err) {
-                return callback(err);
-            }
-
-            for (let i = 0; i < files.length; i++) {
-                const {key, value} = getKeyValueFromPath(files[i]);
-                compactedContent = `${compactedContent}${key} ${value}\n`;
-            }
-
-            try{
-                const fileName = crypto.encodeBase58(crypto.generateRandom("16"));
-                await target.storageDB.writeFile(path.join(constants.PATHS.COMPACTED_PATH_KEYS, fileName), compactedContent);
-            }catch (e) {
-                callback(e);
-            }
-        });
-    }
-
-    const getKeyValueFromPath = (path) => {
-        const lastSegmentIndex = path.lastIndexOf("/");
-        const key = lastSegmentIndex.slice(0, lastSegmentIndex);
-        const value = lastSegmentIndex.slice(lastSegmentIndex + 1);
-        return {
-            key, value
-        }
-    }
-    target.loadPaths = (callback) => {
-        loadCompactedPathKeys((err, compactedKeys) => {
-            if (err) {
-                return callback(err);
-            }
-
-            loadScatteredPathKeys((err, scatteredKeys) => {
-                if (err) {
-                    return callback(err);
-                }
-
-                callback(undefined, {...compactedKeys, ...scatteredKeys});
-            })
-        });
-    }
-
-    const loadScatteredPathKeys = (callback) => {
-        const pathKeyMap = {};
-        target.storageDB.listFiles(constants.PATHS.SCATTERED_PATH_KEYS, async (err, files) => {
-            if (err) {
-                return callback(err);
-            }
-
-            for (let i = 0; i < files.length; i++) {
-                const {key, value} = getKeyValueFromPath(files[i]);
-                pathKeyMap[key] = value;
-            }
-
-            callback(undefined, pathKeyMap);
-        });
-    }
-
-    const loadCompactedPathKeys = (callback) => {
-        let pathKeyMap = {};
-        const compactedValuesLocation = constants.PATHS.COMPACTED_PATH_KEYS;
-        const path = require("path");
-        target.storageDB.listFiles(compactedValuesLocation, async (err, files) => {
-            if (err) {
-                return callback(err);
-            }
-
-            try {
-                for (let i = 0; i < files.length; i++) {
-                    const filePath = path.join(compactedValuesLocation, files[i]);
-                    let compactedFileContent = target.storageDB.readFile(filePath);
-                    compactedFileContent = compactedFileContent.toString();
-                    const partialKeyMap = mapFileContent(compactedFileContent);
-                    pathKeyMap = {...pathKeyMap, ...partialKeyMap};
-                }
-            } catch (e) {
-                return callback(e);
-            }
-
-
-            callback(undefined, pathKeyMap);
-        });
-    }
-
-    const mapFileContent = (fileContent) => {
-        const pathKeyMap = {};
-        const fileLines = fileContent.split("\n");
-        for (let i = 0; i < fileLines.length; i++) {
-            const splitLine = fileLines[i].split(" ");
-            pathKeyMap[splitLine[0]] = splitLine[1];
-        }
-
-        return pathKeyMap;
     }
 }
 

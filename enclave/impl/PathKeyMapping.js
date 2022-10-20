@@ -3,17 +3,27 @@ function PathKeyMapping(enclaveHandler) {
     //
     const openDSU = require("opendsu");
     const utils = openDSU.loadAPI("utils");
+    const keySSISpace = openDSU.loadAPI("keyssi");
     let pathKeysMapping = {};
 
-    const  init = async () => {
+    const init = async () => {
         pathKeysMapping = await $$.promisify(enclaveHandler.loadPaths)();
+    };
+
+    this.storePathKeySSI = (pathKeySSI, callback)=>{
+        if (typeof pathKeySSI === "string") {
+            try{
+
+            }catch (e) {
+                return callback(e);
+            }
+            pathKeySSI = pathKeySSI.getIdentifier();
+        }
+
+        enclaveHandler.storePathKeySSI(pathKeySSI)
     }
 
-    this.put = (pathKeySSI, callback)=>{
-
-    }
-
-    this.get = (pathKeySSI) => {
+    this.getCapableOfSigningKeySSI = (pathKeySSI) => {
 
     };
 

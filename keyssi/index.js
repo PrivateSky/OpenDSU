@@ -54,6 +54,14 @@ const createTemplateSeedSSI = (domain, specificString, control, vn, hint, callba
     return createTemplateKeySSI(SSITypes.SEED_SSI, domain, specificString, control, vn, hint, callback);
 };
 
+const we_createPathKeySSI = (enclave, domain, path, vn, hint, callback) => {
+    let pathKeySSI = keySSIFactory.createType(SSITypes.PATH_SSI, enclave);
+    pathKeySSI.initialize(domain, path, vn, hint, callback);
+}
+
+const createPathKeySSI = (domain, path, vn, hint, callback)=>{
+    return we_createPathKeySSI(openDSU.loadAPI("sc").getMainEnclave(), domain, path, vn, hint, callback);
+}
 const createHashLinkSSI = (domain, hash, vn, hint) => {
     const hashLinkSSI = keySSIFactory.createType(SSITypes.HASH_LINK_SSI)
     hashLinkSSI.initialize(domain, hash, vn, hint);
@@ -281,5 +289,7 @@ module.exports = {
     we_createConstSSI,
     we_createArraySSI,
     createAliasSSI,
-    createSizeSSI
+    createSizeSSI,
+    createPathKeySSI,
+    we_createPathKeySSI
 };

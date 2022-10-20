@@ -1,10 +1,12 @@
 function WalletDBEnclave(keySSI, did) {
     const openDSU = require("opendsu");
+    const constants = require("./constants");
     const db = openDSU.loadAPI("db")
     const scAPI = openDSU.loadAPI("sc");
     const resolver = openDSU.loadAPI("resolver");
     const config = openDSU.loadAPI("config");
-    const DB_NAME = "walletdb_enclave";
+    const keySSISpace = openDSU.loadAPI("keyssi");
+    const DB_NAME = constants.DB_NAMES.WALLET_DB_ENCLAVE;
     const EnclaveMixin = require("./Enclave_Mixin");
     EnclaveMixin(this, did);
     let enclaveDSU;
@@ -45,7 +47,19 @@ function WalletDBEnclave(keySSI, did) {
 
         await $$.promisify(resolver.invalidateDSUCache)(keySSI);
         this.storageDB = db.getSimpleWalletDB(DB_NAME, {keySSI});
-        this.storageDB.on("initialised", () => {
+        this.storageDB.on("initialised", async () => {
+            if (typeof keySSI === "string") {
+                keySSI = keySSISpace.parse(keySSI);
+            }
+            let privateKey;
+            try{
+                privateKey = await $$.promisify(this.storageDB.getRecord)(constants.TABLE_NAMES.PATH_KEY_SSI_PRIVATE_KEYS, 0);
+            } catch (e) {
+            }
+            if (!privateKey) {
+                await $$.promisify(this.storageDB.insertRecord)(constants.TABLE_NAMES.PATH_KEY_SSI_PRIVATE_KEYS, 0, {privateKey: keySSI.getPrivateKey()});
+            }
+
             initialised = true;
             this.finishInitialisation();
             this.dispatchEvent("initialised");
