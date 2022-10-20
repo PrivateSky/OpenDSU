@@ -1,5 +1,5 @@
 const pathModule = require("path");
-
+const utils = require("./utils");
 const constants = require("./constants");
 
 function WalletDBEnclaveHandler(walletDBEnclaveKeySSI, config) {
@@ -10,38 +10,66 @@ function WalletDBEnclaveHandler(walletDBEnclaveKeySSI, config) {
     config = defaultConfig;
     const openDSU = require("opendsu");
     const resolver = openDSU.loadAPI("resolver");
-    const utils = openDSU.loadAPI("utils");
+    const utilsAPI = openDSU.loadAPI("utils");
+    const keySSISpace = openDSU.loadAPI("keyssi");
+    utilsAPI.ObservableMixin(this);
     let enclaveDSU;
+    let initialised = false;
     const init = async ()=>{
         try {
             enclaveDSU = await $$.promisify(resolver.loadDSU)(walletDBEnclaveKeySSI);
         } catch (e) {
             throw createOpenDSUErrorWrapper(`Failed to load enclave DSU`, e);
         }
+
+        initialised = true;
+        this.dispatchEvent("initialised");
     }
 
-    this.storePathKeySSI = (pathKeySSI, callback) => {
-        const filePath = pathModule.join(constants.PATHS.SCATTERED_PATH_KEYS, pathKeySSI.getSpecificString(), pathKeySSI.getIdentifier());
-        storageDB.writeFile(filePath, async err => {
-            if (err) {
-                return callback(err);
-            }
+    this.isInitialised = () => {
+        return initialised;
+    };
 
-            try {
-                const files = await $$.promisify(storageDB.listFiles)(constants.PATHS.SCATTERED_PATH_KEYS);
-                if (files.length === config.maxNoScatteredKeys) {
-                    await compactPathKeys();
-                }
+    this.storePathKeySSI = (pathKeySSI, callback) => {
+        if (typeof pathKeySSI === "string") {
+            try{
+                pathKeySSI = keySSISpace.parse(pathKeySSI);
             }catch (e) {
-                callback(e);
+                return callback(e);
             }
+        }
+        const __storePathKeySSI = () => {
+            const filePath = pathModule.join(constants.PATHS.SCATTERED_PATH_KEYS, pathKeySSI.getSpecificString(), pathKeySSI.getIdentifier());
+            enclaveDSU.writeFile(filePath, async err => {
+                if (err) {
+                    return callback(err);
+                }
+
+                try {
+                    const files = await $$.promisify(enclaveDSU.listFiles)(constants.PATHS.SCATTERED_PATH_KEYS);
+                    if (files.length === config.maxNoScatteredKeys) {
+                        await compactPathKeys();
+                    }
+                    callback();
+                } catch (e) {
+                    callback(e);
+                }
+            })
+        };
+
+        if (this.isInitialised()) {
+            return __storePathKeySSI();
+        }
+
+        this.on("initialised", ()=>{
+            __storePathKeySSI();
         })
     };
 
     const compactPathKeys = async () => {
         let compactedContent = "";
         const crypto = require("opendsu").loadAPI("crypto");
-        const files = $$.promisify(storageDB.listFiles)(constants.PATHS.SCATTERED_PATH_KEYS);
+        const files = $$.promisify(enclaveDSU.listFiles)(constants.PATHS.SCATTERED_PATH_KEYS);
 
         for (let i = 0; i < files.length; i++) {
             const {key, value} = getKeyValueFromPath(files[i]);
@@ -49,11 +77,11 @@ function WalletDBEnclaveHandler(walletDBEnclaveKeySSI, config) {
         }
 
         const fileName = crypto.encodeBase58(crypto.generateRandom("16"));
-        await storageDB.writeFile(pathModule.join(constants.PATHS.COMPACTED_PATH_KEYS, fileName), compactedContent);
+        await enclaveDSU.writeFile(pathModule.join(constants.PATHS.COMPACTED_PATH_KEYS, fileName), compactedContent);
 
         for (let i = 0; i < files.length; i++) {
             const filePath = pathModule.join(constants.PATHS.SCATTERED_PATH_KEYS, files[i]);
-            await $$.promisify(storageDB.delete)(filePath);
+            await $$.promisify(enclaveDSU.delete)(filePath);
         }
     }
 
@@ -67,61 +95,38 @@ function WalletDBEnclaveHandler(walletDBEnclaveKeySSI, config) {
     }
 
     this.loadPaths = (callback) => {
-        loadCompactedPathKeys((err, compactedKeys) => {
-            if (err) {
-                return callback(err);
-            }
-
-            loadScatteredPathKeys(async (err, scatteredKeys) => {
+        const __loadPaths = ()=> {
+            loadCompactedPathKeys((err, compactedKeys) => {
                 if (err) {
                     return callback(err);
                 }
 
-                try {
-                    const keySSIsMap = await deriveAllKeySSIsFromPathKeys({...compactedKeys, ...scatteredKeys});
-                    callback(undefined, keySSIsMap);
-                } catch (e) {
-                    callback(e);
-                }
-            })
+                loadScatteredPathKeys(async (err, scatteredKeys) => {
+                    if (err) {
+                        return callback(err);
+                    }
+
+                    try {
+                        const keySSIsMap = await utils.deriveAllKeySSIsFromPathKeys({...compactedKeys, ...scatteredKeys});
+                        callback(undefined, keySSIsMap);
+                    } catch (e) {
+                        callback(e);
+                    }
+                })
+            });
+        }
+        if (this.isInitialised()) {
+            return __loadPaths();
+        }
+
+        this.on("initialised", () => {
+            __loadPaths();
         });
-    }
-
-    const deriveAllKeySSIsFromPathKeys = async (pathKeyMap) => {
-        let keySSIMap = {};
-        const openDSU = require("opendsu");
-        const keySSISpace = openDSU.loadAPI("keyssi");
-        for (let pth in pathKeyMap) {
-            const pathSSIIdentifier = pathKeyMap[pth];
-            let keySSI = keySSISpace.parse(pathSSIIdentifier);
-            const derivedKeySSIs = await getAllDerivedSSIsForKeySSI(keySSI);
-            keySSIMap = {...keySSIMap, ...derivedKeySSIs};
-        }
-
-        return keySSIMap;
-    }
-
-    const getAllDerivedSSIsForKeySSI = async (keySSI) => {
-        const derivedKeySSIs = {};
-        const keySSIIdentifier = keySSI.getIdentifier();
-        const __getDerivedKeySSIRecursively = async (currentKeySSI) => {
-            derivedKeySSIs[keySSIIdentifier] = currentKeySSI.getIdentifier();
-            try {
-                currentKeySSI = await $$.promisify(currentKeySSI.derive)();
-            } catch (e) {
-                return;
-            }
-
-            await __getDerivedKeySSIRecursively(currentKeySSI);
-        }
-
-        await __getDerivedKeySSIRecursively(keySSI);
-        return derivedKeySSIs;
     }
 
     const loadScatteredPathKeys = (callback) => {
         const pathKeyMap = {};
-        storageDB.listFiles(constants.PATHS.SCATTERED_PATH_KEYS, async (err, files) => {
+        enclaveDSU.listFiles(constants.PATHS.SCATTERED_PATH_KEYS, async (err, files) => {
             if (err) {
                 return callback(err);
             }
@@ -138,7 +143,7 @@ function WalletDBEnclaveHandler(walletDBEnclaveKeySSI, config) {
     const loadCompactedPathKeys = (callback) => {
         let pathKeyMap = {};
         const compactedValuesLocation = constants.PATHS.COMPACTED_PATH_KEYS;
-        storageDB.listFiles(compactedValuesLocation, async (err, files) => {
+        enclaveDSU.listFiles(compactedValuesLocation, async (err, files) => {
             if (err) {
                 return callback(err);
             }
@@ -146,7 +151,7 @@ function WalletDBEnclaveHandler(walletDBEnclaveKeySSI, config) {
             try {
                 for (let i = 0; i < files.length; i++) {
                     const filePath = pathModule.join(compactedValuesLocation, files[i]);
-                    let compactedFileContent = storageDB.readFile(filePath);
+                    let compactedFileContent = enclaveDSU.readFile(filePath);
                     compactedFileContent = compactedFileContent.toString();
                     const partialKeyMap = mapFileContent(compactedFileContent);
                     pathKeyMap = {...pathKeyMap, ...partialKeyMap};
@@ -171,8 +176,8 @@ function WalletDBEnclaveHandler(walletDBEnclaveKeySSI, config) {
         return pathKeyMap;
     }
 
+    // utilsAPI.bindAutoPendingFunctions(this);
     init();
-    utils.bindAutoPendingFunctions(this);
 }
 
 module.exports = WalletDBEnclaveHandler;
