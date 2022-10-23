@@ -22,8 +22,7 @@ function WalletDBEnclaveHandler(walletDBEnclaveKeySSI, config) {
             throw createOpenDSUErrorWrapper(`Failed to load enclave DSU`, e);
         }
 
-        initialised = true;
-        this.dispatchEvent("initialised");
+        this.finishInitialisation();
     }
 
     this.isInitialised = () => {
@@ -57,13 +56,7 @@ function WalletDBEnclaveHandler(walletDBEnclaveKeySSI, config) {
             })
         };
 
-        if (this.isInitialised()) {
-            return __storePathKeySSI();
-        }
-
-        this.on("initialised", ()=>{
-            __storePathKeySSI();
-        })
+        __storePathKeySSI();
     };
 
     const compactPathKeys = async () => {
@@ -115,13 +108,7 @@ function WalletDBEnclaveHandler(walletDBEnclaveKeySSI, config) {
                 })
             });
         }
-        if (this.isInitialised()) {
-            return __loadPaths();
-        }
-
-        this.on("initialised", () => {
-            __loadPaths();
-        });
+        __loadPaths();
     }
 
     const loadScatteredPathKeys = (callback) => {
@@ -176,7 +163,7 @@ function WalletDBEnclaveHandler(walletDBEnclaveKeySSI, config) {
         return pathKeyMap;
     }
 
-    // utilsAPI.bindAutoPendingFunctions(this);
+    utilsAPI.bindAutoPendingFunctions(this);
     init();
 }
 

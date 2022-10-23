@@ -3,15 +3,11 @@ function PathKeyMapping(enclaveHandler) {
     const openDSU = require("opendsu");
     const utilsAPI = openDSU.loadAPI("utils");
     const keySSISpace = openDSU.loadAPI("keyssi");
-    const ObservableMixin = utilsAPI.ObservableMixin;
-    ObservableMixin(this);
     let pathKeysMapping = {};
     let initialised = false;
     const init = async () => {
         pathKeysMapping = await $$.promisify(enclaveHandler.loadPaths)();
-        // this.finishInitialisation();
-        initialised = true;
-        this.dispatchEvent("initialised");
+        this.finishInitialisation();
     };
 
     this.isInitialised = () => {
@@ -39,13 +35,7 @@ function PathKeyMapping(enclaveHandler) {
                 callback();
             });
         }
-        if (this.isInitialised()) {
-            return storePathKeySSI();
-        }
-
-        this.on("initialised", ()=>{
-            storePathKeySSI();
-        })
+        storePathKeySSI();
     };
 
     this.getCapableOfSigningKeySSI = (keySSI, callback) => {
@@ -60,7 +50,7 @@ function PathKeyMapping(enclaveHandler) {
         callback(pathKeysMapping[keySSI]);
     };
 
-    // utilsAPI.bindAutoPendingFunctions(this, ["on", "off"]);
+    utilsAPI.bindAutoPendingFunctions(this);
     init();
 }
 
