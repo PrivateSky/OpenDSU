@@ -1,145 +1,92 @@
 const getBaseURL = require("../utils/getBaseURL");
 
-const {
-    DomainNotSupportedError,
-    getSafeCommandBody,
-    getNoncedCommandBody,
-    getContractEndpointUrl,
-    callContractEndpoint,
-    callContractEndpointUsingBdns,
-} = require("./utils");
 
-class CommandSender {
-    constructor(baseUrl, fallbackToUrlFromBDNS) {
-        this.baseUrl = baseUrl;
-        this.fallbackToUrlFromBDNS = fallbackToUrlFromBDNS;
-    }
+const BLOCKCHAIN_REGISTRATION_MODE = {
+    OVERWRITE: "overwrite",
+    SKIP_EXISTING: "skip",
+    UNIQUE: "unique",
+};
 
-    async sendCommand(method, contractEndpointPrefix, domain, commandBody, callback) {
-        if (typeof commandBody === "function") {
-            callback = commandBody;
-            commandBody = null;
-        }
+const registeredBlockchains = {};
 
-        callback = $$.makeSaneCallback(callback);
-
-        try {
-            try {
-                // try to send the command to the current apihub endpoint
-                const currentApihubUrl = getContractEndpointUrl(this.baseUrl, domain, contractEndpointPrefix);
-                const response = await callContractEndpoint(currentApihubUrl, method, domain, commandBody);
-                callback(null, response);
-            } catch (error) {
-                // if the current apihub endpoint doesn't handle the current domain, then send the command using BDNS
-                if (this.fallbackToUrlFromBDNS && error instanceof DomainNotSupportedError) {
-                    callContractEndpointUsingBdns(method, contractEndpointPrefix, domain, commandBody, callback);
-                    return;
-                }
-                throw error;
-            }
-        } catch (error) {
-            OpenDSUSafeCallback(callback)(
-                createOpenDSUErrorWrapper(`Failed to execute domain contract method: ${JSON.stringify(commandBody)}`, error)
-            );
-        }
-    }
-
-    generateSafeCommand(domain, contractName, methodName, params, callback) {
-        if (typeof params === "function") {
-            callback = params;
-            params = null;
-        }
-
-        try {
-            const commandBody = getSafeCommandBody(domain, contractName, methodName, params);
-            this.sendCommand("POST", "safe-command", domain, commandBody, callback);
-        } catch (error) {
-            callback(error);
-        }
-    }
-
-    async generateNoncedCommand(signerDID, domain, contractName, methodName, params, timestamp, callback) {
-        if (typeof timestamp === "function") {
-            callback = timestamp;
-
-            // check if the param before provided callback is either the timestamp or the params, since both are optional
-            if (typeof params === "number") {
-                timestamp = params;
-                params = null;
-            } else {
-                timestamp = null;
-            }
-        }
-
-        if (typeof params === "function") {
-            callback = params;
-            params = null;
-            timestamp = null;
-        }
-        if (!signerDID) {
-            return callback("signerDID not provided");
-        }
-
-        if (!timestamp) {
-            timestamp = Date.now();
-        }
-
-        try {
-            if (typeof signerDID === "string") {
-                // signerDID contains the identifier, so we need to load the DID
-                const w3cDID = require("opendsu").loadAPI("w3cdid");
-                signerDID = await $$.promisify(w3cDID.resolveDID)(signerDID);
-            }
-
-            const latestBlockInfo = await $$.promisify(this.sendCommand.bind(this))("GET", "latest-block-info", domain);
-            const { number: blockNumber } = latestBlockInfo;
-
-            const commandBody = await getNoncedCommandBody(domain, contractName, methodName, params, blockNumber, timestamp, signerDID);
-            this.sendCommand("POST", "nonced-command", domain, commandBody, callback);
-        } catch (error) {
-            callback(error);
-        }
+function ensureBlockchainForDomain(domainName) {
+    if (!registeredBlockchains[domainName]) {
+        throw new Error(`No blockchain registered for domain ${domainName}!`);
     }
 }
 
-function generateSafeCommand(domain, contractName, methodName, params, callback) {
-    const commandSender = new CommandSender(getBaseURL(), true);
-    commandSender.generateSafeCommand(domain, contractName, methodName, params, callback);
+function callReadMethod(domainName, smartContractId, method, ...args) {
+    ensureBlockchainForDomain(domainName);
+    return registeredBlockchains[domainName].callReadMethod.call(
+        registeredBlockchains[domainName],
+        smartContractId,
+        method,
+        ...args
+    );
 }
 
-async function generateNoncedCommand(signerDID, domain, contractName, methodName, params, timestamp, callback) {
-    const commandSender = new CommandSender(getBaseURL(), true);
-    commandSender.generateNoncedCommand(signerDID, domain, contractName, methodName, params, timestamp, callback);
+function callWriteMethod(domainName, keySSI, smartContractId, method, ...args) {
+    ensureBlockchainForDomain(domainName);
+    return registeredBlockchains[domainName].callWriteMethod.call(
+        registeredBlockchains[domainName],
+        keySSI,
+        smartContractId,
+        method,
+        ...args
+    );
 }
 
-function generateSafeCommandForSpecificServer(serverUrl, domain, contractName, methodName, params, callback) {
-    if (!serverUrl || typeof serverUrl !== "string") {
-        throw new Error(`Invalid serverUrl specified`);
+function transferGas(domainName, keySSI, receiver, amount, unitOrDigits) {
+    ensureBlockchainForDomain(domainName);
+    return registeredBlockchains[domainName].transferGas.call(
+        registeredBlockchains[domainName],
+        keySSI,
+        receiver,
+        amount,
+        unitOrDigits
+    );
+}
+
+function registerBlockchain(domainName, strategyFactory, configuration, registrationMode) {
+    if (!registrationMode) {
+        registrationMode = BLOCKCHAIN_REGISTRATION_MODE.SKIP_EXISTING;
     }
-    const commandSender = new CommandSender(serverUrl);
-    commandSender.generateSafeCommand(domain, contractName, methodName, params, callback);
+
+    if (registeredBlockchains[domainName]) {
+        const errorMessage = `Blockchain already registered for domain ${domainName}!`;
+        console.info(errorMessage, registeredBlockchains[domainName]);
+
+        if (registrationMode === BLOCKCHAIN_REGISTRATION_MODE.UNIQUE) {
+            throw new Error(errorMessage);
+        }
+
+        if (registrationMode === BLOCKCHAIN_REGISTRATION_MODE.SKIP_EXISTING) {
+            return;
+        }
+    }
+
+    if (typeof strategyFactory !== "function") {
+        throw new Error("Should provide a valid strategyFactory");
+    }
+
+    const config = {
+        ...configuration,
+        baseUrl: getBaseURL(),
+    };
+
+    registeredBlockchains[domainName] = strategyFactory(config);
 }
 
-function generateNoncedCommandForSpecificServer(
-    serverUrl,
-    signerDID,
-    domain,
-    contractName,
-    methodName,
-    params,
-    timestamp,
-    callback
-) {
-    if (!serverUrl || typeof serverUrl !== "string") {
-        throw new Error(`Invalid serverUrl specified`);
-    }
-    const commandSender = new CommandSender(serverUrl);
-    commandSender.generateNoncedCommand(signerDID, domain, contractName, methodName, params, timestamp, callback);
+function createCryptoWallet(domainName) {
+    ensureBlockchainForDomain(domainName);
+    return registeredBlockchains[domainName].createCryptoWallet.call(registeredBlockchains[domainName]);
 }
 
 module.exports = {
-    generateSafeCommand,
-    generateNoncedCommand,
-    generateSafeCommandForSpecificServer,
-    generateNoncedCommandForSpecificServer,
+    callReadMethod,
+    callWriteMethod,
+    transferGas,
+    registerBlockchain,
+    createCryptoWallet,
+    BLOCKCHAIN_REGISTRATION_MODE,
 };
