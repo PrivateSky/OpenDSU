@@ -47,7 +47,11 @@ function WalletDBEnclaveHandler(walletDBEnclaveKeySSI, config) {
                 try {
                     const files = await $$.promisify(enclaveDSU.listFiles)(constants.PATHS.SCATTERED_PATH_KEYS);
                     if (files.length === config.maxNoScatteredKeys) {
-                        await compactPathKeys();
+                        try {
+                            await compactPathKeys();
+                        } catch (e) {
+                            return callback(e);
+                        }
                     }
                     callback();
                 } catch (e) {
@@ -62,15 +66,16 @@ function WalletDBEnclaveHandler(walletDBEnclaveKeySSI, config) {
     const compactPathKeys = async () => {
         let compactedContent = "";
         const crypto = require("opendsu").loadAPI("crypto");
-        const files = $$.promisify(enclaveDSU.listFiles)(constants.PATHS.SCATTERED_PATH_KEYS);
+        const files = await $$.promisify(enclaveDSU.listFiles)(constants.PATHS.SCATTERED_PATH_KEYS);
 
         for (let i = 0; i < files.length; i++) {
             const {key, value} = getKeyValueFromPath(files[i]);
             compactedContent = `${compactedContent}${key} ${value}\n`;
         }
 
-        const fileName = crypto.encodeBase58(crypto.generateRandom("16"));
-        await enclaveDSU.writeFile(pathModule.join(constants.PATHS.COMPACTED_PATH_KEYS, fileName), compactedContent);
+        compactedContent = compactedContent.slice(0, compactedContent.length - 1);
+        const fileName = crypto.encodeBase58(crypto.generateRandom(16));
+        await $$.promisify(enclaveDSU.writeFile)(pathModule.join(constants.PATHS.COMPACTED_PATH_KEYS, fileName), compactedContent);
 
         for (let i = 0; i < files.length; i++) {
             const filePath = pathModule.join(constants.PATHS.SCATTERED_PATH_KEYS, files[i]);
@@ -80,8 +85,8 @@ function WalletDBEnclaveHandler(walletDBEnclaveKeySSI, config) {
 
     const getKeyValueFromPath = (pth) => {
         const lastSegmentIndex = pth.lastIndexOf("/");
-        const key = lastSegmentIndex.slice(0, lastSegmentIndex);
-        const value = lastSegmentIndex.slice(lastSegmentIndex + 1);
+        const key = pth.slice(0, lastSegmentIndex);
+        const value = pth.slice(lastSegmentIndex + 1);
         return {
             key, value
         }
@@ -100,7 +105,7 @@ function WalletDBEnclaveHandler(walletDBEnclaveKeySSI, config) {
                     }
 
                     try {
-                        const keySSIsMap = await utils.deriveAllKeySSIsFromPathKeys({...compactedKeys, ...scatteredKeys});
+                        const keySSIsMap = await $$.promisify(utils.deriveAllKeySSIsFromPathKeys)({...compactedKeys, ...scatteredKeys});
                         callback(undefined, keySSIsMap);
                     } catch (e) {
                         callback(e);
@@ -138,7 +143,7 @@ function WalletDBEnclaveHandler(walletDBEnclaveKeySSI, config) {
             try {
                 for (let i = 0; i < files.length; i++) {
                     const filePath = pathModule.join(compactedValuesLocation, files[i]);
-                    let compactedFileContent = enclaveDSU.readFile(filePath);
+                    let compactedFileContent = await $$.promisify(enclaveDSU.readFile)(filePath);
                     compactedFileContent = compactedFileContent.toString();
                     const partialKeyMap = mapFileContent(compactedFileContent);
                     pathKeyMap = {...pathKeyMap, ...partialKeyMap};

@@ -29,9 +29,9 @@ assert.callback('WalletDBEnclave test', (testFinished) => {
             await $$.promisify(scAPI.setMainEnclave)(mainEnclave);
             const sc = scAPI.refreshSecurityContext();
             sc.on("initialised", async () => {
-
                 const pathKeySSI = await $$.promisify(keySSISpace.createPathKeySSI)("vault", "0/somePath")
-                console.log(pathKeySSI.getIdentifier());
+                const expectedIdentifier = "ssi:path:vault:0/somePath::v0"
+                assert.equal(pathKeySSI.getIdentifier(true), expectedIdentifier);
                 testFinished();
             });
         });

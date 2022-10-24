@@ -54,14 +54,16 @@ const createTemplateSeedSSI = (domain, specificString, control, vn, hint, callba
     return createTemplateKeySSI(SSITypes.SEED_SSI, domain, specificString, control, vn, hint, callback);
 };
 
-const we_createPathKeySSI = (enclave, domain, path, vn, hint, callback) => {
+const we_createPathKeySSI = (enclave, domain, path, vn, hint) => {
     let pathKeySSI = keySSIFactory.createType(SSITypes.PATH_SSI, enclave);
-    pathKeySSI.initialize(domain, path, vn, hint, callback);
+    pathKeySSI.load(SSITypes.PATH_SSI, domain, path, '', vn, hint);
+    return pathKeySSI;
 }
 
-const createPathKeySSI = (domain, path, vn, hint, callback)=>{
-    return we_createPathKeySSI(openDSU.loadAPI("sc").getMainEnclave(), domain, path, vn, hint, callback);
-}
+const createPathKeySSI = (domain, path, vn, hint) => {
+    return we_createPathKeySSI(openDSU.loadAPI("sc").getMainEnclave(), domain, path, vn, hint);
+};
+
 const createHashLinkSSI = (domain, hash, vn, hint) => {
     const hashLinkSSI = keySSIFactory.createType(SSITypes.HASH_LINK_SSI)
     hashLinkSSI.initialize(domain, hash, vn, hint);

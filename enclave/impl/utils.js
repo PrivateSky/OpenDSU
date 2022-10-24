@@ -1,37 +1,64 @@
 const openDSU = require("opendsu");
 const keySSISpace = openDSU.loadAPI("keyssi");
-const deriveAllKeySSIsFromPathKeys = async (pathKeyMap) => {
-    let keySSIMap = {};
 
-    for (let pth in pathKeyMap) {
+const deriveAllKeySSIsFromPathKeys = (pathKeyMap, callback) => {
+    let keySSIMap = {};
+    const props = Object.keys(pathKeyMap);
+    const __deriveAllKeySSIsFromPathKeysRecursively = (index) => {
+        const pth = props[index];
+        if (typeof pth === "undefined") {
+            return callback(undefined, keySSIMap);
+        }
+
         const pathSSIIdentifier = pathKeyMap[pth];
-        let keySSI = keySSISpace.parse(pathSSIIdentifier);
-        const derivedKeySSIs = await getAllDerivedSSIsForKeySSI(keySSI);
-        keySSIMap = {...keySSIMap, ...derivedKeySSIs};
+        let keySSI;
+        try {
+            keySSI = keySSISpace.parse(pathSSIIdentifier);
+        } catch (e) {
+            return callback(e);
+        }
+
+        getAllDerivedSSIsForKeySSI(keySSI, (err, derivedKeySSIs) => {
+            if (err) {
+                return callback(err);
+            }
+
+            keySSIMap = {...keySSIMap, ...derivedKeySSIs};
+            __deriveAllKeySSIsFromPathKeysRecursively(index + 1);
+        })
+
     }
 
-    return keySSIMap;
+    __deriveAllKeySSIsFromPathKeysRecursively(0);
 }
 
-const getAllDerivedSSIsForKeySSI = async (keySSI) => {
+const getAllDerivedSSIsForKeySSI = (keySSI, callback) => {
     if (typeof keySSI === "string") {
-        keySSI = keySSISpace.parse(keySSI);
+        try {
+            keySSI = keySSISpace.parse(keySSI);
+        } catch (e) {
+            return callback(e);
+        }
     }
     const derivedKeySSIs = {};
     const keySSIIdentifier = keySSI.getIdentifier();
-    const __getDerivedKeySSIRecursively = async (currentKeySSI) => {
-        derivedKeySSIs[keySSIIdentifier] = currentKeySSI.getIdentifier();
+    const __getDerivedKeySSIsRecursively = (currentKeySSI) => {
+        derivedKeySSIs[currentKeySSI.getIdentifier()] = keySSIIdentifier;
         try {
-            currentKeySSI = await $$.promisify(currentKeySSI.derive)();
-        } catch (e) {
-            return;
-        }
+            currentKeySSI = currentKeySSI.derive((err, derivedKeySSI) => {
+                if (err) {
+                    return callback(err);
+                }
 
-        await __getDerivedKeySSIRecursively(currentKeySSI);
+                currentKeySSI = derivedKeySSI;
+                __getDerivedKeySSIsRecursively(currentKeySSI);
+            });
+        } catch (e) {
+            return callback(undefined, derivedKeySSIs);
+        }
     }
 
-    await __getDerivedKeySSIRecursively(keySSI);
-    return derivedKeySSIs;
+    __getDerivedKeySSIsRecursively(keySSI);
 }
 
 module.exports = {

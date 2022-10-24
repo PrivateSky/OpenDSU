@@ -29,10 +29,13 @@ function PathKeyMapping(enclaveHandler) {
                 if (err) {
                     return callback(err);
                 }
-                const derivedKeySSIs = await utils.getAllDerivedSSIsForKeySSI(pathKeySSI);
-                pathKeysMapping = {...pathKeysMapping, ...derivedKeySSIs};
-                console.log(pathKeysMapping);
-                callback();
+                try {
+                    const derivedKeySSIs = await $$.promisify(utils.getAllDerivedSSIsForKeySSI)(pathKeySSI);
+                    pathKeysMapping = {...pathKeysMapping, ...derivedKeySSIs};
+                    callback();
+                } catch (e) {
+                    callback(e);
+                }
             });
         }
         storePathKeySSI();
@@ -47,7 +50,7 @@ function PathKeyMapping(enclaveHandler) {
             }
         }
         keySSI = keySSI.getIdentifier();
-        callback(pathKeysMapping[keySSI]);
+        callback(undefined, pathKeysMapping[keySSI]);
     };
 
     utilsAPI.bindAutoPendingFunctions(this);

@@ -78,7 +78,19 @@ function Enclave_Mixin(target, did) {
     }
 
     target.getPrivateKeyForSlot = (forDID, slot, callback) => {
-        target.storageDB.getRecord(constants.TABLE_NAMES.PATH_KEY_SSI_PRIVATE_KEYS, slot, callback);
+        target.storageDB.getRecord(constants.TABLE_NAMES.PATH_KEY_SSI_PRIVATE_KEYS, slot, (err, privateKeyRecord)=>{
+            if (err) {
+                return callback(err);
+            }
+            let privateKey;
+            try{
+                privateKey = $$.Buffer.from(privateKeyRecord.privateKey);
+            }catch (e) {
+                return callback(e);
+            }
+
+            callback(undefined, privateKey);
+        });
     };
 
     target.addIndex = (forDID, table, field, forceReindex, callback) => {
@@ -180,7 +192,6 @@ function Enclave_Mixin(target, did) {
                     }
 
                     try {
-
                         derivedKeySSI.derive((err, _derivedKeySSI) => {
                             if (err) {
                                 return callback(err);
