@@ -6,14 +6,11 @@ const assert = dc.assert;
 const openDSU = require('../../index');
 $$.__registerModule("opendsu", openDSU);
 const enclaveAPI = openDSU.loadAPI("enclave");
-const resolver = openDSU.loadAPI("resolver");
 const keySSISpace = openDSU.loadAPI("keyssi");
 const scAPI = openDSU.loadAPI("sc");
-const w3cDID = openDSU.loadAPI("w3cdid");
 const crypto = openDSU.loadAPI("crypto");
-const utils = require("../../enclave/impl/utils");
 const EnclaveHandler = require("../../enclave/impl/WalletDBEnclaveHandler");
-assert.callback('WalletDBEnclave test', (testFinished) => {
+assert.callback('WalletDBEnclaveHandler test', (testFinished) => {
     dc.createTestFolder('createDSU', async (err, folder) => {
         const vaultDomainConfig = {
             "anchoring": {
@@ -34,8 +31,7 @@ assert.callback('WalletDBEnclave test', (testFinished) => {
                 const path = crypto.generateRandom(16).toString("hex")
                 const pathKeySSI = keySSISpace.createPathKeySSI("vault", `0/${path}`);
                 await $$.promisify(enclaveHandler.storePathKeySSI)(pathKeySSI);
-                const derivedKeySSIs = await $$.promisify(utils.getAllDerivedSSIsForKeySSI)(pathKeySSI);
-                expectedResult = {...expectedResult, ...derivedKeySSIs};
+                expectedResult[pathKeySSI.getSpecificString()] = pathKeySSI.getIdentifier();
             }
 
             const loadedPaths = await $$.promisify(enclaveHandler.loadPaths)();

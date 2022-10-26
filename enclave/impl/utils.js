@@ -1,7 +1,7 @@
 const openDSU = require("opendsu");
 const keySSISpace = openDSU.loadAPI("keyssi");
 
-const deriveAllKeySSIsFromPathKeys = (pathKeyMap, callback) => {
+const getKeySSIsMappingFromPathKeys = (pathKeyMap, callback) => {
     let keySSIMap = {};
     const props = Object.keys(pathKeyMap);
     const __deriveAllKeySSIsFromPathKeysRecursively = (index) => {
@@ -18,7 +18,7 @@ const deriveAllKeySSIsFromPathKeys = (pathKeyMap, callback) => {
             return callback(e);
         }
 
-        getAllDerivedSSIsForKeySSI(keySSI, (err, derivedKeySSIs) => {
+        getKeySSIMapping(keySSI, (err, derivedKeySSIs) => {
             if (err) {
                 return callback(err);
             }
@@ -32,7 +32,7 @@ const deriveAllKeySSIsFromPathKeys = (pathKeyMap, callback) => {
     __deriveAllKeySSIsFromPathKeysRecursively(0);
 }
 
-const getAllDerivedSSIsForKeySSI = (keySSI, callback) => {
+const getKeySSIMapping = (keySSI, callback) => {
     if (typeof keySSI === "string") {
         try {
             keySSI = keySSISpace.parse(keySSI);
@@ -40,10 +40,10 @@ const getAllDerivedSSIsForKeySSI = (keySSI, callback) => {
             return callback(e);
         }
     }
-    const derivedKeySSIs = {};
-    const keySSIIdentifier = keySSI.getIdentifier();
-    const __getDerivedKeySSIsRecursively = (currentKeySSI) => {
-        derivedKeySSIs[currentKeySSI.getIdentifier()] = keySSIIdentifier;
+    const keySSIsMap = {};
+
+    const __getDerivedKeySSIsRecursively = (currentKeySSI, derivedKeySSIsObj, callback) => {
+        derivedKeySSIsObj[currentKeySSI.getTypeName()] = currentKeySSI.getIdentifier();
         try {
             currentKeySSI = currentKeySSI.derive((err, derivedKeySSI) => {
                 if (err) {
@@ -51,17 +51,31 @@ const getAllDerivedSSIsForKeySSI = (keySSI, callback) => {
                 }
 
                 currentKeySSI = derivedKeySSI;
-                __getDerivedKeySSIsRecursively(currentKeySSI);
+                __getDerivedKeySSIsRecursively(currentKeySSI, derivedKeySSIsObj, callback);
             });
         } catch (e) {
-            return callback(undefined, derivedKeySSIs);
+            return callback(undefined, derivedKeySSIsObj);
         }
     }
 
-    __getDerivedKeySSIsRecursively(keySSI);
+    __getDerivedKeySSIsRecursively(keySSI, {}, (err, _derivedKeySSIsObj)=>{
+        if (err) {
+            return callback(err);
+        }
+
+        for (let ssiType in _derivedKeySSIsObj) {
+            keySSIsMap[ssiType] = {};
+            const derivedKeySSIsList = Object.values(_derivedKeySSIsObj);
+            for (let i = 0; i < derivedKeySSIsList.length; i++) {
+                keySSIsMap[ssiType][derivedKeySSIsList[i]] = _derivedKeySSIsObj[ssiType];
+            }
+        }
+
+        callback(undefined, keySSIsMap);
+    })
 }
 
 module.exports = {
-    deriveAllKeySSIsFromPathKeys,
-    getAllDerivedSSIsForKeySSI
+    getKeySSIsMappingFromPathKeys,
+    getKeySSIMapping
 }

@@ -1,6 +1,8 @@
 const constants = require("./constants");
+const EnclaveHandler = require("./WalletDBEnclaveHandler");
+const PathKeyMapping = require("./PathKeyMapping");
 
-function Enclave_Mixin(target, did) {
+function Enclave_Mixin(target, did, keySSI) {
     const openDSU = require("opendsu");
     const keySSISpace = openDSU.loadAPI("keyssi")
     const w3cDID = openDSU.loadAPI("w3cdid")
@@ -9,6 +11,8 @@ function Enclave_Mixin(target, did) {
     const ObservableMixin = require("../../utils/ObservableMixin");
     ObservableMixin(target);
     const CryptoSkills = w3cDID.CryptographicSkills;
+
+    let pathKeyMapping;
 
     const getPrivateInfoForDID = (did, callback) => {
         target.storageDB.getRecord(constants.TABLE_NAMES.DIDS_PRIVATE_KEYS, did, (err, record) => {
@@ -56,6 +60,29 @@ function Enclave_Mixin(target, did) {
         });
     };
 
+    const getPathKeyMapping = (callback) => {
+        if (pathKeyMapping) {
+            return callback(pathKeyMapping);
+        }
+
+        const EnclaveHandler = require("./WalletDBEnclaveHandler");
+        const PathKeyMapping = require("../impl/PathKeyMapping");
+
+        try {
+            target.storageDB.getKeySSI((err, keySSI) => {
+                if (err) {
+                    return callback(err);
+                }
+
+                const enclaveHandler = new EnclaveHandler(keySSI);
+                pathKeyMapping = new PathKeyMapping(enclaveHandler);
+                callback(undefined, pathKeyMapping);
+            })
+        } catch (e) {
+            return callback(e);
+        }
+    }
+
     target.getDID = (callback) => {
         if (!did) {
             did = CryptoSkills.applySkill("key", CryptoSkills.NAMES.CREATE_DID_DOCUMENT);
@@ -78,14 +105,14 @@ function Enclave_Mixin(target, did) {
     }
 
     target.getPrivateKeyForSlot = (forDID, slot, callback) => {
-        target.storageDB.getRecord(constants.TABLE_NAMES.PATH_KEY_SSI_PRIVATE_KEYS, slot, (err, privateKeyRecord)=>{
+        target.storageDB.getRecord(constants.TABLE_NAMES.PATH_KEY_SSI_PRIVATE_KEYS, slot, (err, privateKeyRecord) => {
             if (err) {
                 return callback(err);
             }
             let privateKey;
-            try{
+            try {
                 privateKey = $$.Buffer.from(privateKeyRecord.privateKey);
-            }catch (e) {
+            } catch (e) {
                 return callback(e);
             }
 
@@ -238,6 +265,16 @@ function Enclave_Mixin(target, did) {
             }
         }
 
+        if (keySSI.getTypeName() === openDSU.constants.KEY_SSIS.PATH_SSI) {
+           return getPathKeyMapping((err, pathKeyMapping)=>{
+                if (err) {
+                    return callback(err);
+                }
+
+               pathKeyMapping.storePathKeySSI(keySSI, callback);
+           })
+        }
+
         if (keySSI.getTypeName() === openDSU.constants.KEY_SSIS.SEED_SSI) {
             return target.storeSeedSSI(forDID, keySSI, undefined, callback);
         }
@@ -281,13 +318,31 @@ function Enclave_Mixin(target, did) {
             }
         }
 
-        target.storageDB.getRecord(constants.TABLE_NAMES.SREAD_SSIS, keySSI.getIdentifier(), (err, record) => {
+        getPathKeyMapping((err, pathKeyMapping)=>{
             if (err) {
-                return callback(err);
+                return target.storageDB.getRecord(constants.TABLE_NAMES.SREAD_SSIS, keySSI.getIdentifier(), (err, record) => {
+                    if (err) {
+                        return callback(err);
+                    }
+
+                    callback(undefined, record.sReadSSI);
+                });
             }
 
-            callback(undefined, record.sReadSSI);
-        });
+            pathKeyMapping.getReadForKeySSI(keySSI, (err, readKeySSI) => {
+                if (err) {
+                    return target.storageDB.getRecord(constants.TABLE_NAMES.SREAD_SSIS, keySSI.getIdentifier(), (err, record) => {
+                        if (err) {
+                            return callback(err);
+                        }
+
+                        callback(undefined, record.sReadSSI);
+                    });
+                }
+
+                callback(undefined, readKeySSI);
+            })
+        })
     }
 
     target.storeDID = (forDID, storedDID, privateKeys, callback) => {
@@ -381,16 +436,28 @@ function Enclave_Mixin(target, did) {
     }
 
     target.signForKeySSI = (forDID, keySSI, hash, callback) => {
-        getCapableOfSigningKeySSI(keySSI, (err, capableOfSigningKeySSI) => {
+        getPathKeyMapping((err, pathKeyMapping)=>{
             if (err) {
-                return callback(err);
-            }
-            if (typeof capableOfSigningKeySSI === "undefined") {
-                return callback(Error(`The provided SSI does not grant writing rights`));
+                return getCapableOfSigningKeySSI(keySSI, (err, capableOfSigningKeySSI) => {
+                    if (err) {
+                        return callback(err);
+                    }
+                    if (typeof capableOfSigningKeySSI === "undefined") {
+                        return callback(Error(`The provided SSI does not grant writing rights`));
+                    }
+
+                    capableOfSigningKeySSI.sign(hash, callback);
+                });
             }
 
-            capableOfSigningKeySSI.sign(hash, callback);
-        });
+            pathKeyMapping.getCapableOfSigningKeySSI((err, capableOfSigningKeySSI)=>{
+                if (err) {
+                    return callback(err);
+                }
+
+                capableOfSigningKeySSI.sign(hash, callback);
+            })
+        })
     }
 
     target.encryptAES = (forDID, secretKeyAlias, message, AESParams, callback) => {

@@ -6,7 +6,9 @@ function PathKeyMapping(enclaveHandler) {
     let pathKeysMapping = {};
     let initialised = false;
     const init = async () => {
-        pathKeysMapping = await $$.promisify(enclaveHandler.loadPaths)();
+        let paths = await $$.promisify(enclaveHandler.loadPaths)();
+        pathKeysMapping = await $$.promisify(utils.getKeySSIsMappingFromPathKeys)(paths);
+
         this.finishInitialisation();
     };
 
@@ -30,7 +32,7 @@ function PathKeyMapping(enclaveHandler) {
                     return callback(err);
                 }
                 try {
-                    const derivedKeySSIs = await $$.promisify(utils.getAllDerivedSSIsForKeySSI)(pathKeySSI);
+                    const derivedKeySSIs = await $$.promisify(utils.getKeySSIMapping)(pathKeySSI);
                     pathKeysMapping = {...pathKeysMapping, ...derivedKeySSIs};
                     callback();
                 } catch (e) {
@@ -50,8 +52,42 @@ function PathKeyMapping(enclaveHandler) {
             }
         }
         keySSI = keySSI.getIdentifier();
-        callback(undefined, pathKeysMapping[keySSI]);
+        let capableOfSigningKeySSI
+        try {
+            capableOfSigningKeySSI = pathKeysMapping[openDSU.constants.KEY_SSIS.SEED_SSI][keySSI];
+        } catch (e) {
+            return callback(e);
+        }
+
+        if (typeof capableOfSigningKeySSI === "undefined") {
+            return callback(Error("Could not get a keySSI that can sign."));
+        }
+
+        callback(undefined, capableOfSigningKeySSI);
     };
+
+    this.getReadForKeySSI = (keySSI, callback) => {
+        if (typeof keySSI === "string") {
+            try {
+                keySSI = keySSISpace.parse(keySSI);
+            } catch (e) {
+                return callback(e);
+            }
+        }
+        keySSI = keySSI.getIdentifier();
+        let readKeySSI
+        try {
+            readKeySSI = pathKeysMapping[openDSU.constants.KEY_SSIS.SREAD_SSI][keySSI];
+        } catch (e) {
+            return callback(e);
+        }
+
+        if (typeof readKeySSI === "undefined") {
+            return callback(Error("Could not get a keySSI with read access."));
+        }
+
+        callback(undefined, readKeySSI);
+    }
 
     utilsAPI.bindAutoPendingFunctions(this);
     init();

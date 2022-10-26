@@ -8,7 +8,7 @@ function WalletDBEnclave(keySSI, did) {
     const keySSISpace = openDSU.loadAPI("keyssi");
     const DB_NAME = constants.DB_NAMES.WALLET_DB_ENCLAVE;
     const EnclaveMixin = require("./Enclave_Mixin");
-    EnclaveMixin(this, did);
+    EnclaveMixin(this, did, keySSI);
     let enclaveDSU;
     let initialised = false;
     const init = async () => {

@@ -1,5 +1,4 @@
 const pathModule = require("path");
-const utils = require("./utils");
 const constants = require("./constants");
 
 function WalletDBEnclaveHandler(walletDBEnclaveKeySSI, config) {
@@ -104,12 +103,8 @@ function WalletDBEnclaveHandler(walletDBEnclaveKeySSI, config) {
                         return callback(err);
                     }
 
-                    try {
-                        const keySSIsMap = await $$.promisify(utils.deriveAllKeySSIsFromPathKeys)({...compactedKeys, ...scatteredKeys});
-                        callback(undefined, keySSIsMap);
-                    } catch (e) {
-                        callback(e);
-                    }
+
+                    callback(undefined, {...compactedKeys, ...scatteredKeys});
                 })
             });
         }
